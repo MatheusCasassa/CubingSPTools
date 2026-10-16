@@ -40,7 +40,7 @@ export const config = {
   scopes: ['public', 'manage_competitions'] as const,
 
   /** Site da CubingSP (link "voltar" no cabeçalho). */
-  cubingspUrl: (import.meta.env.VITE_CUBINGSP_URL || 'https://cubingsp-site.matcasviana.workers.dev').replace(/\/$/, ''),
+  cubingspUrl: (import.meta.env.VITE_CUBINGSP_URL || 'https://cubingsp.mcasassa.workers.dev').replace(/\/$/, ''),
 }
 
 export const APP_VERSION = 'v0.3'
