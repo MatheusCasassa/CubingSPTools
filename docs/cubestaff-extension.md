@@ -28,15 +28,20 @@ depois de publicada.
 | `v` | `2` | Versão do formato |
 | `cfg` | objeto | Configuração (estações, distribuição, % de novatos, runners, nº de grupos por rodada…) |
 | `ab` | texto | Ausentes: `registrantId` em base 36, separados por vírgula |
-| `st` | lista | Candidatos aprovados: `[id36, funções, preferida, querEmbaralhar, puzzles, disponibilidade]` |
+| `st` | lista | Candidatos aprovados, um texto por pessoa: `"id36\|funções\|preferida\|querEmbaralhar\|puzzles\|disponibilidade"` (separado por barra vertical) |
 | `ex` | lista | Ajudantes extras `{ id, name, note? }` (pais, visitantes — não existem no WCIF) |
 | `rd` | objeto | Rodadas planejadas, por `roundId` |
 | `rev` | número | Revisão (incrementa a cada gravação; detecta edição simultânea) |
 | `at`, `by` | texto | Data/hora e nome de quem gravou |
 
 - **Funções**: letras `j` (juiz), `s` (embaralhador), `r` (runner). Vazio = qualquer.
-- **querEmbaralhar**: `1`, `0` ou `null` (não informado).
-- **Disponibilidade**: 2 dígitos por dia da competição (manhã, tarde): `"1011"` = dia 1 só de manhã, dia 2 o dia todo. `null` = sempre disponível.
+- **querEmbaralhar**: `1`, `0` ou vazio (não informado).
+- **Disponibilidade**: 2 dígitos por dia da competição (manhã, tarde): `"1011"` = dia 1 só de manhã, dia 2 o dia todo. Vazio = sempre disponível.
+
+> **Nunca use `null` nos dados**: a WCA remove valores `null` de listas ao
+> salvar a extensão. A primeira versão gravava `st` como lista com `null` e as
+> posições se deslocavam (todos ficavam "não quer embaralhar"). O leitor ainda
+> aceita esse formato antigo, interpretando as posições pelo tipo.
 
 ### Rodadas (`rd[roundId]`)
 

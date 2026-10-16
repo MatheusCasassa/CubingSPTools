@@ -29,7 +29,7 @@ import {
   readRows,
 } from '../src/tools/cubestaff/model/staffImport'
 import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
-import { encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
+import { decodeStaffRow, encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
 import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
 
 let n = 0
@@ -416,5 +416,37 @@ ok('extensão compacta cabe no limite da WCA (420 competidores)')
   assert.ok(!again.rounds['333-r1'].groups.some((g) => g.competitors.includes(victim)))
 }
 ok('só inscrições aprovadas (pendentes/canceladas ficam de fora)')
+
+// 22. A WCA remove valores null ao salvar a extensão (Cuber Brasil Sumaré 2026):
+// o formato não pode depender de null, e o formato antigo (já salvo) é lido certo.
+{
+  const stripNulls = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.filter((x) => x != null).map(stripNulls)
+      : v && typeof v === 'object'
+        ? Object.fromEntries(
+            Object.entries(v)
+              .filter(([, x]) => x != null)
+              .map(([k, x]) => [k, stripNulls(x)]),
+          )
+        : v
+  const stored = structuredClone(built.wcif)
+  for (const e of stored.extensions ?? []) e.data = stripNulls(e.data)
+  const viaWca = readExtension(stored)!
+  assert.deepEqual(viaWca.staff, upd.staff)
+  // Linhas antigas como ficaram na WCA: [id, funções, preferida, puzzles] (nulls removidos).
+  const days = ['2026-11-14', '2026-11-15']
+  assert.equal(decodeStaffRow(['1', '', '', ''], days).scrambler, null)
+  assert.deepEqual(decodeStaffRow(['1', 'js', 'j', '333,pyram'], days).scramblePuzzles, ['333', 'pyram'])
+  const old = decodeStaffRow(['a', 'js', 's', 1, '333', '1011'], days)
+  assert.equal(old.scrambler, true)
+  assert.deepEqual(old.availability, {
+    '2026-11-14': { morning: true, afternoon: false },
+    '2026-11-15': { morning: true, afternoon: true },
+  })
+  assert.equal(decodeStaffRow(['a', '', '', 0, ''], days).scrambler, false)
+  assert.equal(decodeStaffRow(['a', '', '', '', '1011'], days).availability?.['2026-11-14'].afternoon, false)
+}
+ok('extensão sobrevive à WCA removendo null (embaralhadores voltam)')
 
 console.log(`\n${n} testes do CubeStaff OK`)

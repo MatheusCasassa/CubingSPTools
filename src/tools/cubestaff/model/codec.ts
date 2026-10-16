@@ -112,7 +112,7 @@ export interface EncodedPlan {
   v: 2
   cfg: Partial<Plan['config']> & { absent?: never }
   ab?: string
-  st: (string | number | null)[][]
+  st: (string | (string | number | null)[])[]
   ex: Plan['extras']
   rd: Record<string, EncRound>
   rev: number
@@ -157,14 +157,19 @@ export function encodePlan(plan: Plan, wcif: Wcif): EncodedPlan {
     v: 2,
     cfg,
     ...(absent.length ? { ab: encIds(absent) } : {}),
-    st: plan.staff.map((e) => [
-      b36(e.registrantId),
-      e.roles.map((x) => ROLE_LETTER[x]).join(''),
-      e.preferred.map((x) => ROLE_LETTER[x]).join(''),
-      e.scrambler == null ? null : e.scrambler ? 1 : 0,
-      e.scramblePuzzles.join(','),
-      encAvail(e.availability, days) ?? null,
-    ]),
+    // Cada candidato é um texto "id|funções|preferida|embaralha|puzzles|disponibilidade".
+    // Nada de null: a WCA remove valores null de listas ao salvar a extensão,
+    // o que deslocava as posições (bug que zerava os embaralhadores).
+    st: plan.staff.map((e) =>
+      [
+        b36(e.registrantId),
+        e.roles.map((x) => ROLE_LETTER[x]).join(''),
+        e.preferred.map((x) => ROLE_LETTER[x]).join(''),
+        e.scrambler == null ? '' : e.scrambler ? '1' : '0',
+        e.scramblePuzzles.join(','),
+        encAvail(e.availability, days) ?? '',
+      ].join('|'),
+    ),
     ex: plan.extras,
     rd,
     rev: plan.revision,
@@ -177,28 +182,48 @@ export function encodePlan(plan: Plan, wcif: Wcif): EncodedPlan {
  * Lê a extensão. `fromWcif` reconstrói uma rodada publicada a partir dos
  * assignments (passado por publish.ts para evitar dependência circular).
  */
+const letters = (s: string) =>
+  s
+    .split('')
+    .map((l) => LETTER_ROLE[l])
+    .filter(Boolean)
+
+/**
+ * Lê um candidato. Formato atual: texto "id|funções|preferida|embaralha|puzzles|disp".
+ * Formato antigo (lista): a WCA removia os null, então as posições a partir da
+ * 4ª são lidas pelo tipo — número = quer embaralhar; 1º texto = puzzles;
+ * 2º texto = disponibilidade.
+ */
+export function decodeStaffRow(row: string | (string | number | null)[], days: string[]): StaffEntry {
+  if (typeof row === 'string') {
+    const [id, roles = '', pref = '', scr = '', puzzles = '', avail = ''] = row.split('|')
+    return {
+      registrantId: fromB36(id),
+      roles: letters(roles),
+      preferred: letters(pref),
+      scrambler: scr === '' ? null : scr === '1',
+      scramblePuzzles: puzzles.split(',').filter(Boolean),
+      availability: avail === '' ? null : decAvail(avail, days),
+    }
+  }
+  const rest = row.slice(3).filter((x) => x != null)
+  const scr = rest.find((x) => typeof x === 'number') as number | undefined
+  const texts = rest.filter((x): x is string => typeof x === 'string')
+  return {
+    registrantId: fromB36(String(row[0])),
+    roles: letters(String(row[1] ?? '')),
+    preferred: letters(String(row[2] ?? '')),
+    scrambler: scr == null ? null : scr === 1,
+    scramblePuzzles: (texts[0] ?? '').split(',').filter(Boolean),
+    availability: texts[1] ? decAvail(texts[1], days) : null,
+  }
+}
+
 export function decodePlan(data: EncodedPlan, wcif: Wcif, fromWcif: (roundId: string) => RoundPlan | null): Plan {
   const days = competitionDays(wcif)
   const plan = emptyPlan()
   plan.config = { ...DEFAULT_CONFIG, ...data.cfg, absent: decIds(data.ab) }
-  plan.staff = (data.st ?? []).map((row): StaffEntry => ({
-    registrantId: fromB36(String(row[0])),
-    roles: String(row[1] ?? '')
-      .split('')
-      .filter(Boolean)
-      .map((l) => LETTER_ROLE[l])
-      .filter(Boolean),
-    preferred: String(row[2] ?? '')
-      .split('')
-      .filter(Boolean)
-      .map((l) => LETTER_ROLE[l])
-      .filter(Boolean),
-    scrambler: row[3] == null ? null : row[3] === 1,
-    scramblePuzzles: String(row[4] ?? '')
-      .split(',')
-      .filter(Boolean),
-    availability: decAvail(row[5] == null ? undefined : String(row[5]), days),
-  }))
+  plan.staff = (data.st ?? []).map((row) => decodeStaffRow(row, days))
   plan.extras = data.ex ?? []
   plan.revision = data.rev ?? 0
   plan.updatedAt = data.at ?? plan.updatedAt
