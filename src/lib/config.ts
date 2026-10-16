@@ -46,8 +46,8 @@ export const config = {
 export const APP_VERSION = 'v0.4'
 
 export const LINKS = {
-  guide: 'https://github.com/MatheusCasassa/ScoreComps/wiki/Guide',
-  github: 'https://github.com/MatheusCasassa/ScoreComps',
+  guide: 'https://github.com/MatheusCasassa/CubingSPTools/wiki/Guide',
+  github: 'https://github.com/MatheusCasassa/CubingSPTools',
   email: 'mailto:matcasviana@gmail.com',
   wca: 'https://www.worldcubeassociation.org/persons/2017VIAN01',
 }
