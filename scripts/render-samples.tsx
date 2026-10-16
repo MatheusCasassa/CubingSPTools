@@ -26,6 +26,10 @@ const logo =
       }
     : null
 
+// Idioma da súmula: --lang pt|en|es (padrão pt)
+const langArg = process.argv.indexOf('--lang')
+const lang = (langArg > 0 ? process.argv[langArg + 1] : 'pt') as 'pt' | 'en' | 'es'
+
 const wcif = demoWcif()
 const plans = planRounds(wcif)
 const batches = plans.map((p) => ({
@@ -35,6 +39,7 @@ const batches = plans.map((p) => ({
     p,
     { roundId: p.info.roundId, groupKeys: p.groups.map((g) => g.key), blank: Math.min(p.suggestedBlank, 4) },
     'name',
+    lang,
   ),
 }))
 
@@ -59,6 +64,6 @@ for (const v of variants) {
     },
     async (doc) => new Uint8Array(await renderToBuffer(doc as Parameters<typeof renderToBuffer>[0])),
   )
-  for (const f of rendered) await writeFile(join(outDir, `amostra-${v.tag}${logo ? '-logo' : ''}.pdf`), f.data)
+  for (const f of rendered) await writeFile(join(outDir, `amostra-${v.tag}${lang === 'pt' ? '' : `-${lang}`}${logo ? '-logo' : ''}.pdf`), f.data)
   console.log(`${v.tag}: ${files[0].count} súmulas, ${files[0].slots.length} posições, ${Date.now() - t0} ms`)
 }

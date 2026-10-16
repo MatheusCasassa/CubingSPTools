@@ -225,7 +225,7 @@ export function Card({ model, rect, fonts, logo }: CardProps): ReactElement {
           }}
         >
           <T size={8.5} weight={BOLD} color={MUTED} style={{ letterSpacing: s(8.5 * 0.04) }}>
-            ID
+            {L.idLabel ?? 'ID'}
           </T>
           <T size={20} weight={BOLD}>{model.competitorId || ' '}</T>
         </View>
@@ -267,7 +267,7 @@ export function Card({ model, rect, fonts, logo }: CardProps): ReactElement {
           }}
         >
           <T size={8.5} weight={BOLD} color={MUTED} style={{ letterSpacing: s(8.5 * 0.04) }}>
-            GRUPO
+            {L.groupLabel ?? 'GRUPO'}
           </T>
           <T size={20} weight={BOLD}>{model.group || ' '}</T>
         </View>

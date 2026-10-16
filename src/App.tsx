@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactElement } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Navbar } from './components/layout/Navbar'
 import { Footer } from './components/layout/Footer'
 import { Spinner } from './components/ui/Feedback'
+import { useI18n } from './i18n/I18nProvider'
 import Home from './pages/Home'
 import CubeStaff from './pages/CubeStaff'
 import NotFound from './pages/NotFound'
@@ -12,18 +13,34 @@ const ScoreCompsHome = lazy(() => import('./tools/scorecomps/ui/ScoreCompsHome')
 const CompetitionPage = lazy(() => import('./tools/scorecomps/ui/CompetitionPage'))
 const CalcumulativePage = lazy(() => import('./tools/calcumulative/ui/CalcumulativePage'))
 
+const PAGES: { path: string; element: ReactElement }[] = [
+  { path: '', element: <Home /> },
+  { path: 'scorecomps', element: <ScoreCompsHome /> },
+  { path: 'scorecomps/:competitionId', element: <CompetitionPage /> },
+  { path: 'calcumulative', element: <CalcumulativePage /> },
+  { path: 'cubestaff', element: <CubeStaff /> },
+]
+
+// Português sem prefixo; inglês em /en/… e espanhol em /es/… (como o site da CubingSP).
+const PREFIXES = ['', 'en', 'es']
+
 export default function App() {
+  const { m } = useI18n()
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
       <main className="flex-1">
-        <Suspense fallback={<Spinner label="Carregando…" />}>
+        <Suspense fallback={<Spinner label={m.common.loading} />}>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/scorecomps" element={<ScoreCompsHome />} />
-            <Route path="/scorecomps/:competitionId" element={<CompetitionPage />} />
-            <Route path="/calcumulative" element={<CalcumulativePage />} />
-            <Route path="/cubestaff" element={<CubeStaff />} />
+            {PREFIXES.flatMap((prefix) =>
+              PAGES.map((p) => (
+                <Route
+                  key={`${prefix}/${p.path}`}
+                  path={'/' + [prefix, p.path].filter(Boolean).join('/')}
+                  element={p.element}
+                />
+              )),
+            )}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

@@ -43,7 +43,7 @@ export const config = {
   cubingspUrl: (import.meta.env.VITE_CUBINGSP_URL || 'https://cubingsp.mcasassa.workers.dev').replace(/\/$/, ''),
 }
 
-export const APP_VERSION = 'v0.4'
+export const APP_VERSION = 'v0.5'
 
 export const LINKS = {
   guide: 'https://github.com/MatheusCasassa/CubingSPTools/wiki/Guide',

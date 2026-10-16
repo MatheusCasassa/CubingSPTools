@@ -1,10 +1,5 @@
 import type { Penalty } from '../model/time'
-
-const OPTIONS: { value: Penalty; label: string; title: string }[] = [
-  { value: 'ok', label: 'OK', title: 'Sem penalidade' },
-  { value: '+2', label: '+2', title: 'Penalidade de 2 segundos' },
-  { value: 'dnf', label: 'DNF', title: 'Did Not Finish' },
-]
+import { useI18n } from '../../../i18n/I18nProvider'
 
 export function PenaltyToggle({
   value,
@@ -17,6 +12,12 @@ export function PenaltyToggle({
   disabled?: boolean
   label: string
 }) {
+  const { m } = useI18n()
+  const OPTIONS: { value: Penalty; label: string; title: string }[] = [
+    { value: 'ok', label: 'OK', title: m.calc.penaltyOk },
+    { value: '+2', label: '+2', title: m.calc.penaltyPlus2 },
+    { value: 'dnf', label: 'DNF', title: m.calc.penaltyDnf },
+  ]
   return (
     <div className="seg w-[132px] shrink-0" role="group" aria-label={label}>
       {OPTIONS.map((o) => (

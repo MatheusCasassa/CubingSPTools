@@ -4,6 +4,7 @@
 import { useRef, useState } from 'react'
 import { IconImage } from '../../../components/ui/icons'
 import type { Logo } from '../pdf/ScorecardDocument'
+import { useI18n } from '../../../i18n/I18nProvider'
 
 const MAX_SIDE = 600
 const key = (compId: string) => `scorecomps.logo.${compId}`
@@ -53,26 +54,27 @@ function fileToPng(file: File): Promise<Logo> {
 
 export function LogoPicker({ logo, onChange }: { logo: Logo | null; onChange: (l: Logo | null) => void }) {
   const input = useRef<HTMLInputElement>(null)
+  const { m } = useI18n()
   const [error, setError] = useState<string | null>(null)
 
   return (
     <div>
-      <span className="label">Logo da competição</span>
+      <span className="label">{m.scorecomps.logo}</span>
       <div className="flex items-center gap-3">
         <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border-subtle bg-white">
           {logo ? (
-            <img src={logo.src} alt="Logo da competição" className="max-h-12 max-w-12 object-contain" />
+            <img src={logo.src} alt={m.scorecomps.logoAlt} className="max-h-12 max-w-12 object-contain" />
           ) : (
             <IconImage className="h-5 w-5 text-neutral-400" />
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-ghost btn-sm" onClick={() => input.current?.click()}>
-            {logo ? 'Trocar' : 'Adicionar'}
+            {logo ? m.scorecomps.logoChange : m.scorecomps.logoAdd}
           </button>
           {logo && (
             <button type="button" className="btn-ghost btn-sm" onClick={() => onChange(null)}>
-              Remover
+              {m.scorecomps.logoRemove}
             </button>
           )}
         </div>
@@ -88,13 +90,13 @@ export function LogoPicker({ logo, onChange }: { logo: Logo | null; onChange: (l
             setError(null)
             try {
               onChange(await fileToPng(f))
-            } catch (err) {
-              setError(err instanceof Error ? err.message : String(err))
+            } catch {
+              setError(m.scorecomps.logoError)
             }
           }}
         />
       </div>
-      <p className="mt-1.5 text-xs text-fg-faint">Aparece pequena à esquerda do nome da competição.</p>
+      <p className="mt-1.5 text-xs text-fg-faint">{m.scorecomps.logoHint}</p>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   )

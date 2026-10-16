@@ -118,6 +118,19 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 
 ---
 
+## Idiomas (PT · EN · ES)
+
+Como no site da CubingSP: português sem prefixo (`/calcumulative`), inglês em
+`/en/…` e espanhol em `/es/…`, com seletor de idioma (bandeiras em SVG) no
+cabeçalho. Textos em `src/i18n/messages/{pt,en,es}.ts` — o TypeScript acusa
+qualquer chave faltando em EN/ES. A **súmula** tem idioma próprio (opção
+"Idioma da súmula", padrão = idioma do site), com os textos em
+`src/tools/scorecomps/model/strings.ts`; o português é o do Modelo_Aprovado.
+O login da WCA continua usando só a raiz como Redirect URI e volta para a
+página/idioma de onde saiu.
+
+Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
+
 ## Calcumulative — regras
 
 - **Limite cumulativo** (Regulamento A1a2/A1a4/A1a5): limite de cada tentativa

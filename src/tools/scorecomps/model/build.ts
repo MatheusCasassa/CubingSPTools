@@ -13,6 +13,8 @@ import {
   type Competitor,
 } from '../../../lib/wca/wcif'
 import { buildRoundLayout, type ScorecardModel } from './logic'
+import { SCORECARD_STRINGS } from './strings'
+import type { Locale } from '../../../i18n/locales'
 
 export interface GroupPlan {
   /** Chave única dentro da rodada ("g1", "g2"… ou "all"). */
@@ -95,14 +97,20 @@ export interface RoundSelection {
   blank: number
 }
 
-function eventLine(info: RoundInfo): string {
-  return info.totalRounds > 1 ? `${info.eventName} · ${info.label}` : info.eventName
+/** "Rodada N" / "Final" no idioma pedido. */
+export function roundName(info: RoundInfo, locale: Locale): string {
+  const S = SCORECARD_STRINGS[locale]
+  return info.roundNumber === info.totalRounds && info.totalRounds > 1 ? S.final : S.round(info.roundNumber)
 }
 
-function sortCompetitors(list: Competitor[], sortBy: SortBy): Competitor[] {
+function eventLine(info: RoundInfo, locale: Locale): string {
+  return info.totalRounds > 1 ? `${info.eventName} · ${roundName(info, locale)}` : info.eventName
+}
+
+function sortCompetitors(list: Competitor[], sortBy: SortBy, locale: Locale): Competitor[] {
   const out = [...list]
   if (sortBy === 'id') out.sort((a, b) => a.registrantId - b.registrantId)
-  else out.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  else out.sort((a, b) => a.name.localeCompare(b.name, locale === 'pt' ? 'pt-BR' : locale))
   return out
 }
 
@@ -112,11 +120,12 @@ export function buildRoundScorecards(
   plan: RoundPlan,
   sel: RoundSelection,
   sortBy: SortBy,
+  locale: Locale = 'pt',
 ): ScorecardModel[] {
-  const layout = buildRoundLayout(plan.info.round, plan.info.eventId)
+  const layout = buildRoundLayout(plan.info.round, plan.info.eventId, locale)
   const base = {
     competitionName: wcif.name,
-    eventName: eventLine(plan.info),
+    eventName: eventLine(plan.info, locale),
     layout,
     roundId: plan.info.roundId,
   }
@@ -124,7 +133,7 @@ export function buildRoundScorecards(
   const out: ScorecardModel[] = []
   for (const g of plan.groups) {
     if (!wanted.has(g.key)) continue
-    for (const c of sortCompetitors(g.competitors, sortBy)) {
+    for (const c of sortCompetitors(g.competitors, sortBy, locale)) {
       out.push({
         ...base,
         competitorId: String(c.registrantId),

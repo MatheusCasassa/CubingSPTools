@@ -1,9 +1,11 @@
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../lib/auth/AuthContext'
 import { isConfigured } from '../../lib/config'
+import { useI18n } from '../../i18n/I18nProvider'
 
 export function WcaLoginButton({ large = false }: { large?: boolean }) {
   const { login } = useAuth()
+  const { m } = useI18n()
   const location = useLocation()
   return (
     <button
@@ -15,7 +17,7 @@ export function WcaLoginButton({ large = false }: { large?: boolean }) {
         <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
         <path d="M9 3.5v17M15 3.5v17M3.5 9h17M3.5 15h17" />
       </svg>
-      Entrar com a conta WCA
+      {m.login.button}
     </button>
   )
 }

@@ -6,14 +6,19 @@ import type { CompetitionListItem } from '../../../lib/wca/types'
 import { WcaLoginButton } from '../../../components/auth/WcaLoginButton'
 import { Alert, Spinner } from '../../../components/ui/Feedback'
 import { IconArrowRight, ScoreCompsMark } from '../../../components/ui/icons'
+import { useI18n } from '../../../i18n/I18nProvider'
+import { WcaApiError } from '../../../lib/wca/api'
 
-function formatDate(d?: string): string {
+function formatDate(d: string | undefined, tag: string): string {
   if (!d) return ''
-  const [y, m, day] = d.split('-')
-  return `${day}/${m}/${y}`
+  const [y, mo, day] = d.split('-').map(Number)
+  return new Intl.DateTimeFormat(tag, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
+    new Date(y, mo - 1, day),
+  )
 }
 
 function Header() {
+  const { m } = useI18n()
   return (
     <div className="flex items-center gap-4">
       <ScoreCompsMark className="h-12 w-12" />
@@ -21,22 +26,24 @@ function Header() {
         <h1 className="text-3xl font-semibold tracking-tight">
           Score<span className="text-navy dark:text-canary">Comps</span>
         </h1>
-        <p className="text-sm text-fg-muted">Súmulas oficiais em PDF a partir dos grupos da WCA</p>
+        <p className="text-sm text-fg-muted">{m.scorecomps.subtitle}</p>
       </div>
     </div>
   )
 }
 
 function DemoLink() {
+  const { m, lp } = useI18n()
   return (
-    <Link to="/scorecomps/demo" className="btn-ghost">
-      Ver com uma competição de demonstração
+    <Link to={lp('/scorecomps/demo')} className="btn-ghost">
+      {m.scorecomps.demo}
     </Link>
   )
 }
 
 function CompetitionList() {
   const { token, isDelegate, setManagesCompetitions } = useAuth()
+  const { m, lp, tag } = useI18n()
   const [comps, setComps] = useState<CompetitionListItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,48 +56,46 @@ function CompetitionList() {
         setComps(list)
         setManagesCompetitions(list.length > 0)
       })
-      .catch((e) => active && setError(e instanceof Error ? e.message : 'Erro ao carregar.'))
+      .catch((e) =>
+        active &&
+        setError(e instanceof WcaApiError && e.status === 401 ? m.errors.sessionExpired : m.errors.loadCompetitions),
+      )
     return () => {
       active = false
     }
   }, [token, setManagesCompetitions])
 
   if (error) return <Alert>{error}</Alert>
-  if (!comps) return <Spinner label="Carregando suas competições…" />
+  if (!comps) return <Spinner label={m.scorecomps.loadingCompetitions} />
 
   if (comps.length === 0 && !isDelegate) {
     return (
       <div className="card p-8 text-center">
-        <h2 className="text-xl font-semibold">Acesso restrito</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm text-fg-muted">
-          Sua conta WCA não é Delegada nem Organizadora de nenhuma competição. O ScoreComps é exclusivo para
-          quem gerencia competições na WCA.
-        </p>
+        <h2 className="text-xl font-semibold">{m.scorecomps.restrictedTitle}</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-fg-muted">{m.scorecomps.restrictedText}</p>
       </div>
     )
   }
 
   return (
     <div>
-      <h2 className="text-lg font-semibold">Suas competições</h2>
-      <p className="mb-5 mt-1 text-sm text-fg-muted">
-        Apenas competições em que você é Delegado ou Organizador aparecem aqui.
-      </p>
+      <h2 className="text-lg font-semibold">{m.scorecomps.yourCompetitions}</h2>
+      <p className="mb-5 mt-1 text-sm text-fg-muted">{m.scorecomps.onlyManaged}</p>
       {comps.length === 0 ? (
-        <p className="text-sm text-fg-muted">Você é Delegado, mas não há competições gerenciáveis no momento.</p>
+        <p className="text-sm text-fg-muted">{m.scorecomps.noManageable}</p>
       ) : (
         <ul className="grid gap-2.5">
           {comps.map((c) => (
             <li key={c.id}>
               <Link
-                to={`/scorecomps/${encodeURIComponent(c.id)}`}
+                to={lp(`/scorecomps/${encodeURIComponent(c.id)}`)}
                 state={{ name: c.name }}
                 className="card group flex items-center justify-between px-5 py-4 transition-colors hover:border-brand-500/50"
               >
                 <span>
                   <span className="block font-medium">{c.name}</span>
                   <span className="mt-0.5 block text-xs text-fg-faint">
-                    {formatDate(c.start_date)}
+                    {formatDate(c.start_date, tag)}
                     {c.city ? ` · ${c.city}` : ''}
                   </span>
                 </span>
@@ -106,21 +111,16 @@ function CompetitionList() {
 
 export default function ScoreCompsHome() {
   const { status, error } = useAuth()
+  const { m } = useI18n()
   return (
     <div className="container-page py-12 sm:py-16">
       <div className="mx-auto max-w-3xl">
         <Header />
-        {status === 'loading' && <Spinner label="Verificando sessão…" />}
+        {status === 'loading' && <Spinner label={m.common.checkingSession} />}
         {status !== 'loading' && status !== 'authenticated' && (
           <div className="mt-10 animate-fade-up">
-            <p className="text-lg leading-relaxed">
-              Escolha a competição, marque as rodadas e os grupos e baixe as súmulas prontas para imprimir — com
-              as regras de corte, limite de tempo e penalidade de cada rodada, direto dos dados oficiais da WCA.
-            </p>
-            <p className="mt-4 leading-relaxed text-fg-muted">
-              Para utilizar a ferramenta, é necessário fazer login em sua conta WCA. Nenhuma senha ou
-              armazenamento passam por aqui, roda 100% no seu navegador.
-            </p>
+            <p className="text-lg leading-relaxed">{m.scorecomps.intro}</p>
+            <p className="mt-4 leading-relaxed text-fg-muted">{m.scorecomps.loginNote}</p>
             {error && (
               <div className="mt-6">
                 <Alert>{error}</Alert>

@@ -9,8 +9,10 @@
 
 import type { WcifFormatId, WcifRound } from '../../../lib/wca/types'
 import { formatCentis } from '../../../lib/wca/format'
+import { SCORECARD_STRINGS } from './strings'
+import type { Locale } from '../../../i18n/locales'
 
-export const PENALTY_EXAMPLE = 'Exemplo de Penalidade: 14.67 + 2 = 16.67'
+export const PENALTY_EXAMPLE = SCORECARD_STRINGS.pt.penaltyExample
 
 export interface ScorecardRow {
   /** Rótulo da linha: "1".."5" ou "E1"/"E2". */
@@ -30,6 +32,9 @@ export interface RoundLayout {
   penaltyText: string | null
   cutoffText: string
   extrasText: string
+  /** Rótulos do cabeçalho ("ID", "GRUPO"). */
+  idLabel: string
+  groupLabel: string
 }
 
 const SOLVES_BY_FORMAT: Record<WcifFormatId, number> = { '1': 1, '2': 2, '3': 3, m: 3, a: 5 }
@@ -41,7 +46,8 @@ function rows(from: number, to: number): ScorecardRow[] {
   return out
 }
 
-export function buildRoundLayout(round: WcifRound, eventId: string): RoundLayout {
+export function buildRoundLayout(round: WcifRound, eventId: string, locale: Locale = 'pt'): RoundLayout {
+  const S = SCORECARD_STRINGS[locale]
   const solveCount = SOLVES_BY_FORMAT[round.format] ?? 5
   const isFmc = eventId === '333fm'
   const isMulti = eventId === '333mbf'
@@ -60,22 +66,19 @@ export function buildRoundLayout(round: WcifRound, eventId: string): RoundLayout
   let dnfText: string | null = null
   const tl = round.timeLimit
   if (isFmc) {
-    dnfText = 'Menor nº de movimentos'
+    dnfText = S.fewestMoves
   } else if (tl && tl.cumulativeRoundIds && tl.cumulativeRoundIds.length > 0) {
     const t = formatCentis(tl.centiseconds)
-    dnfText =
-      tl.cumulativeRoundIds.length > 1
-        ? `Tempo cumulativo de ${t} (múltiplas rodadas)`
-        : `Tempo cumulativo de ${t}`
+    dnfText = tl.cumulativeRoundIds.length > 1 ? S.cumulativeMulti(t) : S.cumulative(t)
   } else if (tl && tl.centiseconds > 0 && !isMulti) {
-    dnfText = `DNF se > ${formatCentis(tl.centiseconds)}`
+    dnfText = S.dnfIf(formatCentis(tl.centiseconds))
   }
 
   const cutoffText =
     block2.length > 0 && round.cutoff
       ? isFmc
-        ? `Tempo de corte se > ${round.cutoff.attemptResult} movimentos`
-        : `Tempo de corte se > ${formatCentis(round.cutoff.attemptResult)}`
+        ? S.cutoffMoves(round.cutoff.attemptResult)
+        : S.cutoffIf(formatCentis(round.cutoff.attemptResult))
       : ''
 
   return {
@@ -84,9 +87,11 @@ export function buildRoundLayout(round: WcifRound, eventId: string): RoundLayout
     block2,
     extras,
     dnfText,
-    penaltyText: isFmc || isMulti ? null : PENALTY_EXAMPLE,
+    penaltyText: isFmc || isMulti ? null : S.penaltyExample,
     cutoffText,
-    extrasText: 'Extra(s)',
+    extrasText: S.extras,
+    idLabel: S.id,
+    groupLabel: S.group,
   }
 }
 
