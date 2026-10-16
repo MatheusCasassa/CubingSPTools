@@ -1,12 +1,16 @@
-# Ferramentas WCA — ScoreComps · CubeStaff
+# Ferramentas CubingSP — ScoreComps · Calcumulative · CubeStaff
 
-Hub de ferramentas para Delegados e Organizadores de competições da WCA, no
-visual da CubingSP. Desenvolvido por **Matheus Casassa**.
+Hub de ferramentas para Delegados, Organizadores e competidores de
+competições da WCA, no visual da CubingSP (é para onde o menu "Ferramentas"
+do site da CubingSP aponta). Desenvolvido por **Matheus Casassa**.
 
-| Ferramenta | O que faz | Status |
-|---|---|---|
-| **ScoreComps** (`/scorecomps`) | Súmulas oficiais em PDF a partir dos grupos do WCIF | ✅ disponível |
-| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Runner) gravados na WCA | 🔜 em breve |
+Produção: **https://cubingspferramentas.mcasassa.workers.dev/**
+
+| Ferramenta | O que faz | Login | Status |
+|---|---|---|---|
+| **ScoreComps** (`/scorecomps`) | Súmulas oficiais em PDF a partir dos grupos do WCIF | WCA | ✅ disponível |
+| **Calcumulative** (`/calcumulative`) | Limite de tempo cumulativo e média de 5 com BPA/WPA e meta | — | ✅ disponível |
+| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Runner) gravados na WCA | WCA | 🔜 em breve |
 
 Tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem secret) e
 os PDFs são gerados localmente num Web Worker. Nenhum servidor nosso recebe
@@ -61,9 +65,10 @@ O projeto já tem `wrangler.jsonc` (Workers com Static Assets, SPA).
   ID da conta Cloudflare.
 - **Não** crie regra `/* /index.html 200` em `public/_redirects` (erro 100324).
 
-Na WCA, a Redirect URI de produção é a **raiz** do site com barra final
-(ex.: `https://scorecomps.mcasassa.workers.dev/`). O app volta sozinho para a
-página onde o login começou.
+Na WCA, a Redirect URI de produção é a **raiz** do site com barra final:
+`https://cubingspferramentas.mcasassa.workers.dev/`. O app volta sozinho para a
+página onde o login começou. O `name` do `wrangler.jsonc`
+(`cubingspferramentas`) precisa ser igual ao nome do Worker na Cloudflare.
 
 ---
 
@@ -112,6 +117,16 @@ página onde o login começou.
 | Extras | Linhas de corte tracejadas, logo da competição (ao lado do nome) |
 
 ---
+
+## Calcumulative — regras
+
+- **Limite cumulativo** (Regulamento A1a2/A1a4/A1a5): limite de cada tentativa
+  = menor entre o limite por tentativa e o que sobra do cumulativo; conta o
+  resultado com penalidades (ou o tempo decorrido, se DNF); resultado que
+  chega ao limite vira DNF; esgotado o cumulativo, o resto é DNS.
+- **Média de 5** (9f8, 9f1/9f2): descarta melhor e pior; 2 DNFs → DNF;
+  BPA/WPA com 4 tempos; "meta sub-X" diz o máximo no último solve.
+- Testes com os exemplos do próprio regulamento: `npm test`.
 
 ## Estrutura
 

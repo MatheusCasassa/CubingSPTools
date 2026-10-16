@@ -1,6 +1,6 @@
 {
   "name": "scorecomps",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Ferramentas para Delegados e Organizadores da WCA: ScoreComps (súmulas) e CubeStaff (grupos e staff).",
   "type": "module",
@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "fonts": "python scripts/build-fonts.py",
     "samples": "tsx scripts/render-samples.tsx",
-    "stress": "tsx scripts/stress.tsx"
+    "stress": "tsx scripts/stress.tsx",
+    "test": "tsx scripts/test-calcumulative.ts"
   },
   "dependencies": {
     "@fontsource/geist-mono": "^5.2.5",

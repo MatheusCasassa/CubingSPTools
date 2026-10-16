@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../lib/auth/AuthContext'
 import { config } from '../../lib/config'
 import { applyTheme, getTheme, type Theme } from '../../lib/theme'
@@ -25,6 +25,7 @@ function ThemeToggle() {
 
 const TOOLS = [
   { to: '/scorecomps', label: 'ScoreComps' },
+  { to: '/calcumulative', label: 'Calcumulative' },
   { to: '/cubestaff', label: 'CubeStaff', soon: true },
 ]
 
@@ -49,8 +50,9 @@ function ToolLink({ to, label, soon, onClick }: { to: string; label: string; soo
 }
 
 export function Navbar() {
-  const { status, me, logout } = useAuth()
+  const { status, me, logout, login } = useAuth()
   const [open, setOpen] = useState(false)
+  const location = useLocation()
 
   return (
     <header className="sticky top-0 z-30 border-b border-border-subtle bg-bg/80 backdrop-blur-md">
@@ -92,6 +94,16 @@ export function Navbar() {
             </div>
           )}
           <ThemeToggle />
+          {(status === 'anonymous' || status === 'error') && (
+            <button
+              type="button"
+              onClick={() => login(location.pathname)}
+              className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-500"
+              title="Entrar com a conta WCA (Delegados e Organizadores)"
+            >
+              Entrar
+            </button>
+          )}
           <button
             className="rounded-lg p-2 text-fg-muted hover:bg-surface-2 hover:text-fg md:hidden"
             aria-label="Menu"

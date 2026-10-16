@@ -10,6 +10,7 @@ import NotFound from './pages/NotFound'
 // O ScoreComps (react-pdf, fontkit…) só é baixado quando a ferramenta é aberta.
 const ScoreCompsHome = lazy(() => import('./tools/scorecomps/ui/ScoreCompsHome'))
 const CompetitionPage = lazy(() => import('./tools/scorecomps/ui/CompetitionPage'))
+const CalcumulativePage = lazy(() => import('./tools/calcumulative/ui/CalcumulativePage'))
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/scorecomps" element={<ScoreCompsHome />} />
             <Route path="/scorecomps/:competitionId" element={<CompetitionPage />} />
+            <Route path="/calcumulative" element={<CalcumulativePage />} />
             <Route path="/cubestaff" element={<CubeStaff />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
