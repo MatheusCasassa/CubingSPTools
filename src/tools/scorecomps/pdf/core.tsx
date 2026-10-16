@@ -15,6 +15,8 @@ export interface RenderRequest {
   cutLines: boolean
   /** Logo da competição (PNG em data URL + proporção) ou null. */
   logo: Logo | null
+  /** Logo como marca d'água (75% transparente) ou null. */
+  watermark?: Logo | null
   title: string
 }
 
@@ -44,7 +46,7 @@ export async function renderCore(
     const doc = (
       <ScorecardDocument
         slots={f.slots}
-        options={{ paperId: req.paperId, cutLines: req.cutLines, fonts, logo: req.logo, title: req.title }}
+        options={{ paperId: req.paperId, cutLines: req.cutLines, fonts, logo: req.logo, watermark: req.watermark, title: req.title }}
       />
     )
     out.push({ name: f.name, data: await toBytes(doc) })

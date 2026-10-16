@@ -63,15 +63,23 @@ const LOGO_H = 28
 const LOGO_MAX_W = 56
 const LOGO_GAP = 5
 
+/** Marca d'água: 75% transparente, ocupando até 80% da largura e 70% da altura do cartão. */
+export const WATERMARK_OPACITY = 0.25
+const WATERMARK_MAX_W = 0.8
+const WATERMARK_MAX_H = 0.7
+
 export interface CardProps {
   model: ScorecardModel
   /** Retângulo do cartão na página, em pt. */
   rect: Rect
   fonts: PreparedFonts
+  /** Logo pequena ao lado do nome da competição. */
   logo?: Logo | null
+  /** Logo grande e bem apagada no fundo do cartão. */
+  watermark?: Logo | null
 }
 
-export function Card({ model, rect, fonts, logo }: CardProps): ReactElement {
+export function Card({ model, rect, fonts, logo, watermark }: CardProps): ReactElement {
   // pt por px de projeto. Normalmente a largura manda; em folhas "largas"
   // (Carta) a altura mínima garante espaço para o pior caso (corte + nome em
   // 2 linhas + logo) sem estourar o cartão.
@@ -202,6 +210,7 @@ export function Card({ model, rect, fonts, logo }: CardProps): ReactElement {
         flexDirection: 'column',
       }}
     >
+      {watermark ? <Watermark logo={watermark} rect={rect} /> : null}
       {/* Cabeçalho: ID | Competição/Evento | Grupo */}
       <View
         style={{
@@ -328,6 +337,29 @@ export function Card({ model, rect, fonts, logo }: CardProps): ReactElement {
 }
 
 /** Borda externa do cartão: traço de 0.4 mm centrado na borda, raio 2.6 mm. */
+
+/**
+ * Marca d'água centralizada no cartão. É o primeiro filho do cartão, então
+ * fica ATRÁS de linhas e textos (o cartão não tem fundo opaco).
+ */
+function Watermark({ logo, rect }: { logo: Logo; rect: Rect }): ReactElement {
+  const w = Math.min(rect.w * WATERMARK_MAX_W, rect.h * WATERMARK_MAX_H * logo.aspect)
+  const h = w / logo.aspect
+  return (
+    <Image
+      src={logo.src}
+      style={{
+        position: 'absolute',
+        left: (rect.w - w) / 2,
+        top: (rect.h - h) / 2,
+        width: w,
+        height: h,
+        opacity: WATERMARK_OPACITY,
+      }}
+    />
+  )
+}
+
 export function CardBorder({ rect }: { rect: Rect }): ReactElement {
   const lw = 0.4 * MM_TO_PT
   return (
@@ -354,6 +386,7 @@ export interface DocumentOptions {
   /** Fontes já preparadas (prepareFonts). */
   fonts: PreparedFonts
   logo?: Logo | null
+  watermark?: Logo | null
   title?: string
 }
 
@@ -383,7 +416,7 @@ export function ScorecardDocument({
           {page.map((m, si) =>
             m ? (
               <View key={si}>
-                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} />
+                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} />
                 <CardBorder rect={toPt(layout.cards[si])} />
               </View>
             ) : null,

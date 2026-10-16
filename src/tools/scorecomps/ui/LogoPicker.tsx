@@ -5,6 +5,7 @@ import { useRef, useState } from 'react'
 import { IconImage } from '../../../components/ui/icons'
 import type { Logo } from '../pdf/ScorecardDocument'
 import { useI18n } from '../../../i18n/I18nProvider'
+import { bytesToBase64, rgbaToGrayPng } from '../model/grayPng'
 
 const MAX_SIDE = 600
 const key = (compId: string) => `scorecomps.logo.${compId}`
@@ -52,7 +53,47 @@ function fileToPng(file: File): Promise<Logo> {
   })
 }
 
-export function LogoPicker({ logo, onChange }: { logo: Logo | null; onChange: (l: Logo | null) => void }) {
+const grayCache = new Map<string, Promise<Logo>>()
+
+/**
+ * Versão preto e branco da logo (tons de cinza, mantendo a transparência),
+ * como PNG cinza de verdade: o PDF sai só com tinta preta.
+ */
+export function toGrayscale(logo: Logo): Promise<Logo> {
+  let p = grayCache.get(logo.src)
+  if (!p) {
+    p = new Promise<Logo>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject(new Error('Canvas indisponível'))
+        ctx.drawImage(img, 0, 0)
+        const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const png = rgbaToGrayPng(data, width, height)
+        resolve({ src: `data:image/png;base64,${bytesToBase64(png)}`, aspect: logo.aspect })
+      }
+      img.onerror = () => reject(new Error('Não foi possível ler esta imagem.'))
+      img.src = logo.src
+    })
+    grayCache.set(logo.src, p)
+    p.catch(() => grayCache.delete(logo.src))
+  }
+  return p
+}
+
+export function LogoPicker({
+  logo,
+  bw = false,
+  onChange,
+}: {
+  logo: Logo | null
+  /** Mostra a prévia em preto e branco. */
+  bw?: boolean
+  onChange: (l: Logo | null) => void
+}) {
   const input = useRef<HTMLInputElement>(null)
   const { m } = useI18n()
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +104,7 @@ export function LogoPicker({ logo, onChange }: { logo: Logo | null; onChange: (l
       <div className="flex items-center gap-3">
         <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border-subtle bg-white">
           {logo ? (
-            <img src={logo.src} alt={m.scorecomps.logoAlt} className="max-h-12 max-w-12 object-contain" />
+            <img src={logo.src} alt={m.scorecomps.logoAlt} className={`max-h-12 max-w-12 object-contain ${bw ? 'grayscale' : ''}`} />
           ) : (
             <IconImage className="h-5 w-5 text-neutral-400" />
           )}

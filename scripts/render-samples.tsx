@@ -1,7 +1,7 @@
 // Gera PDFs de amostra no Node com EXATAMENTE o mesmo código do navegador
 // (planejamento, ordem, fontes e documento react-pdf).
 //   npm run samples            → samples/*.pdf
-//   npm run samples -- --logo caminho/logo.png
+//   npm run samples -- --logo caminho/logo.png [--watermark] [--no-header-logo]
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { renderToBuffer } from '@react-pdf/renderer'
@@ -25,6 +25,10 @@ const logo =
         aspect: aspectArg > 0 ? Number(process.argv[aspectArg + 1]) : 1,
       }
     : null
+
+// --watermark: a logo também vai como marca d'água; --no-header-logo: só marca d'água
+const watermark = process.argv.includes('--watermark') ? logo : null
+const headerLogo = process.argv.includes('--no-header-logo') ? null : logo
 
 // Idioma da súmula: --lang pt|en|es (padrão pt)
 const langArg = process.argv.indexOf('--lang')
@@ -57,13 +61,13 @@ for (const v of variants) {
   const files = planOutput(batches, { competitionId: wcif.id, paperId: v.paper, order: v.order, split: v.split })
   const t0 = Date.now()
   const rendered = await renderCore(
-    { files, paperId: v.paper, cutLines: true, logo, title: wcif.name },
+    { files, paperId: v.paper, cutLines: true, logo: headerLogo, watermark, title: wcif.name },
     {
       resolve: (rel) => join(pub, rel),
       load: async (rel) => new Uint8Array(await readFile(join(pub, rel))),
     },
     async (doc) => new Uint8Array(await renderToBuffer(doc as Parameters<typeof renderToBuffer>[0])),
   )
-  for (const f of rendered) await writeFile(join(outDir, `amostra-${v.tag}${lang === 'pt' ? '' : `-${lang}`}${logo ? '-logo' : ''}.pdf`), f.data)
+  for (const f of rendered) await writeFile(join(outDir, `amostra-${v.tag}${lang === 'pt' ? '' : `-${lang}`}${headerLogo ? '-logo' : ''}${watermark ? '-marca' : ''}.pdf`), f.data)
   console.log(`${v.tag}: ${files[0].count} súmulas, ${files[0].slots.length} posições, ${Date.now() - t0} ms`)
 }
