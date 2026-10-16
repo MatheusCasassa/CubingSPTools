@@ -70,6 +70,17 @@ const EVENTS: EventSpec[] = [
     ],
   })),
   {
+    id: '777',
+    rounds: [
+      { id: '777-r1', format: 'm', timeLimit: { centiseconds: 54000, cumulativeRoundIds: [] }, cutoff: { numberOfAttempts: 1, attemptResult: 30000 }, advancementCondition: null },
+    ],
+  },
+  {
+    // Multi-Blind com 2 tentativas (Bo2) — algumas competições usam só 1.
+    id: '333mbf',
+    rounds: [{ id: '333mbf-r1', format: '2', timeLimit: null, cutoff: null, advancementCondition: null }],
+  },
+  {
     id: '333fm',
     rounds: [
       { id: '333fm-r1', format: 'm', timeLimit: { centiseconds: 360000, cumulativeRoundIds: [] }, cutoff: null, advancementCondition: null },
@@ -80,7 +91,7 @@ const EVENTS: EventSpec[] = [
 /** Nº de grupos da rodada 1 de cada evento. */
 const GROUPS: Record<string, number> = {
   '333': 3, '444': 2, '666': 1, '333bf': 1, pyram: 2, '333fm': 1,
-  '222': 2, '333oh': 1, clock: 1, minx: 1, skewb: 1, sq1: 1, fto: 1,
+  '222': 2, '333oh': 1, clock: 1, minx: 1, skewb: 1, sq1: 1, fto: 1, '777': 1, '333mbf': 1,
 }
 
 const OFFICIAL_ORDER = [

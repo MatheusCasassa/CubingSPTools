@@ -336,6 +336,15 @@ export const en: Messages = {
     noGroupsChip: 'No groups (all registrants)',
     blank: 'Blank',
     blankAria: (what: string) => `Blank scorecards — ${what}`,
+    blankTitle: 'Blank scorecards',
+    blankSummary: 'Per event, for last-minute registrations, spares or subsequent rounds.',
+    blankIntro:
+      'Each blank scorecard follows the round format on the WCA website, always with the 2 extras: average of 5 / best of 5 with 5 attempts; 6x6x6, 7x7x7, 4BLD, 5BLD and FMC with 3; Multi-Blind with 1, 2 or 3, as set for the competition. It shows the competition name, event and round; ID, name and group are filled in by hand.',
+    blankPerEvent: 'per event',
+    blankPerEventAria: 'Number of blank scorecards per event',
+    blankApply: 'Apply to every first round',
+    blankReset: 'Reset',
+    attemptsN: (n: number) => (n === 1 ? '1 attempt' : `${n} attempts`),
     nextRoundHint: (n: number) =>
       `Subsequent round: who advances is only known on the day. Suggestion: ${n} blank scorecards.`,
     noGroupsHint:

@@ -348,6 +348,15 @@ export const pt = {
     noGroupsChip: 'Sem grupos (todos os inscritos)',
     blank: 'Em branco',
     blankAria: (what: string) => `Súmulas em branco — ${what}`,
+    blankTitle: 'Súmulas em branco',
+    blankSummary: 'Por modalidade, para inscrições de última hora, reposição ou rodadas seguintes.',
+    blankIntro:
+      'Cada súmula em branco segue o formato da rodada na WCA, sempre com os 2 extras: média de 5 / melhor de 5 com 5 tentativas; 6x6x6, 7x7x7, 4BLD, 5BLD e FMC com 3; Multi-Blind com 1, 2 ou 3, conforme a competição. Sai com o nome da competição, a modalidade e a rodada; ID, nome e grupo ficam para preencher à mão.',
+    blankPerEvent: 'por modalidade',
+    blankPerEventAria: 'Quantidade de súmulas em branco por modalidade',
+    blankApply: 'Aplicar na 1ª rodada de todas',
+    blankReset: 'Zerar',
+    attemptsN: (n: number) => (n === 1 ? '1 tentativa' : `${n} tentativas`),
     nextRoundHint: (n: number) =>
       `Rodada seguinte: os classificados só existem no dia. Sugestão: ${n} súmulas em branco.`,
     noGroupsHint:

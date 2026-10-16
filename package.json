@@ -12,7 +12,7 @@
     "fonts": "python scripts/build-fonts.py",
     "samples": "tsx scripts/render-samples.tsx",
     "stress": "tsx scripts/stress.tsx",
-    "test": "tsx scripts/test-calcumulative.ts && tsx scripts/test-competitions.ts && tsx scripts/test-graypng.ts && tsx scripts/test-cubestaff.ts"
+    "test": "tsx scripts/test-calcumulative.ts && tsx scripts/test-competitions.ts && tsx scripts/test-graypng.ts && tsx scripts/test-blank.ts && tsx scripts/test-cubestaff.ts"
   },
   "dependencies": {
     "@fontsource/geist-mono": "^5.2.5",

@@ -13,6 +13,7 @@ import { layoutFor, PAPERS, PAPER_IDS, type PaperId } from '../pdf/paper'
 import type { RenderProgress } from '../pdf/core'
 import { generateFiles, deliver, openInNewTab } from '../pdf/generate'
 import { LogoPicker, loadLogo, saveLogo, toGrayscale } from './LogoPicker'
+import { BlankPanel } from './BlankPanel'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import type { Logo } from '../pdf/ScorecardDocument'
 import { WATERMARK_TRANSPARENCY, watermarkOpacity } from '../model/watermark'
@@ -394,6 +395,20 @@ export default function CompetitionPage() {
     setSel(Object.fromEntries(plans.filter((p) => p.info.roundNumber === 1).map((p) => [p.info.roundId, fullSel(p)])))
   const clearAll = () => setSel({})
 
+  // ---- súmulas em branco (mesmo estado do campo "Em branco" de cada rodada)
+  const setBlank = (roundId: string, n: number) =>
+    setSel((prev) => ({ ...prev, [roundId]: { groups: prev[roundId]?.groups ?? [], blank: n } }))
+  const applyBlankAll = (n: number) =>
+    setSel((prev) => {
+      const next = { ...prev }
+      for (const p of plans) {
+        const groups = prev[p.info.roundId]?.groups ?? []
+        // n > 0: só na 1ª rodada de cada modalidade; 0: zera em todas.
+        if (n === 0 || p.info.roundNumber === 1) next[p.info.roundId] = { groups, blank: n }
+      }
+      return next
+    })
+
   // ---- estados de carregamento / acesso
   if (!isDemo && status === 'loading') return <Spinner label={m.common.checkingSession} />
   if (!isDemo && status !== 'authenticated') {
@@ -455,6 +470,12 @@ export default function CompetitionPage() {
           {/* ------------------------------------------------ rodadas */}
           <div className="space-y-6">
             <EventStrip events={events} sel={sel} onToggle={toggleEvent} />
+            <BlankPanel
+              events={events}
+              blankOf={(id) => sel[id]?.blank ?? 0}
+              onBlank={setBlank}
+              onApplyAll={applyBlankAll}
+            />
             {events.map((ev) => (
               <section key={ev.eventId} id={`evento-${ev.eventId}`} className="scroll-mt-24">
                 <h2 className="mb-2.5 flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wider text-fg-muted">

@@ -38,6 +38,11 @@ export interface RoundLayout {
 }
 
 const SOLVES_BY_FORMAT: Record<WcifFormatId, number> = { '1': 1, '2': 2, '3': 3, m: 3, a: 5 }
+
+/** Nº de tentativas (linhas) da súmula para um formato de rodada. */
+export function attemptsFor(format: WcifFormatId): number {
+  return SOLVES_BY_FORMAT[format] ?? 5
+}
 const EXTRA_COUNT = 2
 
 function rows(from: number, to: number): ScorecardRow[] {

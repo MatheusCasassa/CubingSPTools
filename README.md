@@ -118,6 +118,7 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 | Ordenar | Nome · ID |
 | Extras | Linhas de corte tracejadas, logo da competição |
 | Logo | Colorida ou preto e branco · ao lado do nome e/ou marca d'água (grande, atrás da súmula, transparência ajustável de 50% a 95% — padrão 75%) |
+| Em branco | Painel "Súmulas em branco": quantidade por modalidade/rodada (ou N na 1ª rodada de todas). As linhas seguem o formato da rodada: Ao5/Bo5 = 5, Mo3/Bo3 (6x6, 7x7, 4BLD, 5BLD, FMC) = 3, Multi-Blind = 1, 2 ou 3 — sempre + 2 extras |
 
 A logo **preto e branco** é gravada como PNG em tons de cinza de verdade
 (cinza + alfa), então o PDF a embute como *DeviceGray*: a impressora usa só a
