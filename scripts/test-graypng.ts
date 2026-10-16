@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict'
 import { unzlibSync } from 'fflate'
 import { luminance, rgbaToGrayPng } from '../src/tools/scorecomps/model/grayPng'
+import { watermarkOpacity } from '../src/tools/scorecomps/model/watermark'
 
 // 2×1: vermelho opaco e azul semitransparente
 const png = rgbaToGrayPng(new Uint8Array([220, 40, 40, 255, 30, 90, 220, 128]), 2, 1)
@@ -18,3 +19,12 @@ assert.deepEqual([...raw], [0, luminance(220, 40, 40), 255, luminance(30, 90, 22
 assert.equal(luminance(255, 255, 255), 255)
 assert.equal(luminance(0, 0, 0), 0)
 console.log('✓ logo preto e branco (PNG cinza + alfa)')
+
+// Transparência da marca d'água: % → opacidade, limitada a 50–95%.
+assert.equal(watermarkOpacity(75), 0.25)
+assert.equal(watermarkOpacity(90), 0.1)
+assert.equal(watermarkOpacity(), 0.25)
+assert.equal(watermarkOpacity(NaN), 0.25)
+assert.equal(watermarkOpacity(0), 0.5)
+assert.equal(watermarkOpacity(100), 0.05)
+console.log("✓ transparência da marca d'água")

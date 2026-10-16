@@ -15,6 +15,7 @@ import { generateFiles, deliver, openInNewTab } from '../pdf/generate'
 import { LogoPicker, loadLogo, saveLogo, toGrayscale } from './LogoPicker'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import type { Logo } from '../pdf/ScorecardDocument'
+import { WATERMARK_TRANSPARENCY, watermarkOpacity } from '../model/watermark'
 import { useI18n } from '../../../i18n/I18nProvider'
 import type { Locale } from '../../../i18n/locales'
 import { roundName } from '../model/build'
@@ -36,6 +37,8 @@ interface Prefs {
   logoHeader: boolean
   /** Logo grande e 75% transparente no fundo do cartão. */
   logoWatermark: boolean
+  /** Transparência da marca d'água, em % (50–95). */
+  watermarkTransparency: number
 }
 const DEFAULT_PREFS: Prefs = {
   paperId: 'a4',
@@ -47,6 +50,7 @@ const DEFAULT_PREFS: Prefs = {
   logoBw: false,
   logoHeader: true,
   logoWatermark: false,
+  watermarkTransparency: WATERMARK_TRANSPARENCY.default,
 }
 const PREFS_KEY = 'scorecomps.prefs'
 
@@ -346,6 +350,7 @@ export default function CompetitionPage() {
       cutLines: prefs.cutLines,
       logo: prefs.logoHeader ? printLogo : null,
       watermark: prefs.logoWatermark ? printLogo : null,
+      watermarkTransparency: prefs.watermarkTransparency,
       title: m.scorecomps.pdfTitle(name),
     }
   }
@@ -603,6 +608,40 @@ export default function CompetitionPage() {
                         />
                       </label>
                       <p className="mt-1 text-xs text-fg-faint">{m.scorecomps.logoWatermarkHint}</p>
+                      {prefs.logoWatermark && (
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <label htmlFor="wm-transparency">{m.scorecomps.watermarkTransparency}</label>
+                            <span className="font-mono text-fg-muted">{prefs.watermarkTransparency}%</span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-3">
+                            {logo && (
+                              <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border border-border-subtle bg-white">
+                                <img
+                                  src={logo.src}
+                                  alt=""
+                                  className={`max-h-8 max-w-8 object-contain ${prefs.logoBw ? 'grayscale' : ''}`}
+                                  style={{ opacity: watermarkOpacity(prefs.watermarkTransparency) }}
+                                />
+                              </div>
+                            )}
+                            <input
+                              id="wm-transparency"
+                              type="range"
+                              className="w-full accent-brand-600"
+                              min={WATERMARK_TRANSPARENCY.min}
+                              max={WATERMARK_TRANSPARENCY.max}
+                              step={WATERMARK_TRANSPARENCY.step}
+                              value={prefs.watermarkTransparency}
+                              onChange={(e) => setPrefs({ ...prefs, watermarkTransparency: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="mt-1 flex justify-between text-[11px] text-fg-faint">
+                            <span>{m.scorecomps.watermarkStronger}</span>
+                            <span>{m.scorecomps.watermarkLighter}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

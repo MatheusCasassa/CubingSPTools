@@ -11,6 +11,7 @@ import type { ReactElement } from 'react'
 import type { ScorecardModel, ScorecardRow } from '../model/logic'
 import { layoutFor, MM_TO_PT, type PaperId, type Rect } from './paper'
 import type { PreparedFonts } from './fonts'
+import { watermarkOpacity } from '../model/watermark'
 
 // ------------------------------------------------------------------ medidas
 /** Largura de projeto do cartão (px). */
@@ -63,8 +64,7 @@ const LOGO_H = 28
 const LOGO_MAX_W = 56
 const LOGO_GAP = 5
 
-/** Marca d'água: 75% transparente, ocupando até 80% da largura e 70% da altura do cartão. */
-export const WATERMARK_OPACITY = 0.25
+/** Marca d'água: até 80% da largura e 70% da altura do cartão (transparência em model/watermark.ts). */
 const WATERMARK_MAX_W = 0.8
 const WATERMARK_MAX_H = 0.7
 
@@ -77,9 +77,11 @@ export interface CardProps {
   logo?: Logo | null
   /** Logo grande e bem apagada no fundo do cartão. */
   watermark?: Logo | null
+  /** Transparência da marca d'água, em % (50–95). */
+  watermarkTransparency?: number
 }
 
-export function Card({ model, rect, fonts, logo, watermark }: CardProps): ReactElement {
+export function Card({ model, rect, fonts, logo, watermark, watermarkTransparency }: CardProps): ReactElement {
   // pt por px de projeto. Normalmente a largura manda; em folhas "largas"
   // (Carta) a altura mínima garante espaço para o pior caso (corte + nome em
   // 2 linhas + logo) sem estourar o cartão.
@@ -210,7 +212,7 @@ export function Card({ model, rect, fonts, logo, watermark }: CardProps): ReactE
         flexDirection: 'column',
       }}
     >
-      {watermark ? <Watermark logo={watermark} rect={rect} /> : null}
+      {watermark ? <Watermark logo={watermark} rect={rect} opacity={watermarkOpacity(watermarkTransparency)} /> : null}
       {/* Cabeçalho: ID | Competição/Evento | Grupo */}
       <View
         style={{
@@ -342,7 +344,7 @@ export function Card({ model, rect, fonts, logo, watermark }: CardProps): ReactE
  * Marca d'água centralizada no cartão. É o primeiro filho do cartão, então
  * fica ATRÁS de linhas e textos (o cartão não tem fundo opaco).
  */
-function Watermark({ logo, rect }: { logo: Logo; rect: Rect }): ReactElement {
+function Watermark({ logo, rect, opacity }: { logo: Logo; rect: Rect; opacity: number }): ReactElement {
   const w = Math.min(rect.w * WATERMARK_MAX_W, rect.h * WATERMARK_MAX_H * logo.aspect)
   const h = w / logo.aspect
   return (
@@ -354,7 +356,7 @@ function Watermark({ logo, rect }: { logo: Logo; rect: Rect }): ReactElement {
         top: (rect.h - h) / 2,
         width: w,
         height: h,
-        opacity: WATERMARK_OPACITY,
+        opacity,
       }}
     />
   )
@@ -387,6 +389,7 @@ export interface DocumentOptions {
   fonts: PreparedFonts
   logo?: Logo | null
   watermark?: Logo | null
+  watermarkTransparency?: number
   title?: string
 }
 
@@ -416,7 +419,7 @@ export function ScorecardDocument({
           {page.map((m, si) =>
             m ? (
               <View key={si}>
-                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} />
+                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} watermarkTransparency={options.watermarkTransparency} />
                 <CardBorder rect={toPt(layout.cards[si])} />
               </View>
             ) : null,

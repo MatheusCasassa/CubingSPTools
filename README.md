@@ -117,12 +117,12 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 | Arquivos | Um PDF · Um PDF por rodada (.zip) · Um PDF por grupo (.zip) |
 | Ordenar | Nome · ID |
 | Extras | Linhas de corte tracejadas, logo da competição |
-| Logo | Colorida ou preto e branco · ao lado do nome e/ou marca d'água (grande, 75% transparente, atrás da súmula) |
+| Logo | Colorida ou preto e branco · ao lado do nome e/ou marca d'água (grande, atrás da súmula, transparência ajustável de 50% a 95% — padrão 75%) |
 
 A logo **preto e branco** é gravada como PNG em tons de cinza de verdade
 (cinza + alfa), então o PDF a embute como *DeviceGray*: a impressora usa só a
 tinta preta. Amostras com marca d'água:
-`npm run samples -- --logo logo.png --aspect 1.5 --watermark [--no-header-logo]`.
+`npm run samples -- --logo logo.png --aspect 1.5 --watermark [--no-header-logo] [--transparency 90]`.
 
 ---
 

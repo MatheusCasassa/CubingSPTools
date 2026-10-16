@@ -1,7 +1,7 @@
 // Gera PDFs de amostra no Node com EXATAMENTE o mesmo código do navegador
 // (planejamento, ordem, fontes e documento react-pdf).
 //   npm run samples            → samples/*.pdf
-//   npm run samples -- --logo caminho/logo.png [--watermark] [--no-header-logo]
+//   npm run samples -- --logo caminho/logo.png [--watermark] [--no-header-logo] [--transparency 90]
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { renderToBuffer } from '@react-pdf/renderer'
@@ -29,6 +29,9 @@ const logo =
 // --watermark: a logo também vai como marca d'água; --no-header-logo: só marca d'água
 const watermark = process.argv.includes('--watermark') ? logo : null
 const headerLogo = process.argv.includes('--no-header-logo') ? null : logo
+// --transparency N: transparência da marca d'água em % (padrão 75)
+const trArg = process.argv.indexOf('--transparency')
+const watermarkTransparency = trArg > 0 ? Number(process.argv[trArg + 1]) : undefined
 
 // Idioma da súmula: --lang pt|en|es (padrão pt)
 const langArg = process.argv.indexOf('--lang')
@@ -61,7 +64,7 @@ for (const v of variants) {
   const files = planOutput(batches, { competitionId: wcif.id, paperId: v.paper, order: v.order, split: v.split })
   const t0 = Date.now()
   const rendered = await renderCore(
-    { files, paperId: v.paper, cutLines: true, logo: headerLogo, watermark, title: wcif.name },
+    { files, paperId: v.paper, cutLines: true, logo: headerLogo, watermark, watermarkTransparency, title: wcif.name },
     {
       resolve: (rel) => join(pub, rel),
       load: async (rel) => new Uint8Array(await readFile(join(pub, rel))),

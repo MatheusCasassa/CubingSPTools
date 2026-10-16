@@ -390,7 +390,10 @@ export const pt = {
     logoBwHint: 'Imprime só com tinta preta — economiza a tinta colorida.',
     logoHeader: 'Ao lado do nome da competição',
     logoWatermark: "Marca d'água no fundo",
-    logoWatermarkHint: 'Grande e 75% transparente, atrás da súmula: o que for escrito continua legível.',
+    logoWatermarkHint: 'Grande e bem apagada, atrás da súmula: o que for escrito continua legível.',
+    watermarkTransparency: 'Transparência',
+    watermarkStronger: 'Mais forte',
+    watermarkLighter: 'Mais apagada',
     logoError: 'Não foi possível ler esta imagem.',
     // ação
     cards: (n: number): string => (n === 1 ? 'súmula' : 'súmulas'),

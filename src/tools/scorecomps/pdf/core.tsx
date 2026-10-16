@@ -17,6 +17,8 @@ export interface RenderRequest {
   logo: Logo | null
   /** Logo como marca d'água (75% transparente) ou null. */
   watermark?: Logo | null
+  /** Transparência da marca d'água, em % (50–95; padrão 75). */
+  watermarkTransparency?: number
   title: string
 }
 
@@ -46,7 +48,7 @@ export async function renderCore(
     const doc = (
       <ScorecardDocument
         slots={f.slots}
-        options={{ paperId: req.paperId, cutLines: req.cutLines, fonts, logo: req.logo, watermark: req.watermark, title: req.title }}
+        options={{ paperId: req.paperId, cutLines: req.cutLines, fonts, logo: req.logo, watermark: req.watermark, watermarkTransparency: req.watermarkTransparency, title: req.title }}
       />
     )
     out.push({ name: f.name, data: await toBytes(doc) })
