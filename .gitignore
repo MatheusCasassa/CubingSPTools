@@ -1,25 +1,10 @@
 node_modules
 dist
-dist-ssr
 *.local
 .env
 .env.*
 !.env.example
 .DS_Store
 *.log
-.vscode/*
-!.vscode/extensions.json
-
-# build/dev artifacts
 tsconfig.tsbuildinfo
-preview-*.png
-preview-*.html
-cc-preview.*
-smoke-*.png
-sumulas-exemplo-*.pdf
-cartoes-exemplo.pdf
-
-# diagnóstico (dev)
-reproduce-app.*
-repro.html
-repro-h2c.png
+samples/

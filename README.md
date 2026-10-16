@@ -1,281 +1,140 @@
-# ScoreComps · CubingSP
+# Ferramentas WCA — ScoreComps · CubeStaff
 
-**ScoreComps** — ferramenta de **agrupamento, staff e súmulas oficiais da WCA**.
-Aplicação web **client-side** (React + TypeScript + Vite), com login oficial
-da WCA via **OAuth 2.0 (implicit grant)**. Restrito a **Delegados** e
-**Organizadores**, opera apenas nas competições que o usuário gerencia — lendo
-(e escrevendo) direto no WCIF oficial.
+Hub de ferramentas para Delegados e Organizadores de competições da WCA, no
+visual da CubingSP. Desenvolvido por **Matheus Casassa**.
 
-> Feito para o projeto CubingSP. Pode rodar sozinho (Netlify / Cloudflare
-> Pages / GitHub Pages) ou ser incorporado ao site como módulo
-> `delegate-tools`. Veja `ARQUITETURA.md`.
+| Ferramenta | O que faz | Status |
+|---|---|---|
+| **ScoreComps** (`/scorecomps`) | Súmulas oficiais em PDF a partir dos grupos do WCIF | ✅ disponível |
+| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Runner) gravados na WCA | 🔜 em breve |
 
----
-
-## Recursos
-
-- 🔐 Login oficial da WCA (OAuth implicit grant — sem senha, sem secret).
-- 🛡️ Acesso só para **Delegado/Organizador**; geração limitada às suas competições.
-- 🧩 Lê rodadas, grupos e competidores do **WCIF** automaticamente.
-- 👥 **Agrupamento automático (estilo Groupifier)**: cria os grupos por rodada,
-  semeando por ranking (usa `personalBests` do WCIF; média→single, invertido p/
-  BLD), com divisão **por nível** ou **equilibrada**, e números de estação.
-- 🧑‍⚖️ **Atribuição de staff**: embaralhadores, runners e juízes por grupo,
-  tirados de competidores de outros grupos e com carga balanceada.
-- ☁️ **Salvar na WCA**: grava os grupos e atribuições no WCIF oficial
-  (`PATCH .../wcif`), como o Groupifier faz.
-- 🪪 **Cartões de competidor**: um cartão por pessoa com o grupo de cada evento
-  e as tarefas de staff.
-- 🏷️ Nomes de eventos no **padrão oficial da WCA** (via `@wca/helpers`).
-- 🧠 Lógica dinâmica de súmula conforme as regras da WCA:
-  - `DNF se > {limite}` (limite simples) ou `Tempo cumulativo de {limite}` (3BLD/Multi);
-  - `Exemplo de Penalidade: 14.67 + 2 = 16.67`;
-  - blocos e `Tempo de corte se > {corte}` / `Não possui tempo de corte`;
-  - eventos de 3 solves (6x6, 7x7, 4BLD, 5BLD) com corte após 1 tentativa;
-  - extras **E1/E2** com assinatura do **Delegado (D)** em marca-d'água.
-- 🖨️ **Vários tamanhos de folha** (A4/Carta com 4 por página, A5, A6, A7); as
-  súmulas **ocupam a folha inteira** e **linhas de corte tracejadas** separam
-  uma da outra — estilo Groupifier.
-- 📐 Nº de solves e blocos vêm do **formato da rodada no WCIF** — já reflete
-  regras atuais (ex.: **3x3x3 Blindfolded virou Bo5/Ao5 em 2026**).
-- 🈶 Suporta **nomes longos e com caracteres CJK** (ex.:
-  `Pedro Henrique Maciel Ceccopieri Belo (陈昊然)`) — a fonte encolhe/quebra
-  para caber sem estourar o layout.
-- 🔤 Tipografia **Inter** (embarcada, funciona offline), bordas suavemente
-  arredondadas e linhas nítidas.
-- 🌙 Interface responsiva em português, tema escuro (identidade CubingSP), com
-  **prévia ao vivo** da súmula.
-- 👀 Botão **"Baixar PDF de exemplo"** para conferir o resultado sem login.
+Tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem secret) e
+os PDFs são gerados localmente num Web Worker. Nenhum servidor nosso recebe
+token ou dados.
 
 ---
 
-## Layout da súmula
+## Rodar em localhost
 
-```
-┌──────┬────────────────────────┬───────┐
-│  ID  │  Nome da Competição    │ Grupo │   ← ID e Grupo em negrito
-│  12  │  Evento · Rodada       │   1   │
-├──────┴────────────────────────┴───────┤
-│           Nome do Competidor           │   ← negrito, largura fixa
-│              2019XXXX01                 │   ← WCA ID
-├──┬───┬──────────────────────────┬──┬──┤
-│# │ S │ DNF se > 10:00.00        │J │C │
-│  │   │ Exemplo de Penalidade... │  │  │
-├──┼───┼──────────────────────────┼──┼──┤
-│1 │   │                          │  │  │   ← Bloco 1
-│2 │   │                          │  │  │
-├──┴───┴──────────────────────────┴──┴──┤
-│        Tempo de corte se > ...          │   ← intermediário
-├──┬───┬──────────────────────────┬──┬──┤
-│3 │   │                          │  │  │   ← Bloco 2
-│4 │   │                          │  │  │
-│5 │   │                          │  │  │
-├──────────────────────────────────────┤
-│               Extra(s)                 │
-├──┬───┬────────────────────┬──┬──┬──┐
-│E1│   │                    │D │J │C │   ← extras têm coluna D
-│E2│   │                    │D │J │C │
-└──┴───┴────────────────────┴──┴──┴──┘
-```
-
-Colunas: **#** (nº do solve) · **S** (Embaralhador) · tempo · **J** (Juiz) ·
-**C** (Competidor). Extras acrescentam **D** (Delegado).
-
-### Tamanhos de folha
-
-As súmulas ocupam a folha inteira; **linhas de corte tracejadas** ("serrilhadas")
-passam entre elas para recorte:
-
-| Folha | Súmulas por página |
-|---|---|
-| A4 | 4 |
-| Carta (Letter) | 4 |
-| A5 | 1 (grande) |
-| A6 | 1 |
-| A7 | 1 (pequena) |
-
-O nome do competidor tem largura fixa e **encolhe/quebra automaticamente**
-para nomes longos ou com caracteres não latinos (CJK), sem quebrar o layout.
-Como a rasterização usa as fontes do navegador, os glifos CJK aparecem quando
-há uma fonte com esses caracteres no sistema (padrão em Windows/macOS); a
-pilha de fontes já inclui os fallbacks comuns.
-
----
-
-## 1. Registrar o app OAuth na WCA (obrigatório)
-
-1. Acesse **https://www.worldcubeassociation.org/oauth/applications/new**
-   (logado com uma conta WCA).
-2. Preencha:
-   - **Name**: `Súmulas CubingSP` (ou o que preferir).
-   - **Redirect URI**: a **raiz** do app (com barra no final). Uma por linha
-     para cada ambiente:
-     ```
-     http://localhost:5173/
-     https://sumulas.cubingsp.com.br/
-     ```
-   - **Confidential?**: **DESMARCADO** ✅ (cliente público, sem secret).
-   - **Scopes**: marque **`public`** e **`manage_competitions`**.
-3. Salve e copie o **Application UID** (esse é o `Client ID`).
-
-> Usa **implicit grant** (`response_type=token`) — o mesmo fluxo do Groupifier
-> e do AGE, comprovadamente aceito pela WCA. O token volta no fragmento `#` da
-> URL raiz; só o **Client ID** é usado, nenhum secret é armazenado. Por isso a
-> Redirect URI é a raiz do app, não `/callback`.
-
----
-
-## 2. Configurar variáveis de ambiente
-
-Copie `.env.example` para `.env` e preencha:
-
-```bash
-cp .env.example .env
-```
-
-```dotenv
-VITE_WCA_CLIENT_ID=seu-application-uid
-VITE_WCA_ORIGIN=https://www.worldcubeassociation.org
-# VITE_BASE=/sumulas-wca/   # só p/ GitHub Pages em subdiretório
-```
-
-Para testar sem tocar na WCA de produção, use o ambiente de staging:
-`VITE_WCA_ORIGIN=https://staging.worldcubeassociation.org` (registre o app no
-staging também).
-
----
-
-## 3. Rodar localmente
+Pré-requisito: Node.js 20 ou mais novo.
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173
+npm run dev            # http://localhost:5173
 ```
 
-Outros scripts:
+- **Sem login:** abra `http://localhost:5173/scorecomps/demo` — competição
+  fictícia com todos os casos (Ao5 com/sem corte, Mo3, 3BLD cumulativo, FMC,
+  finais em branco, nomes CJK/cirílico/longos). Dá para testar tudo, inclusive
+  logo e todos os formatos de download.
+- **Com login WCA:** no app da WCA
+  (<https://www.worldcubeassociation.org/oauth/applications>), adicione
+  `http://localhost:5173/` às **Redirect URIs** (uma por linha, mantendo a de
+  produção).
+
+Para testar o build final, igual ao que vai para a Cloudflare:
 
 ```bash
-npm run build     # gera dist/ (produção)
-npm run preview   # serve o dist/ localmente
-npm run lint      # checagem de tipos (tsc)
+npm run build
+npm run preview        # http://localhost:5173
 ```
 
-Testar o motor de agrupamento com um WCIF fictício (sem navegador):
+### Conferir os PDFs sem abrir o navegador
 
 ```bash
-npx tsx scripts/test-grouping.ts   # gera grupos + staff + súmulas + cartões e imprime o resultado
+npm run samples        # samples/amostra-*.pdf (A4, A4 corte e empilhe, Carta, A5, A6, A7)
+npm run stress         # samples/stress-*.pdf  (pior caso em todos os tamanhos)
 ```
 
-> No app, o PDF de exemplo é gerado pelo próprio botão **"Baixar PDF de
-> exemplo"** na tela de login.
+Os scripts usam **o mesmo código** do navegador (planejamento, ordem, fontes e
+documento react-pdf) — o PDF conferido é o mesmo que o usuário baixa.
 
 ---
 
-## 4. Deploy
+## Deploy (Cloudflare)
 
-O resultado do `npm run build` é uma pasta estática (`dist/`). É uma SPA; o
-host deve fazer **fallback de rotas para `index.html`** (já incluímos
-`public/_redirects` para Netlify/Cloudflare). O login volta para a **raiz** do
-app (o token chega no fragmento `#`), então não há rota especial de callback.
+O projeto já tem `wrangler.jsonc` (Workers com Static Assets, SPA).
 
-### Netlify / Cloudflare Pages (recomendado)
+- **Build command:** `npm run build`
+- **Deploy command:** `npx wrangler deploy`
+- **Variáveis:** nenhuma é obrigatória. Não defina `VITE_WCA_CLIENT_ID` com o
+  ID da conta Cloudflare.
+- **Não** crie regra `/* /index.html 200` em `public/_redirects` (erro 100324).
 
-- **Build command**: `npm run build`
-- **Publish directory**: `dist`
-- Defina as variáveis `VITE_WCA_CLIENT_ID` e `VITE_WCA_ORIGIN` no painel.
-- O `_redirects` já cuida do fallback SPA.
-- Cadastre a **raiz** da URL final (com barra) como Redirect URI no app WCA.
-
-### Vercel
-
-- Framework preset: **Vite**. Adicione um rewrite `/(.*) → /index.html`
-  (`vercel.json`) para o fallback SPA, e as variáveis de ambiente no projeto.
-
-### GitHub Pages (subdiretório)
-
-1. Build com o base path do repositório:
-   ```bash
-   VITE_BASE="/NOME-DO-REPO/" npm run build
-   ```
-2. Publique `dist/` no branch `gh-pages` (ex.: action `peaceiris/actions-gh-pages`).
-3. Para o fallback SPA, copie `index.html` para `404.html` dentro de `dist/`
-   antes de publicar (`cp dist/index.html dist/404.html`).
-4. Redirect URI no app WCA: `https://<user>.github.io/NOME-DO-REPO/` (a raiz, com barra).
+Na WCA, a Redirect URI de produção é a **raiz** do site com barra final
+(ex.: `https://scorecomps.mcasassa.workers.dev/`). O app volta sozinho para a
+página onde o login começou.
 
 ---
 
-## 5. Como o acesso é restringido
+## ScoreComps — como funciona
 
-- A UI só libera se a API disser que você é **Delegado**
-  (`GET /me → delegate_status`) **ou** se você gerencia **≥1 competição**.
-- A lista de competições vem de
-  `GET /competitions?managed_by_me=true` — a própria WCA devolve apenas as
-  competições em que você é **Delegado ou Organizador**. Logo, não há como
-  gerar súmulas de uma competição que não é sua.
+1. Login WCA → lista `competitions?managed_by_me=true` (só Delegados/Organizadores).
+2. Lê o WCIF da competição. Os grupos vêm das atividades `evento-rN-gK` e dos
+   assignments `competitor` — o contrato gravado pelo CubeStaff, Groupifier
+   ou Delegate Dashboard. O ScoreComps **só lê**, nunca altera o WCIF.
+3. Escolha rodadas/grupos (+ súmulas em branco), folha, ordem e arquivos.
+4. O Worker gera o(s) PDF(s); vários arquivos saem num `.zip`.
+
+### Regras da súmula (Modelo_Aprovado)
+
+- Nº de solves pelo **formato** da rodada (a=5, m/3=3, 2=2, 1=1) — nunca pelo
+  evento (3BLD virou Bo5/Ao5 em 2026 e o WCIF já reflete isso).
+- Blocos só se houver **tempo de corte**: `Tempo de corte se > X`.
+- `DNF se > X` (limite simples) ou `Tempo cumulativo de X` (+ `(múltiplas rodadas)`).
+- `Exemplo de Penalidade: 14.67 + 2 = 16.67` (não aparece em FMC/Multi).
+- FMC: `Menor nº de movimentos`.
+- Extras E1/E2 com coluna **D** (Delegado).
+- Rodadas seguintes sem atribuições: súmulas em branco (quantidade sugerida
+  pela condição de classificação da rodada anterior).
+
+### Layout e fidelidade
+
+- Desenhado em **vetor** com `@react-pdf/renderer` (nada de rasterizar HTML).
+- Fonte **Arimo** (mesmo desenho e métricas do Arial/Liberation Sans) — é a
+  fonte em que o Modelo_Aprovado foi renderizado. Linhas de 1 px de projeto.
+- A linha de base de cada texto é corrigida para a posição que o navegador
+  usava (meia-entrelinha CSS) — inclusive com caracteres CJK.
+- Conferido pixel a pixel contra as imagens do `Modelo_Aprovado.pdf`:
+  diferença máxima ≈ 1 px a 216 dpi (~0,1 mm).
+- Nome do competidor medido com as próprias fontes do PDF: ocupa a largura do
+  cartão (11,5–22 px) e quebra em 2 linhas só em nomes enormes.
+- CJK/Coreano: Noto Sans SC/KR por glifo, baixando só os subconjuntos usados.
+
+### Formatos de download
+
+| Opção | Valores |
+|---|---|
+| Folha | A4 (4/folha), Carta (4/folha), A5, A6, A7 (1/folha) |
+| Ordem | Natural · Corte e empilhe (4/folha: corte o maço em 4 pilhas e empilhe) |
+| Arquivos | Um PDF · Um PDF por rodada (.zip) · Um PDF por grupo (.zip) |
+| Ordenar | Nome · ID |
+| Extras | Linhas de corte tracejadas, logo da competição (ao lado do nome) |
 
 ---
 
-## Fluxo de agrupamento (aba "Agrupamento & staff")
-
-1. Defina o nº de **estações** (base das sugestões, como no Groupifier).
-2. Escolha as rodadas e ajuste, por rodada: nº de **grupos**, **divisão**
-   (por nível = grupos separados por velocidade; equilibrada = níveis
-   misturados via *snake seeding*), **embaralhadores**, **runners**, **juízes**
-   e **números de estação**.
-3. **Gerar grupos** — cria as atividades de grupo no WCIF, semeia por ranking
-   (`personalBests`), distribui competidores e atribui staff (de competidores de
-   outros grupos, com carga balanceada).
-4. A partir do resultado: **Baixar súmulas**, **Baixar cartões de competidor**
-   e **Salvar na WCA** (grava no WCIF oficial — requer que a rodada tenha
-   horário no cronograma da WCA).
-
-> As regras de ranking, contagem de grupos/staff e a persistência via
-> `PATCH .../wcif` seguem o comportamento do Groupifier
-> (`jonatanklosko/groupifier`). Eventos com tentativas pré-agendadas (FMC e
-> Multi-BLD) não são divididos em grupos, igual ao Groupifier.
-
-## 6. Estrutura do projeto
+## Estrutura
 
 ```
 src/
-├── auth/            OAuth (implicit grant) + contexto React
-│   ├── wcaAuth.ts
-│   └── AuthContext.tsx
-├── wca/             API e WCIF
-│   ├── api.ts       fetch/patch (inclui PATCH do WCIF)
-│   ├── types.ts
-│   ├── wcif.ts      extração de rodadas/grupos/competidores
-│   └── grouping.ts  motor de agrupamento + staff (lógica do Groupifier)
-├── scorecards/      regras + layout + PDF
-│   ├── format.ts    tempos e nomes de evento (padrão WCA)
-│   ├── logic.ts     blocos, cutoff, cumulativo, extras
-│   ├── build.ts     WCIF + seleção → modelos de súmula
-│   ├── template.ts  HTML/CSS da súmula (fonte, bordas, D, etc.)
-│   ├── paper.ts     tamanhos de folha + disposição na página
-│   ├── export.ts    html2canvas + jsPDF → PDF com linhas de corte
-│   ├── competitorCards.ts  cartões de competidor (grupos + tarefas)
-│   └── demo.ts      dados fictícios (todos os casos + nome CJK)
-├── components/      UI (Header, Login, listas, prévia, agrupamento)
-│   └── GroupingPanel.tsx    config de grupos/staff + salvar/exportar
-├── config.ts        leitura das envs
-└── App.tsx
-scripts/test-grouping.ts    teste do motor de agrupamento (dev)
+├── main.tsx, App.tsx              # rotas: / · /scorecomps · /scorecomps/:id · /cubestaff
+├── styles/index.css               # tokens da CubingSP (claro/escuro)
+├── components/layout/             # Navbar (sticky, blur) e Footer (créditos)
+├── components/ui/, auth/          # ícones, feedback, botão de login WCA
+├── pages/                         # Home do hub, CubeStaff (em breve), 404
+├── lib/
+│   ├── config.ts, theme.ts
+│   ├── auth/                      # OAuth implícito da WCA
+│   └── wca/                       # API, tipos e leitura do WCIF
+└── tools/
+    ├── scorecomps/
+    │   ├── model/                 # regras, plano de rodadas, ordem, saída, demo
+    │   ├── pdf/                   # react-pdf: documento, fontes, papel, Worker
+    │   └── ui/                    # páginas da ferramenta
+    └── cubestaff/grouping.ts      # motor de grupos (base para o CubeStaff)
+public/fonts/                      # Arimo + Noto SC/KR (gerados por scripts/build-fonts.py)
+scripts/                           # samples, stress, build-fonts
 ```
 
----
-
-## 7. Integração ao site CubingSP (opcional)
-
-`ARQUITETURA.md` (roadmap Fase 3) prevê `src/modules/delegate-tools`. Como
-`src/scorecards/*` e `src/wca/*` **não dependem de React**, dá para importá-los
-direto num route handler/página Next.js. O único ponto a adaptar é o fluxo
-OAuth: no site, a WCA já é registrada com callback
-`/api/auth/wca/callback` (ver `claude/autenticacao.md`), então reaproveite o
-token dessa integração em vez do fluxo implicit standalone.
-
----
-
-## Licença / aviso
-
-Ferramenta **não oficial**, feita pela comunidade. Usa a API pública da WCA.
-"WCA" e "World Cube Association" pertencem à World Cube Association.
+As fontes em `public/fonts` já vêm prontas. Só rode `npm run fonts`
+(requer `pip install fonttools brotli`) se quiser atualizá-las.

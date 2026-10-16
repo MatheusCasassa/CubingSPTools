@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens da CubingSP — tema claro em :root, escuro (padrão) em .dark */
+:root {
+  --bg: 250 250 251;          /* #fafafb */
+  --surface: 255 255 255;     /* #ffffff */
+  --surface-2: 243 244 247;
+  --fg: 11 12 16;             /* #0b0c10 */
+  --fg-muted: 90 96 114;      /* #5a6072 */
+  --fg-faint: 130 136 152;
+  --border: 228 230 236;      /* #e4e6ec */
+  --border-strong: 204 208 218;
+  color-scheme: light;
+}
+.dark {
+  --bg: 11 12 16;             /* #0b0c10 */
+  --surface: 19 22 34;        /* #131622 */
+  --surface-2: 27 31 45;
+  --fg: 244 245 248;          /* #f4f5f8 */
+  --fg-muted: 154 161 181;    /* #9aa1b5 */
+  --fg-faint: 107 114 133;
+  --border: 35 40 56;         /* #232838 */
+  --border-strong: 52 59 80;
+  color-scheme: dark;
+}
+
+html, body, #root { min-height: 100%; }
+body {
+  @apply bg-bg text-fg font-sans antialiased;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body { transition: background-color .2s ease, color .2s ease; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@layer components {
+  .container-page { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold
+      transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400
+      focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-500 active:bg-brand-700; }
+  .btn-ghost { @apply btn border border-border-subtle bg-surface text-fg hover:bg-surface-2; }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .card { @apply rounded-2xl border border-border-subtle bg-surface; }
+  .label { @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-fg-muted; }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors;
+  }
+  .seg { @apply flex rounded-lg border border-border-subtle bg-surface-2 p-0.5; }
+  .seg > button {
+    @apply flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:text-fg
+      disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .seg > button[aria-pressed='true'] { @apply bg-surface text-fg shadow-sm; }
+  .dark .seg > button[aria-pressed='true'] { @apply bg-ink-600; }
+}

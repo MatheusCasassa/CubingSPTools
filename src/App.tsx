@@ -1,33 +1,31 @@
-import { useState } from 'react'
-import { useAuth } from './auth/AuthContext'
-import { Header } from './components/Header'
-import { Login } from './components/Login'
-import { CompetitionList } from './components/CompetitionList'
-import { CompetitionView } from './components/CompetitionView'
-import { Spinner } from './components/Spinner'
-import { Footer } from './components/Footer'
-import type { CompetitionListItem } from './wca/types'
+import { lazy, Suspense } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import { Navbar } from './components/layout/Navbar'
+import { Footer } from './components/layout/Footer'
+import { Spinner } from './components/ui/Feedback'
+import Home from './pages/Home'
+import CubeStaff from './pages/CubeStaff'
+import NotFound from './pages/NotFound'
+
+// O ScoreComps (react-pdf, fontkit…) só é baixado quando a ferramenta é aberta.
+const ScoreCompsHome = lazy(() => import('./tools/scorecomps/ui/ScoreCompsHome'))
+const CompetitionPage = lazy(() => import('./tools/scorecomps/ui/CompetitionPage'))
 
 export default function App() {
-  const { status } = useAuth()
-  const [competition, setCompetition] = useState<CompetitionListItem | null>(null)
-
   return (
-    <div className="flex min-h-full flex-col">
-      <Header />
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
       <main className="flex-1">
-        {status === 'loading' && <Spinner label="Verificando sessão…" />}
-
-        {(status === 'anonymous' || status === 'error') && <Login />}
-
-        {status === 'authenticated' &&
-          (competition ? (
-            <CompetitionView competition={competition} onBack={() => setCompetition(null)} />
-          ) : (
-            <CompetitionList onSelect={setCompetition} />
-          ))}
+        <Suspense fallback={<Spinner label="Carregando…" />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/scorecomps" element={<ScoreCompsHome />} />
+            <Route path="/scorecomps/:competitionId" element={<CompetitionPage />} />
+            <Route path="/cubestaff" element={<CubeStaff />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
-
       <Footer />
     </div>
   )

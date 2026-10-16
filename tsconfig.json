@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -15,7 +15,18 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "scripts", "vite.config.ts"],
+  // Arquivos da versão antiga (html2canvas/jsPDF), caso ainda existam na pasta.
+  "exclude": [
+    "src/scorecards",
+    "src/wca",
+    "src/auth",
+    "src/components/*.tsx",
+    "src/config.ts",
+    "src/theme.ts",
+    "scripts/test-grouping.ts"
+  ]
 }

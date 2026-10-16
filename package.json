@@ -1,32 +1,43 @@
 {
   "name": "scorecomps",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "ScoreComps — agrupamento, staff e súmulas oficiais da WCA. Ferramenta client-side para Delegados e Organizadores (CubingSP).",
+  "description": "Ferramentas para Delegados e Organizadores da WCA: ScoreComps (súmulas) e CubeStaff (grupos e staff).",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "fonts": "python scripts/build-fonts.py",
+    "samples": "tsx scripts/render-samples.tsx",
+    "stress": "tsx scripts/stress.tsx"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.3.0",
+    "@fontsource/geist-mono": "^5.2.5",
+    "@fontsource/geist-sans": "^5.2.5",
+    "@react-pdf/renderer": "^4.9.0",
     "@wca/helpers": "^1.1.7",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^2.5.2",
+    "buffer": "^6.0.3",
+    "fflate": "^0.8.2",
+    "fontkit": "^2.0.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@fontsource/arimo": "^5.2.8",
+    "@fontsource/noto-sans-kr": "^5.1.0",
+    "@fontsource/noto-sans-sc": "^5.1.0",
+    "@types/fontkit": "^2.0.8",
+    "@types/node": "^20.17.6",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.23.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }
