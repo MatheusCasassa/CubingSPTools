@@ -8,12 +8,47 @@ import { Alert, Spinner } from '../../../components/ui/Feedback'
 import { IconArrowRight, ScoreCompsMark } from '../../../components/ui/icons'
 import { useI18n } from '../../../i18n/I18nProvider'
 import { WcaApiError } from '../../../lib/wca/api'
+import { splitCompetitions, todayIso } from '../model/competitions'
+import { syncTrustedTime, trustedNow } from '../../../lib/trustedTime'
 
 function formatDate(d: string | undefined, tag: string): string {
   if (!d) return ''
   const [y, mo, day] = d.split('-').map(Number)
   return new Intl.DateTimeFormat(tag, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
     new Date(y, mo - 1, day),
+  )
+}
+
+function dateRange(c: CompetitionListItem, tag: string): string {
+  const start = formatDate(c.start_date, tag)
+  const end = formatDate(c.end_date, tag)
+  return end && end !== start ? `${start} – ${end}` : start
+}
+
+function CompetitionRows({ comps, empty }: { comps: CompetitionListItem[]; empty: string }) {
+  const { lp, tag } = useI18n()
+  if (comps.length === 0) return <p className="text-sm text-fg-faint">{empty}</p>
+  return (
+    <ul className="grid gap-2.5">
+      {comps.map((c) => (
+        <li key={c.id}>
+          <Link
+            to={lp(`/scorecomps/${encodeURIComponent(c.id)}`)}
+            state={{ name: c.name }}
+            className="card group flex items-center justify-between px-5 py-4 transition-colors hover:border-brand-500/50"
+          >
+            <span>
+              <span className="block font-medium">{c.name}</span>
+              <span className="mt-0.5 block text-xs text-fg-faint">
+                {dateRange(c, tag)}
+                {c.city ? ` · ${c.city}` : ''}
+              </span>
+            </span>
+            <IconArrowRight className="h-4 w-4 text-fg-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand-500" />
+          </Link>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -43,15 +78,16 @@ function DemoLink() {
 
 function CompetitionList() {
   const { token, isDelegate, setManagesCompetitions } = useAuth()
-  const { m, lp, tag } = useI18n()
+  const { m } = useI18n()
   const [comps, setComps] = useState<CompetitionListItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) return
     let active = true
-    fetchManagedCompetitions(token.accessToken)
-      .then((list) => {
+    // Busca as competições e, em paralelo, a hora do servidor (para "hoje").
+    Promise.all([fetchManagedCompetitions(token.accessToken), syncTrustedTime()])
+      .then(([list]) => {
         if (!active) return
         setComps(list)
         setManagesCompetitions(list.length > 0)
@@ -67,6 +103,8 @@ function CompetitionList() {
 
   if (error) return <Alert>{error}</Alert>
   if (!comps) return <Spinner label={m.scorecomps.loadingCompetitions} />
+
+  const { upcoming, past } = splitCompetitions(comps, todayIso(trustedNow()))
 
   if (comps.length === 0 && !isDelegate) {
     return (
@@ -84,26 +122,20 @@ function CompetitionList() {
       {comps.length === 0 ? (
         <p className="text-sm text-fg-muted">{m.scorecomps.noManageable}</p>
       ) : (
-        <ul className="grid gap-2.5">
-          {comps.map((c) => (
-            <li key={c.id}>
-              <Link
-                to={lp(`/scorecomps/${encodeURIComponent(c.id)}`)}
-                state={{ name: c.name }}
-                className="card group flex items-center justify-between px-5 py-4 transition-colors hover:border-brand-500/50"
-              >
-                <span>
-                  <span className="block font-medium">{c.name}</span>
-                  <span className="mt-0.5 block text-xs text-fg-faint">
-                    {formatDate(c.start_date, tag)}
-                    {c.city ? ` · ${c.city}` : ''}
-                  </span>
-                </span>
-                <IconArrowRight className="h-4 w-4 text-fg-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand-500" />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-8">
+          <section>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-fg-muted">
+              {m.scorecomps.upcomingCompetitions}
+            </h3>
+            <CompetitionRows comps={upcoming} empty={m.scorecomps.noUpcoming} />
+          </section>
+          <section>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-fg-muted">
+              {m.scorecomps.pastCompetitions}
+            </h3>
+            <CompetitionRows comps={past} empty={m.scorecomps.noPast} />
+          </section>
+        </div>
       )}
     </div>
   )

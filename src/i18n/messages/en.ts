@@ -50,6 +50,13 @@ export const en: Messages = {
       'Tools that help Delegates, Organizers and competitors with the main tasks of a competition: **Grouping**, **Staff Assignments**, **PDF Scorecards** and time calculations, all from official WCA data.',
     footnote:
       'The Delegate and Organizer tools require signing in with your WCA account. No passwords or data are stored here — everything runs 100% in your browser.',
+    categories: {
+      before: { title: 'Before the Competition', description: 'Planning: groups, staff and scorecards ready for the day.' },
+      during: { title: 'During the Competition', description: 'On the day: quick calculations for judges, Delegates and competitors.' },
+      after: { title: 'After the Competition', description: 'Checking and submitting results.' },
+      aux: { title: 'Auxiliary Tools', description: 'Utilities that help at any time.' },
+    },
+    emptyCategory: 'No tools here yet — more coming soon.',
     tools: {
       scorecomps:
         'Official PDF scorecards built from the competition groups, with WCA cutoff and time limit rules, several paper sizes and the competition logo.',
@@ -93,6 +100,10 @@ export const en: Messages = {
     yourCompetitions: 'Your competitions',
     onlyManaged: 'Only competitions where you are a Delegate or Organizer are listed here.',
     noManageable: 'You are a Delegate, but there are no manageable competitions right now.',
+    upcomingCompetitions: 'Upcoming Competitions',
+    pastCompetitions: 'Past Competitions',
+    noUpcoming: 'No upcoming competitions.',
+    noPast: 'No past competitions.',
     restrictedTitle: 'Restricted access',
     restrictedText:
       'Your WCA account is not a Delegate or Organizer of any competition. ScoreComps is only for people who manage WCA competitions.',

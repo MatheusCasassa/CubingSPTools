@@ -52,6 +52,13 @@ export const pt = {
       'Ferramentas feitas para facilitar Delegados, Organizadores e competidores com as principais tarefas de uma competição: **Agrupamento**, **Atribuição de Tarefas**, **Geração de Súmulas em PDF** e cálculos de tempo, tudo a partir dos dados oficiais da WCA.',
     footnote:
       'As ferramentas de Delegados e Organizadores pedem login na sua conta WCA. Nenhuma senha ou armazenamento passam por aqui, roda 100% no seu navegador.',
+    categories: {
+      before: { title: 'Antes da Competição', description: 'Planejamento: grupos, staff e súmulas prontos para o dia.' },
+      during: { title: 'Durante a Competição', description: 'Apoio no dia: cálculos rápidos para juízes, Delegados e competidores.' },
+      after: { title: 'Depois da Competição', description: 'Conferência e envio de resultados.' },
+      aux: { title: 'Ferramentas Auxiliares', description: 'Utilitários que ajudam em qualquer momento.' },
+    },
+    emptyCategory: 'Nenhuma ferramenta aqui ainda — novidades em breve.',
     tools: {
       scorecomps:
         'Súmulas oficiais em PDF a partir dos grupos da competição, com as regras de corte e limite de tempo da WCA, vários tamanhos de folha e a logo da competição.',
@@ -95,6 +102,10 @@ export const pt = {
     yourCompetitions: 'Suas competições',
     onlyManaged: 'Apenas competições em que você é Delegado ou Organizador aparecem aqui.',
     noManageable: 'Você é Delegado, mas não há competições gerenciáveis no momento.',
+    upcomingCompetitions: 'Competições Futuras',
+    pastCompetitions: 'Competições Passadas',
+    noUpcoming: 'Nenhuma competição futura.',
+    noPast: 'Nenhuma competição passada.',
     restrictedTitle: 'Acesso restrito',
     restrictedText:
       'Sua conta WCA não é Delegada nem Organizadora de nenhuma competição. O ScoreComps é exclusivo para quem gerencia competições na WCA.',

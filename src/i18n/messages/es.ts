@@ -50,6 +50,13 @@ export const es: Messages = {
       'Herramientas que facilitan a Delegados, Organizadores y competidores las principales tareas de una competición: **Agrupamiento**, **Asignación de Tareas**, **Generación de Hojas de Tiempo en PDF** y cálculos de tiempo, todo a partir de los datos oficiales de la WCA.',
     footnote:
       'Las herramientas para Delegados y Organizadores requieren iniciar sesión con tu cuenta WCA. Ninguna contraseña ni dato se guarda aquí: todo funciona 100% en tu navegador.',
+    categories: {
+      before: { title: 'Antes de la Competición', description: 'Planificación: grupos, staff y hojas de tiempo listos para el día.' },
+      during: { title: 'Durante la Competición', description: 'En el día: cálculos rápidos para jueces, Delegados y competidores.' },
+      after: { title: 'Después de la Competición', description: 'Revisión y envío de resultados.' },
+      aux: { title: 'Herramientas Auxiliares', description: 'Utilidades que ayudan en cualquier momento.' },
+    },
+    emptyCategory: 'Aún no hay herramientas aquí — pronto habrá novedades.',
     tools: {
       scorecomps:
         'Hojas de tiempo oficiales en PDF a partir de los grupos de la competición, con las reglas de corte y límite de tiempo de la WCA, varios tamaños de hoja y el logo de la competición.',
@@ -93,6 +100,10 @@ export const es: Messages = {
     yourCompetitions: 'Tus competiciones',
     onlyManaged: 'Solo aparecen aquí las competiciones en las que eres Delegado u Organizador.',
     noManageable: 'Eres Delegado, pero no hay competiciones gestionables en este momento.',
+    upcomingCompetitions: 'Próximas Competiciones',
+    pastCompetitions: 'Competiciones Pasadas',
+    noUpcoming: 'No hay próximas competiciones.',
+    noPast: 'No hay competiciones pasadas.',
     restrictedTitle: 'Acceso restringido',
     restrictedText:
       'Tu cuenta WCA no es Delegada ni Organizadora de ninguna competición. ScoreComps es exclusivo para quienes gestionan competiciones en la WCA.',
