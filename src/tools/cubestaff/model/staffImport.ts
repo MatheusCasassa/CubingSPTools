@@ -8,7 +8,7 @@
 
 import type { Wcif, WcifPerson } from '../../../lib/wca/types'
 import type { Availability, StaffEntry, StaffRole } from './types'
-import { normalizeName } from './people'
+import { isApproved, normalizeName } from './people'
 import { competitionDays } from './schedule'
 
 export type FieldKey =
@@ -231,7 +231,7 @@ export function parseAvailability(
 
 // ------------------------------------------------------------- linhas
 
-export type MatchHow = 'wcaId' | 'email' | 'name' | 'fuzzy' | 'manual' | null
+export type MatchHow = 'wcaId' | 'email' | 'name' | 'fuzzy' | 'manual' | 'notApproved' | null
 
 export interface ImportRow {
   index: number
@@ -269,7 +269,24 @@ export function matchPerson(
   email: string,
   name: string,
 ): { registrantId: number | null; how: MatchHow } {
-  const persons = wcif.persons.filter((p) => p.registrantId != null)
+  // Só inscrições aprovadas; quem está pendente/cancelado é sinalizado.
+  const found = matchAmong(wcif.persons.filter(isApproved), wcaId, email, name)
+  if (found.registrantId != null) return found
+  const other = matchAmong(
+    wcif.persons.filter((p) => p.registrantId != null && !isApproved(p)),
+    wcaId,
+    email,
+    name,
+  )
+  return other.registrantId != null && other.how !== 'fuzzy' ? { registrantId: null, how: 'notApproved' } : found
+}
+
+function matchAmong(
+  persons: WcifPerson[],
+  wcaId: string | null,
+  email: string,
+  name: string,
+): { registrantId: number | null; how: MatchHow } {
   if (wcaId) {
     const p = persons.find((x) => x.wcaId?.toUpperCase() === wcaId.toUpperCase())
     if (p) return { registrantId: p.registrantId, how: 'wcaId' }

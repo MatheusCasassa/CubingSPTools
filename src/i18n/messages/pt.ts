@@ -89,7 +89,7 @@ export const pt = {
     tabs: { config: 'Configuração', staff: 'Staff', groups: 'Grupos', people: 'Pessoas' },
     roles: { competitor: 'Competidor', judge: 'Juiz', scrambler: 'Embaralhador', runner: 'Runner', reserve: 'Suplente' },
     rolesPlural: { competitor: 'Competidores', judge: 'Juízes', scrambler: 'Embaralhadores', runner: 'Runners', reserve: 'Suplentes' },
-    tags: { newcomer: 'Novato', delegate: 'Delegado', organizer: 'Organizador', staff: 'Staff', extra: 'Extra', absent: 'Ausente', locked: 'Travado' },
+    tags: { notApproved: 'Não aprovado', newcomer: 'Novato', delegate: 'Delegado', organizer: 'Organizador', staff: 'Staff', extra: 'Extra', absent: 'Ausente', locked: 'Travado' },
     // barra de ações
     generate: 'Gerar grupos',
     generateTitle: 'Gerar grupos e staff',
@@ -215,7 +215,7 @@ export const pt = {
     notesCols: 'Respostas para avaliar (teste de embaralhamento)',
     previewRows: (n: number) => `${n} respostas`,
     matched: (n: number, t: number) => `${n} de ${t} encontrados na competição`,
-    match: { wcaId: 'WCA ID', email: 'e-mail', name: 'nome', fuzzy: 'nome parecido — confira', manual: 'escolhido', none: 'não inscrito' } as Record<string, string>,
+    match: { notApproved: 'inscrição não aprovada', wcaId: 'WCA ID', email: 'e-mail', name: 'nome', fuzzy: 'nome parecido — confira', manual: 'escolhido', none: 'não inscrito' } as Record<string, string>,
     pickPerson: 'Escolher pessoa…',
     asExtra: 'Adicionar como ajudante extra',
     include: 'Incluir',
@@ -226,6 +226,7 @@ export const pt = {
     issues: 'Conferência',
     noIssues: 'Nenhum problema encontrado.',
     issue: {
+      notApproved: (who: string, where: string) => `${who} não tem inscrição aprovada na WCA (${where}).`,
       conflict: (who: string, where: string) => `${who}: duas funções ao mesmo tempo (${where}).`,
       newcomerStaff: (who: string, where: string) => `${who} é novato e está no staff (${where}).`,
       delegateStaff: (who: string, where: string) => `${who} é Delegado e está no staff (${where}).`,
@@ -266,7 +267,7 @@ export const pt = {
     competingHere: 'compete neste grupo',
     allEvents: 'Todas',
     // pessoas
-    peopleHint: 'Marque ausentes antes de gerar: eles não entram nos grupos.',
+    peopleHint: 'Só inscrições aprovadas na WCA são consideradas. Marque ausentes antes de gerar: eles não entram nos grupos.',
     absentToggle: 'Ausente',
     noAssignments: 'Sem atribuições.',
     // salvar

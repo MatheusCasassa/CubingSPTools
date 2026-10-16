@@ -33,6 +33,7 @@ import {
   compareRank,
   findRound,
   hasResultIn,
+  isApproved,
   isDelegate,
   isNewcomer,
   personsById,
@@ -342,7 +343,7 @@ function eligible(
   const inGroup = new Set(wg.plan.competitors)
   for (const [id, entry] of ctx.entries) {
     const person = ctx.byId.get(id)
-    if (!person || isNewcomer(person) || ctx.absent.has(id) || inGroup.has(id)) continue
+    if (!person || !isApproved(person) || isNewcomer(person) || ctx.absent.has(id) || inGroup.has(id)) continue
     const ref = pref(id)
     if (taken.has(ref)) continue
     if (!isAvailable(entry, wg.slot, ctx.tz)) continue
@@ -503,12 +504,24 @@ export interface GenerateResult {
 
 export function generate(wcif: Wcif, source: Plan, opts: GenerateOptions): GenerateResult {
   const plan: Plan = structuredClone(source)
+  // Travas de quem perdeu a aprovação (inscrição cancelada) não são mantidas.
+  const approvedRef = (r: Ref) => {
+    const id = refId(r)
+    if (id == null) return true
+    const p = wcif.persons.find((x) => x.registrantId === id)
+    return !!p && isApproved(p)
+  }
   const config = plan.config
   const notes: Note[] = []
   const sources: Record<string, CompetitorSource> = {}
   const byId = personsById(wcif)
   const absent = new Set(config.absent)
-  const entries = new Map(plan.staff.filter((s) => byId.has(s.registrantId)).map((s) => [s.registrantId, s]))
+  // Só candidatos com inscrição APROVADA na competição.
+  const entries = new Map(
+    plan.staff
+      .filter((s) => byId.has(s.registrantId) && isApproved(byId.get(s.registrantId)!))
+      .map((s) => [s.registrantId, s]),
+  )
   const now = opts.now ?? new Date().toISOString()
   if (entries.size === 0) notes.push({ level: 'warn', code: 'noStaffList' })
 
@@ -570,7 +583,7 @@ export function generate(wcif: Wcif, source: Plan, opts: GenerateOptions): Gener
     const groups: WorkGroup[] = slots.map((slot, gi) => {
       const prev = sameShape ? previous.groups[gi] : undefined
       const keep = (role: StaffRole, list: Ref[] | undefined) =>
-        (list ?? []).filter((r) => prev!.locked.includes(lockKey(role, r)))
+        (list ?? []).filter((r) => prev!.locked.includes(lockKey(role, r)) && approvedRef(r))
       const gp: GroupPlan = {
         number: slot.number,
         // Estação 1 = mais rápido (como no Groupifier).
@@ -578,7 +591,9 @@ export function generate(wcif: Wcif, source: Plan, opts: GenerateOptions): Gener
         judges: prev ? keep('judge', prev.judges) : [],
         scramblers: prev ? keep('scrambler', prev.scramblers) : [],
         runners: prev ? keep('runner', prev.runners) : [],
-        reserves: prev ? prev.reserves.filter((r) => prev.locked.includes(lockKey('reserve', r))) : [],
+        reserves: prev
+          ? prev.reserves.filter((r) => prev.locked.includes(lockKey('reserve', r)) && approvedRef(r))
+          : [],
         locked: prev
           ? prev.locked.filter((k) => {
               const [kind, ref] = k.split(':')

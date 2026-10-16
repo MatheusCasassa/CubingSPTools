@@ -132,7 +132,12 @@ export function demoCubeStaffWcif(): Wcif {
       countryIso2: 'BR',
       roles: delegate ? ['delegate'] : i === 2 || i === 3 ? ['organizer'] : [],
       email: `pessoa${i + 1}@exemplo.com`,
-      registration: { eventIds, status: 'accepted', isCompeting: true },
+      // Algumas inscrições NÃO aprovadas (pendente/cancelada): o CubeStaff ignora.
+      registration: {
+        eventIds,
+        status: i % 13 === 12 ? 'pending' : i === 40 ? 'deleted' : 'accepted',
+        isCompeting: true,
+      },
       assignments: [],
       personalBests,
     }
@@ -187,7 +192,9 @@ export function demoCubeStaffWcif(): Wcif {
 
   // Pyraminx R1 já com resultados (para testar "Atualizar rodadas seguintes").
   const pyr = events.find((e) => e.id === 'pyram')!.rounds[0]
-  const pyrPeople = persons.filter((p) => p.registration?.eventIds.includes('pyram'))
+  const pyrPeople = persons.filter(
+    (p) => p.registration?.status === 'accepted' && p.registration.eventIds.includes('pyram'),
+  )
   pyr.results = pyrPeople
     .map((p) => ({ p, avg: 400 + Math.round(rand() * 900) }))
     .sort((a, b) => a.avg - b.avg)

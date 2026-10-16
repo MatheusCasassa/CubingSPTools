@@ -39,6 +39,7 @@ export function IssuesBox({ issues, onJump }: { issues: Issue[]; onJump?: (round
     const who = i.ref ? person(i.ref).name : ''
     switch (i.code) {
       case 'conflict':
+      case 'notApproved':
       case 'newcomerStaff':
       case 'delegateStaff':
       case 'unavailable':

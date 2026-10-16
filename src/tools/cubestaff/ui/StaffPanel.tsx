@@ -3,7 +3,7 @@ import { useI18n } from '../../../i18n/I18nProvider'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import { eventName } from '../../../lib/wca/format'
 import type { Plan, StaffEntry, StaffRole } from '../model/types'
-import { isDelegate, isNewcomer, normalizeName } from '../model/people'
+import { isApproved, isDelegate, isNewcomer, normalizeName } from '../model/people'
 import { competitionDays } from '../model/schedule'
 import { loadPrivate } from '../model/storage'
 import { useCs } from './ctx'
@@ -28,7 +28,7 @@ export function PersonSearch({
   const list = useMemo(() => {
     const n = normalizeName(q)
     return wcif.persons
-      .filter((p) => p.registrantId != null && !exclude.has(p.registrantId))
+      .filter((p) => isApproved(p) && !exclude.has(p.registrantId!))
       .filter((p) => !n || normalizeName(p.name).includes(n) || (p.wcaId ?? '').toLowerCase().includes(q.toLowerCase()))
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
       .slice(0, 60)
@@ -126,7 +126,7 @@ export function StaffPanel() {
 
   const addAll = () => {
     const extra: StaffEntry[] = wcif.persons
-      .filter((p) => p.registrantId != null && p.wcaId && !inList.has(p.registrantId))
+      .filter((p) => isApproved(p) && p.wcaId && !inList.has(p.registrantId!))
       .map((p) => ({
         registrantId: p.registrantId!,
         roles: [],
@@ -202,6 +202,7 @@ export function StaffPanel() {
                           <div className="font-medium">{p.name}</div>
                           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                             <span className="font-mono text-[11px] text-fg-faint">{p.wcaId ?? ''}</span>
+                            {(!p.person || !isApproved(p.person)) && <Tag tone="danger">{t.tags.notApproved}</Tag>}
                             {p.delegate && <Tag tone="brand">{t.tags.delegate}</Tag>}
                             {p.newcomer && <Tag tone="danger">{t.tags.newcomer}</Tag>}
                           </div>

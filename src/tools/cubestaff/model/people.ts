@@ -8,10 +8,21 @@ export const isNewcomer = (p: WcifPerson) => !p.wcaId
 /** Delegado ou Delegado trainee da competição (papel no WCIF). */
 export const isDelegate = (p: WcifPerson) => (p.roles ?? []).some((r) => r === 'delegate' || r === 'trainee-delegate')
 
-export const isAccepted = (p: WcifPerson) => {
+/**
+ * Inscrição APROVADA na WCA (status "accepted"). Inclui o staff não
+ * competidor (a WCA marca como aprovado). Pendentes, lista de espera,
+ * canceladas e recusadas ficam de fora de tudo no CubeStaff.
+ */
+export const isApproved = (p: WcifPerson) => {
   const reg = p.registration
-  return !!reg && (reg.status === 'accepted' || reg.status === undefined) && reg.isCompeting !== false
+  return p.registrantId != null && !!reg && (reg.status === 'accepted' || reg.status === undefined)
 }
+
+/** Competidor aprovado (aprovado e competindo). */
+export const isAccepted = (p: WcifPerson) => isApproved(p) && p.registration!.isCompeting !== false
+
+/** Só as pessoas com inscrição aprovada. */
+export const approvedPersons = (wcif: Wcif) => wcif.persons.filter(isApproved)
 
 export function personalBest(p: WcifPerson, eventId: string, type: 'single' | 'average'): number {
   const pb = p.personalBests?.find((b) => b.eventId === eventId && b.type === type)
@@ -109,11 +120,12 @@ export function roundCompetitors(
     return { ids, source: 'registrations' }
   }
   const own = info.round.results ?? []
-  if (own.length > 0) return { ids: own.map((r) => r.personId).filter((id) => byId.has(id)), source: 'results' }
+  const ok = (id: number) => byId.has(id) && isAccepted(byId.get(id)!) && !absent.has(id)
+  if (own.length > 0) return { ids: own.map((r) => r.personId).filter(ok), source: 'results' }
   const event = wcif.events.find((e) => e.id === info.eventId)!
   const prev = event.rounds[info.number - 2]
   const adv = prev ? advancingFromPrevious(prev) : null
-  if (adv) return { ids: adv.filter((id) => byId.has(id)), source: 'previousResults' }
+  if (adv) return { ids: adv.filter(ok), source: 'previousResults' }
   return { ids: [], source: 'unknown' }
 }
 

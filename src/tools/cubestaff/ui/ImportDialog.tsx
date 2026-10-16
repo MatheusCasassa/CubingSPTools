@@ -13,6 +13,7 @@ import {
 import { loadPrivate, savePrivate } from '../model/storage'
 import { DEMO_ID } from '../model/demo'
 import { useCs } from './ctx'
+import { approvedPersons } from '../model/people'
 import { Modal, Tag } from './primitives'
 
 export function ImportDialog({ onClose }: { onClose: () => void }) {
@@ -245,8 +246,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                         >
                           <option value="">{t.pickPerson}</option>
                           <option value="extra">{t.asExtra}</option>
-                          {wcif.persons
-                            .filter((p) => p.registrantId != null)
+                          {approvedPersons(wcif)
                             .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
                             .map((p) => (
                               <option key={p.registrantId} value={p.registrantId!}>

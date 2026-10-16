@@ -5,7 +5,16 @@ import type { Wcif } from '../../../lib/wca/types'
 import { type GroupPlan, type Plan, type Ref, type StaffRole, lockKey, pref, refId } from './types'
 import { agendaFor, isAvailable, slotOf, slotsByRound } from './engine'
 import { competitionTimezone, overlaps } from './schedule'
-import { compareRank, findRound, hasResultIn, isDelegate, isNewcomer, personsById } from './people'
+import {
+  compareRank,
+  findRound,
+  hasResultIn,
+  isAccepted,
+  isApproved,
+  isDelegate,
+  isNewcomer,
+  personsById,
+} from './people'
 
 const touch = (plan: Plan) => {
   plan.updatedAt = new Date().toISOString()
@@ -185,8 +194,10 @@ export function candidates(
   const eventId = roundId.split('-')[0]
   const info = findRound(wcif, roundId)
   const out: Candidate[] = []
+  // Só inscrições aprovadas; para competir, só competidores aprovados.
   for (const p of wcif.persons) {
-    if (p.registrantId == null) continue
+    if (p.registrantId == null || !isApproved(p)) continue
+    if (role === 'competitor' && !isAccepted(p)) continue
     if (role === 'competitor' && !(p.registration?.eventIds ?? []).includes(eventId) && info?.number === 1) continue
     const ref = pref(p.registrantId)
     const competingHere = !!g?.competitors.includes(p.registrantId)

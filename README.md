@@ -162,7 +162,9 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
 
 ### Regras de geração
 
-- Base: inscritos aceitos e presentes (marque ausentes na aba Pessoas).
+- Base: **só inscrições aprovadas na WCA** (pendentes, lista de espera,
+  canceladas e recusadas ficam de fora de grupos, staff, suplentes, escolhas
+  manuais e importação do CSV) e presentes (marque ausentes na aba Pessoas).
 - **Uma função por vez**: quem compete num grupo só compete; ninguém faz
   duas coisas ao mesmo tempo, inclusive em palcos simultâneos.
 - **Novatos** (sem WCA ID) nunca são juízes nem embaralhadores.

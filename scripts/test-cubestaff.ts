@@ -18,10 +18,16 @@ import {
   readExtension,
   diffAssignments,
 } from '../src/tools/cubestaff/model/publish'
-import { addStaff, moveCompetitor } from '../src/tools/cubestaff/model/edits'
+import { addStaff, candidates, moveCompetitor } from '../src/tools/cubestaff/model/edits'
 import { isDelegate, isNewcomer, personsById, rankKey } from '../src/tools/cubestaff/model/people'
 import { parseCsv, toCsv } from '../src/tools/cubestaff/model/csv'
-import { detectColumns, parseAvailability, parseEvents, readRows } from '../src/tools/cubestaff/model/staffImport'
+import {
+  detectColumns,
+  matchPerson,
+  parseAvailability,
+  parseEvents,
+  readRows,
+} from '../src/tools/cubestaff/model/staffImport'
 import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
 import { encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
 import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
@@ -43,13 +49,13 @@ const groups = Object.values(plan.rounds).flatMap((rp) => rp.groups.map((g) => (
 for (const roundId of firstRounds) {
   const eventId = roundId.split('-')[0]
   const expected = wcif.persons
-    .filter((p) => p.registration?.eventIds.includes(eventId))
+    .filter((p) => p.registration?.status === 'accepted' && p.registration.eventIds.includes(eventId))
     .map((p) => p.registrantId!)
     .sort()
   const got = plan.rounds[roundId].groups.flatMap((g) => g.competitors).sort()
   assert.deepEqual(got, expected, roundId)
 }
-ok('todos os inscritos competem uma vez em cada 1ª rodada')
+ok('todos os inscritos aprovados competem uma vez em cada 1ª rodada')
 
 // 2. Uma função por vez — nenhum conflito de horário (inclusive entre palcos).
 const errors = checkPlan(wcif, plan).filter((i) => i.level === 'error')
@@ -379,5 +385,36 @@ ok('suplentes livres no horário do grupo')
   assert.equal(Object.keys(back2.rounds).length, Object.keys(gen.rounds).length)
 }
 ok('extensão compacta cabe no limite da WCA (420 competidores)')
+
+// 21. Só inscrições APROVADAS: pendentes/canceladas não competem, não fazem
+// staff, não viram suplentes, não aparecem para escolha nem casam no CSV.
+{
+  const notApproved = wcif.persons.filter((p) => p.registration?.status !== 'accepted')
+  assert.ok(notApproved.length >= 3, 'demo precisa de inscrições não aprovadas')
+  const bad = new Set(notApproved.map((p) => p.registrantId!))
+  const badRefs = new Set([...bad].map((id) => `p${id}`))
+  assert.ok(
+    base.staff.some((s) => bad.has(s.registrantId)),
+    'demo deveria ter pendente na lista de staff',
+  )
+  for (const rp of Object.values(upd.rounds))
+    for (const g of rp.groups) {
+      for (const id of g.competitors) assert.ok(!bad.has(id), `não aprovado competindo: ${id}`)
+      for (const r of [...g.judges, ...g.scramblers, ...g.runners, ...g.reserves])
+        assert.ok(!badRefs.has(r), `não aprovado no staff: ${r}`)
+    }
+  assert.ok(candidates(wcif, upd, '333-r1', 1, 'judge').every((c) => !badRefs.has(c.ref)))
+  assert.ok(candidates(wcif, upd, '333-r1', 1, 'competitor').every((c) => !badRefs.has(c.ref)))
+  const pend = notApproved[0]
+  assert.deepEqual(matchPerson(wcif, pend.wcaId, '', pend.name), { registrantId: null, how: 'notApproved' })
+  // Inscrição cancelada depois de gerar: a conferência acusa e gerar de novo tira a pessoa.
+  const later = structuredClone(wcif)
+  const victim = upd.rounds['333-r1'].groups[0].competitors[0]
+  later.persons.find((p) => p.registrantId === victim)!.registration!.status = 'deleted'
+  assert.ok(checkPlan(later, upd).some((i) => i.code === 'notApproved' && i.ref === `p${victim}`))
+  const again = generate(later, upd, { roundIds: ['333-r1'] }).plan
+  assert.ok(!again.rounds['333-r1'].groups.some((g) => g.competitors.includes(victim)))
+}
+ok('só inscrições aprovadas (pendentes/canceladas ficam de fora)')
 
 console.log(`\n${n} testes do CubeStaff OK`)

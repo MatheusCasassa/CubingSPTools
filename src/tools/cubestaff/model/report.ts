@@ -15,10 +15,11 @@ import {
   stationsForRoom,
 } from './engine'
 import { competitionTimezone, overlaps } from './schedule'
-import { isDelegate, isNewcomer, personsById } from './people'
+import { isAccepted, isApproved, isDelegate, isNewcomer, personsById } from './people'
 
 export type IssueCode =
   | 'conflict'
+  | 'notApproved'
   | 'newcomerStaff'
   | 'delegateStaff'
   | 'unavailable'
@@ -36,7 +37,7 @@ export interface Issue {
   roundId: string
   group: number
   ref?: Ref
-  role?: 'competitor' | StaffRole
+  role?: 'competitor' | StaffRole | 'reserve'
   count?: number
   needed?: number
 }
@@ -76,9 +77,12 @@ export function checkPlan(wcif: Wcif, plan: Plan): Issue[] {
             .some((b) => !(b.roundId === roundId && b.group === g.number) && blocks.some((blk) => overlaps(b, blk)))
           if (doubleHere || elsewhere)
             issues.push({ level: 'error', code: 'conflict', roundId, group: g.number, ref, role })
-          if (role === 'competitor') continue
           const id = refId(ref)
           const person = id != null ? byId.get(id) : undefined
+          // Inscrição não aprovada (pendente, cancelada…) ou que saiu da competição.
+          if (id != null && (!person || (role === 'competitor' ? !isAccepted(person) : !isApproved(person))))
+            issues.push({ level: 'error', code: 'notApproved', roundId, group: g.number, ref, role })
+          if (role === 'competitor') continue
           if (person && isNewcomer(person) && role !== 'runner')
             issues.push({ level: 'error', code: 'newcomerStaff', roundId, group: g.number, ref, role })
           if (person && isDelegate(person) && role !== 'runner')
@@ -88,6 +92,13 @@ export function checkPlan(wcif: Wcif, plan: Plan): Issue[] {
           if (id != null && !isAvailable(entries.get(id), slot, tz))
             issues.push({ level: 'warn', code: 'unavailable', roundId, group: g.number, ref, role })
         }
+      }
+
+      for (const ref of g.reserves) {
+        const id = refId(ref)
+        const person = id != null ? byId.get(id) : undefined
+        if (id != null && (!person || !isApproved(person)))
+          issues.push({ level: 'error', code: 'notApproved', roundId, group: g.number, ref, role: 'reserve' })
       }
 
       if (sched?.kind !== 'attempts' && plan.staff.length > 0) {

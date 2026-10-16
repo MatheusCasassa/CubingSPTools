@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '../../../i18n/I18nProvider'
 import type { StaffRole } from '../model/types'
 import { agendaFor, type Busy } from '../model/engine'
-import { normalizeName } from '../model/people'
+import { isApproved, normalizeName } from '../model/people'
 import { useCs } from './ctx'
 import { Tag } from './primitives'
 
@@ -20,7 +20,7 @@ export function PeoplePanel() {
   const inList = new Set(plan.staff.map((e) => e.registrantId))
 
   const rows = wcif.persons
-    .filter((p) => p.registrantId != null && (p.registration?.status ?? 'accepted') === 'accepted')
+    .filter(isApproved)
     .map((p) => ({ p, info: person(`p${p.registrantId}`) }))
     .filter(({ p, info }) =>
       filter === 'all'
