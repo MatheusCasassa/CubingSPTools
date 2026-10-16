@@ -7,13 +7,14 @@ import { WcaLoginButton } from '../../../components/auth/WcaLoginButton'
 import { Alert, Spinner } from '../../../components/ui/Feedback'
 import { IconArrowLeft, IconDownload, IconEye, IconSpinner } from '../../../components/ui/icons'
 import { demoWcif } from '../model/demo'
-import { planRounds, buildRoundScorecards, type RoundPlan, type SortBy } from '../model/build'
+import { planRounds, buildRoundScorecards, buildGenericScorecards, genericRoundId, ADVANCERS_KEY, type RoundPlan, type SortBy } from '../model/build'
+import { GENERIC_ATTEMPTS } from '../model/logic'
 import { planOutput, type OrderMode, type SplitMode, type RoundBatch } from '../model/output'
 import { layoutFor, PAPERS, PAPER_IDS, type PaperId } from '../pdf/paper'
 import type { RenderProgress } from '../pdf/core'
 import { generateFiles, deliver, openInNewTab } from '../pdf/generate'
 import { LogoPicker, loadLogo, saveLogo, toGrayscale } from './LogoPicker'
-import { BlankPanel } from './BlankPanel'
+import { BlankPanel, NO_GENERIC_BLANK, type GenericBlank } from './BlankPanel'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import type { Logo } from '../pdf/ScorecardDocument'
 import { WATERMARK_TRANSPARENCY, watermarkOpacity } from '../model/watermark'
@@ -155,7 +156,11 @@ function RoundCard({
                   : 'border-border-subtle bg-surface-2 text-fg-muted hover:border-border-strong')
               }
             >
-              {g.key === 'all' ? m.scorecomps.noGroupsChip : m.scorecomps.group(g.printed)}
+              {g.key === 'all'
+                ? m.scorecomps.noGroupsChip
+                : g.key === ADVANCERS_KEY
+                  ? m.scorecomps.advancersChip
+                  : m.scorecomps.group(g.printed)}
               <span className="font-mono opacity-70">{g.competitors.length}</span>
             </button>
           )
@@ -176,8 +181,13 @@ function RoundCard({
       {!plan.fromGroups && plan.groups.length === 0 && (
         <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.nextRoundHint(plan.suggestedBlank)}</p>
       )}
-      {!plan.fromGroups && plan.groups.length > 0 && (
+      {!plan.fromGroups && plan.groups.length > 0 && !plan.advancers && (
         <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.noGroupsHint}</p>
+      )}
+      {plan.advancers && (
+        <p className="mt-2 pl-7 text-xs text-fg-faint">
+          {plan.advancers === 'results' ? m.scorecomps.advancersFromLive : m.scorecomps.advancersComputed}
+        </p>
       )}
     </div>
   )
@@ -256,6 +266,10 @@ export default function CompetitionPage() {
   const [busy, setBusy] = useState<null | 'download' | 'preview'>(null)
   const [progress, setProgress] = useState<RenderProgress | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
+  const [generic, setGeneric] = useState<GenericBlank>(NO_GENERIC_BLANK)
+  // Recarregar o WCIF (ex.: depois de sincronizar o WCA Live) sem perder a seleção.
+  const [reloadKey, setReloadKey] = useState(0)
+  const [reloading, setReloading] = useState(false)
 
   const name = wcif?.name ?? (location.state as { name?: string } | null)?.name ?? competitionId
 
@@ -272,9 +286,11 @@ export default function CompetitionPage() {
     }
     if (!token) return
     let active = true
-    setWcif(null)
+    if (reloadKey === 0) setWcif(null)
+    else setReloading(true)
     fetchWcif(token.accessToken, competitionId)
       .then((w) => active && setWcif(w))
+      .finally(() => active && setReloading(false))
       .catch((e) =>
         active &&
         setError(
@@ -288,7 +304,7 @@ export default function CompetitionPage() {
     return () => {
       active = false
     }
-  }, [competitionId, isDemo, preview, token])
+  }, [competitionId, isDemo, preview, token, reloadKey])
 
   useEffect(() => setLogo(loadLogo(competitionId)), [competitionId])
 
@@ -327,7 +343,14 @@ export default function CompetitionPage() {
           pdfLocale,
         ),
       }))
-  }, [wcif, plans, sel, prefs.sortBy, pdfLocale])
+      .concat(
+        // Em branco genéricas (sem modalidade) vão por último.
+        GENERIC_ATTEMPTS.filter((a) => generic[a] > 0).map((a) => ({
+          roundId: genericRoundId(a),
+          models: buildGenericScorecards(wcif.name, a, generic[a], pdfLocale),
+        })),
+      )
+  }, [wcif, plans, sel, prefs.sortBy, pdfLocale, generic])
 
   const files = useMemo(
     () =>
@@ -395,19 +418,6 @@ export default function CompetitionPage() {
     setSel(Object.fromEntries(plans.filter((p) => p.info.roundNumber === 1).map((p) => [p.info.roundId, fullSel(p)])))
   const clearAll = () => setSel({})
 
-  // ---- súmulas em branco (mesmo estado do campo "Em branco" de cada rodada)
-  const setBlank = (roundId: string, n: number) =>
-    setSel((prev) => ({ ...prev, [roundId]: { groups: prev[roundId]?.groups ?? [], blank: n } }))
-  const applyBlankAll = (n: number) =>
-    setSel((prev) => {
-      const next = { ...prev }
-      for (const p of plans) {
-        const groups = prev[p.info.roundId]?.groups ?? []
-        // n > 0: só na 1ª rodada de cada modalidade; 0: zera em todas.
-        if (n === 0 || p.info.roundNumber === 1) next[p.info.roundId] = { groups, blank: n }
-      }
-      return next
-    })
 
   // ---- estados de carregamento / acesso
   if (!isDemo && status === 'loading') return <Spinner label={m.common.checkingSession} />
@@ -445,6 +455,17 @@ export default function CompetitionPage() {
         </div>
         {wcif && (
           <div className="flex gap-2">
+            {!isDemo && (
+              <button
+                className="btn-ghost btn-sm"
+                onClick={() => setReloadKey((k) => k + 1)}
+                disabled={reloading}
+                title={m.scorecomps.reloadTitle}
+              >
+                {reloading ? <IconSpinner /> : null}
+                {m.scorecomps.reload}
+              </button>
+            )}
             <button className="btn-ghost btn-sm" onClick={selectFirstRounds}>
               {m.scorecomps.firstRounds}
             </button>
@@ -469,13 +490,8 @@ export default function CompetitionPage() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* ------------------------------------------------ rodadas */}
           <div className="space-y-6">
+            <BlankPanel value={generic} onChange={setGeneric} />
             <EventStrip events={events} sel={sel} onToggle={toggleEvent} />
-            <BlankPanel
-              events={events}
-              blankOf={(id) => sel[id]?.blank ?? 0}
-              onBlank={setBlank}
-              onApplyAll={applyBlankAll}
-            />
             {events.map((ev) => (
               <section key={ev.eventId} id={`evento-${ev.eventId}`} className="scroll-mt-24">
                 <h2 className="mb-2.5 flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wider text-fg-muted">

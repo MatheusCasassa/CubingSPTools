@@ -337,16 +337,20 @@ export const es: Messages = {
     blank: 'En blanco',
     blankAria: (what: string) => `Hojas en blanco — ${what}`,
     blankTitle: 'Hojas de tiempo en blanco',
-    blankSummary: 'Por modalidad, para inscripciones de último momento, repuestos o rondas siguientes.',
     blankIntro:
-      'Cada hoja en blanco sigue el formato de la ronda en la WCA, siempre con los 2 extras: media de 5 / mejor de 5 con 5 intentos; 6x6x6, 7x7x7, 4BLD, 5BLD y FMC con 3; Multi-Blind con 1, 2 o 3, según la competición. Sale con el nombre de la competición, la modalidad y la ronda; ID, nombre y grupo se completan a mano.',
-    blankPerEvent: 'por modalidad',
-    blankPerEventAria: 'Cantidad de hojas en blanco por modalidad',
-    blankApply: 'Aplicar a la 1.ª ronda de todas',
+      'No dependen de la modalidad: solo llevan el nombre y el logo de la competición. Modalidad, ronda, tiempo límite y tiempo de corte quedan con espacio para completar a mano, junto con ID, nombre y grupo. Siempre con los 2 extras.',
+    blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
+    blankAriaN: (n: number) => `Cantidad de hojas en blanco con ${n} ${n === 1 ? 'intento' : 'intentos'}`,
     blankReset: 'Poner a cero',
     attemptsN: (n: number) => (n === 1 ? '1 intento' : `${n} intentos`),
     nextRoundHint: (n: number) =>
-      `Ronda siguiente: los clasificados solo se conocen el día. Sugerencia: ${n} hojas en blanco.`,
+      `Quién avanza todavía no está en la WCA. Después de cargar la ronda anterior en WCA Live, haz clic en Sincronizar allí y en "Actualizar desde la WCA" aquí para imprimir con nombres. Mientras tanto, sugerencia: ${n} en blanco.`,
+    advancersChip: 'Clasificados',
+    advancersFromLive: 'Clasificados leídos de WCA Live (ronda ya abierta y sincronizada con la WCA). El campo Grupo queda en blanco.',
+    advancersComputed:
+      'Clasificados calculados con los resultados de la ronda anterior y la condición de clasificación (como máximo 75 %). Revisa WCA Live antes de imprimir. El campo Grupo queda en blanco.',
+    reload: 'Actualizar desde la WCA',
+    reloadTitle: 'Vuelve a buscar los datos en la WCA — úsalo después de sincronizar WCA Live para traer a los clasificados',
     noGroupsHint:
       'Sin grupos en la WCA: el campo Grupo queda en blanco. Crea los grupos en CubeStaff, Groupifier o Delegate Dashboard.',
     round: (n: number) => `Ronda ${n}`,

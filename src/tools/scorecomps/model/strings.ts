@@ -15,6 +15,10 @@ export interface ScorecardStrings {
   cutoffIf: (t: string) => string
   cutoffMoves: (n: number) => string
   extras: string
+  /** Súmula em branco genérica: linha do evento e campos para preencher. */
+  blankEventLine: string
+  blankTimeLimit: string
+  blankCutoff: string
 }
 
 export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
@@ -31,6 +35,9 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
     cutoffIf: (t) => `Tempo de corte se > ${t}`,
     cutoffMoves: (n) => `Tempo de corte se > ${n} movimentos`,
     extras: 'Extra(s)',
+    blankEventLine: 'Modalidade: ______________  Rodada: ____',
+    blankTimeLimit: 'Limite de tempo: ____________',
+    blankCutoff: 'Tempo de corte se > ____________',
   },
   en: {
     id: 'ID',
@@ -45,6 +52,9 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
     cutoffIf: (t) => `Cutoff if > ${t}`,
     cutoffMoves: (n) => `Cutoff if > ${n} moves`,
     extras: 'Extra(s)',
+    blankEventLine: 'Event: ______________  Round: ____',
+    blankTimeLimit: 'Time limit: ____________',
+    blankCutoff: 'Cutoff if > ____________',
   },
   es: {
     id: 'ID',
@@ -59,5 +69,8 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
     cutoffIf: (t) => `Tiempo de corte si > ${t}`,
     cutoffMoves: (n) => `Tiempo de corte si > ${n} movimientos`,
     extras: 'Extra(s)',
+    blankEventLine: 'Modalidad: ______________  Ronda: ____',
+    blankTimeLimit: 'Tiempo límite: ____________',
+    blankCutoff: 'Tiempo de corte si > ____________',
   },
 }

@@ -3,7 +3,7 @@
 // 3BLD Bo5 com limite cumulativo, FMC, rodadas seguintes (súmulas em branco),
 // nomes longos, CJK, cirílico e acentos.
 
-import type { Wcif, WcifActivity, WcifEvent, WcifPerson } from '../../../lib/wca/types'
+import type { Wcif, WcifActivity, WcifEvent, WcifPerson, WcifResult } from '../../../lib/wca/types'
 
 const FIRST = [
   'Ana', 'Bruno', 'Carla', 'Diego', 'Eduarda', 'Felipe', 'Gabriela', 'Henrique', 'Isabela', 'João',
@@ -142,12 +142,40 @@ export function demoWcif(): Wcif {
     }
   })
 
+  // Resultados como o WCA Live sincroniza com a WCA, para testar as rodadas
+  // seguintes: 3x3 R1 terminada (R2 calculada pela condição: top 16) e
+  // Pyraminx R1 terminada com a R2 já aberta no WCA Live (lista própria).
+  const events = EVENTS.map((e) => ({ id: e.id, rounds: e.rounds.map((r) => ({ ...r, results: [] as WcifResult[] })) }))
+  const finished = (eventId: string, base: number) => {
+    const round = events.find((e) => e.id === eventId)!.rounds[0]
+    const people = persons.filter((p) => p.registration?.eventIds.includes(eventId))
+    // Tempo "aleatório" estável por pessoa (centésimos).
+    const avg = (id: number) => base + ((id * 7919) % 997) * 3
+    round.results = people
+      .map((p) => ({ personId: p.registrantId!, average: avg(p.registrantId!) }))
+      .sort((x, y) => x.average - y.average)
+      .map((r, i) => ({
+        personId: r.personId,
+        ranking: i + 1,
+        attempts: [0, 1, 2, 3, 4].map((k) => ({ result: r.average + (k - 2) * 37 })),
+        best: r.average - 74,
+        average: r.average,
+      }))
+    return round.results
+  }
+  finished('333', 900)
+  const pyrR1 = finished('pyram', 450)
+  const pyrR2 = events.find((e) => e.id === 'pyram')!.rounds[1]
+  pyrR2.results = pyrR1
+    .slice(0, Math.floor(pyrR1.length * 0.75))
+    .map((r) => ({ personId: r.personId, ranking: null, attempts: [] }))
+
   return {
     id: DEMO_COMPETITION.id,
     name: DEMO_COMPETITION.name,
     shortName: DEMO_COMPETITION.name,
     persons,
-    events: EVENTS.map((e) => ({ id: e.id, rounds: e.rounds })).sort(
+    events: events.sort(
       (a, b) => OFFICIAL_ORDER.indexOf(a.id) - OFFICIAL_ORDER.indexOf(b.id),
     ),
     schedule: {

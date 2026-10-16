@@ -100,6 +100,36 @@ export function buildRoundLayout(round: WcifRound, eventId: string, locale: Loca
   }
 }
 
+/** Nº de tentativas das súmulas em branco genéricas. */
+export type GenericAttempts = 5 | 3 | 2 | 1
+export const GENERIC_ATTEMPTS: GenericAttempts[] = [5, 3, 2, 1]
+
+/**
+ * Súmula em branco genérica (sem modalidade): limite e corte com espaço para
+ * preencher. A linha de corte fica onde ela costuma estar — depois da 2ª
+ * tentativa em 5 (Ao5/Bo5) e da 1ª em 3 (Mo3/Bo3); com 1 ou 2 não há corte.
+ */
+export function buildGenericLayout(attempts: GenericAttempts, locale: Locale = 'pt'): RoundLayout {
+  const S = SCORECARD_STRINGS[locale]
+  const cutAfter = attempts === 5 ? 2 : attempts === 3 ? 1 : null
+  const block1 = rows(1, cutAfter ?? attempts)
+  const block2 = cutAfter != null ? rows(cutAfter + 1, attempts) : []
+  const extras: ScorecardRow[] = []
+  for (let i = 1; i <= EXTRA_COUNT; i++) extras.push({ label: `E${i}`, isExtra: true })
+  return {
+    solveCount: attempts,
+    block1,
+    block2,
+    extras,
+    dnfText: S.blankTimeLimit,
+    penaltyText: S.penaltyExample,
+    cutoffText: block2.length > 0 ? S.blankCutoff : '',
+    extrasText: S.extras,
+    idLabel: S.id,
+    groupLabel: S.group,
+  }
+}
+
 /** Uma súmula individual. Campos vazios = súmula em branco (preencher à mão). */
 export interface ScorecardModel {
   competitionName: string

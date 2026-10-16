@@ -92,8 +92,12 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 - `Exemplo de Penalidade: 14.67 + 2 = 16.67` (não aparece em FMC/Multi).
 - FMC: `Menor nº de movimentos`.
 - Extras E1/E2 com coluna **D** (Delegado).
-- Rodadas seguintes sem atribuições: súmulas em branco (quantidade sugerida
-  pela condição de classificação da rodada anterior).
+- Rodadas seguintes sem grupos: os **classificados com nome** vêm dos
+  resultados que o WCA Live sincroniza com a WCA — a lista da própria rodada
+  (quando o WCA Live já abriu a rodada) ou o cálculo pelos resultados da
+  rodada anterior + condição de classificação (máx. 75%, empates juntos). O
+  botão "Atualizar da WCA" busca de novo depois de sincronizar. Sem
+  resultados ainda: súmulas em branco (quantidade sugerida pela condição).
 
 ### Layout e fidelidade
 
@@ -118,7 +122,7 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 | Ordenar | Nome · ID |
 | Extras | Linhas de corte tracejadas, logo da competição |
 | Logo | Colorida ou preto e branco · ao lado do nome e/ou marca d'água (grande, atrás da súmula, transparência ajustável de 50% a 95% — padrão 75%) |
-| Em branco | Painel "Súmulas em branco": quantidade por modalidade/rodada (ou N na 1ª rodada de todas). As linhas seguem o formato da rodada: Ao5/Bo5 = 5, Mo3/Bo3 (6x6, 7x7, 4BLD, 5BLD, FMC) = 3, Multi-Blind = 1, 2 ou 3 — sempre + 2 extras |
+| Em branco | Painel "Súmulas em branco" (genéricas, como no Groupifier): não dependem de modalidade — só nome e logo da competição; modalidade, rodada, limite de tempo e tempo de corte para preencher à mão. Quantidade por nº de tentativas: 5 (Ao5/Bo5, corte após a 2ª), 3 (Mo3/Bo3, corte após a 1ª), 2 ou 1 — sempre + 2 extras. Cada rodada também tem o campo "Em branco" (com a modalidade impressa) |
 
 A logo **preto e branco** é gravada como PNG em tons de cinza de verdade
 (cinza + alfa), então o PDF a embute como *DeviceGray*: a impressora usa só a

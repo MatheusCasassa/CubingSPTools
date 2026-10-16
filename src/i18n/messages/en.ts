@@ -337,16 +337,20 @@ export const en: Messages = {
     blank: 'Blank',
     blankAria: (what: string) => `Blank scorecards — ${what}`,
     blankTitle: 'Blank scorecards',
-    blankSummary: 'Per event, for last-minute registrations, spares or subsequent rounds.',
     blankIntro:
-      'Each blank scorecard follows the round format on the WCA website, always with the 2 extras: average of 5 / best of 5 with 5 attempts; 6x6x6, 7x7x7, 4BLD, 5BLD and FMC with 3; Multi-Blind with 1, 2 or 3, as set for the competition. It shows the competition name, event and round; ID, name and group are filled in by hand.',
-    blankPerEvent: 'per event',
-    blankPerEventAria: 'Number of blank scorecards per event',
-    blankApply: 'Apply to every first round',
+      'Not tied to any event: they only show the competition name and logo. Event, round, time limit and cutoff have space to be filled in by hand, along with ID, name and group. Always with the 2 extras.',
+    blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
+    blankAriaN: (n: number) => `Number of blank scorecards with ${n} ${n === 1 ? 'attempt' : 'attempts'}`,
     blankReset: 'Reset',
     attemptsN: (n: number) => (n === 1 ? '1 attempt' : `${n} attempts`),
     nextRoundHint: (n: number) =>
-      `Subsequent round: who advances is only known on the day. Suggestion: ${n} blank scorecards.`,
+      `Who advances is not on the WCA website yet. After entering the previous round in WCA Live, click Synchronize there and "Refresh from WCA" here to print with names. Meanwhile, suggestion: ${n} blank.`,
+    advancersChip: 'Advancing',
+    advancersFromLive: 'Advancing competitors read from WCA Live (round already open and synchronized with the WCA). The Group field is left blank.',
+    advancersComputed:
+      'Advancing competitors calculated from the previous round results and the advancement condition (at most 75%). Check WCA Live before printing. The Group field is left blank.',
+    reload: 'Refresh from WCA',
+    reloadTitle: 'Fetches the WCA data again — use after synchronizing WCA Live to get who advanced',
     noGroupsHint:
       'No groups on the WCA website: the Group field is left blank. Create the groups with CubeStaff, Groupifier or Delegate Dashboard.',
     round: (n: number) => `Round ${n}`,

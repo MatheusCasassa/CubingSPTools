@@ -61,7 +61,11 @@ export function planOutput(
     for (const m of b.models) if (!keys.includes(m.groupKey)) keys.push(m.groupKey)
     for (const key of keys) {
       const models = b.models.filter((m) => m.groupKey === key)
-      const suffix = key === 'blank' ? 'em-branco' : key === 'all' ? 'todos' : key
+      if (key === 'generic') {
+        files.push({ name: `${comp}-${round}.pdf`, slots: arrange(models, perPage, opts.order), count: models.length })
+        continue
+      }
+      const suffix = key === 'blank' ? 'em-branco' : key === 'all' ? 'todos' : key === 'adv' ? 'classificados' : key
       files.push({ name: `${comp}-${round}-${suffix}.pdf`, slots: arrange(models, perPage, opts.order), count: models.length })
     }
   }

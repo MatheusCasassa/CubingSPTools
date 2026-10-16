@@ -2,6 +2,8 @@
 // Os grupos vêm do WCIF (atividades "evento-rN-gK" + assignments "competitor"),
 // exatamente o contrato que o CubeStaff (ou Groupifier/Delegate Dashboard)
 // grava na WCA. O ScoreComps só LÊ — nunca altera o WCIF.
+// Rodadas seguintes sem grupos: os classificados vêm dos resultados que o
+// WCA Live sincroniza com a WCA (mesma regra do CubeStaff).
 
 import type { Wcif } from '../../../lib/wca/types'
 import {
@@ -12,7 +14,8 @@ import {
   type RoundInfo,
   type Competitor,
 } from '../../../lib/wca/wcif'
-import { buildRoundLayout, type ScorecardModel } from './logic'
+import { buildRoundLayout, buildGenericLayout, type GenericAttempts, type ScorecardModel } from './logic'
+import { personsById, roundCompetitors } from '../../cubestaff/model/people'
 import { SCORECARD_STRINGS } from './strings'
 import type { Locale } from '../../../i18n/locales'
 
@@ -32,7 +35,17 @@ export interface RoundPlan {
   fromGroups: boolean
   /** Sugestão de súmulas em branco (rodadas seguintes, sem atribuições). */
   suggestedBlank: number
+  /**
+   * Rodadas seguintes: de onde vieram os classificados.
+   *  - 'results': lista da própria rodada no WCA Live (rodada já aberta);
+   *  - 'previousResults': calculado pelos resultados da rodada anterior e
+   *    pela condição de classificação (Regulamento 9p1: no máximo 75%).
+   */
+  advancers: 'results' | 'previousResults' | null
 }
+
+/** Chave do "grupo" com os classificados de uma rodada seguinte. */
+export const ADVANCERS_KEY = 'adv'
 
 function advancingFrom(prev: RoundPlan | undefined): number {
   if (!prev) return 0
@@ -63,7 +76,7 @@ export function planRounds(wcif: Wcif): RoundPlan[] {
       .filter((g) => g.competitors.length > 0)
 
     if (groups.length > 0) {
-      plans.push({ info, groups, fromGroups: true, suggestedBlank: 0 })
+      plans.push({ info, groups, fromGroups: true, suggestedBlank: 0, advancers: null })
     } else if (info.roundNumber === 1) {
       // Sem grupos: todos os inscritos aceitos, campo Grupo em branco.
       plans.push({
@@ -78,10 +91,28 @@ export function planRounds(wcif: Wcif): RoundPlan[] {
         ],
         fromGroups: false,
         suggestedBlank: 0,
+        advancers: null,
       })
     } else {
-      // Rodadas seguintes: classificados só existem no dia → súmulas em branco.
-      plans.push({ info, groups: [], fromGroups: false, suggestedBlank: advancingFrom(prev) })
+      // Rodadas seguintes: classificados lidos dos resultados (WCA Live → WCA).
+      const known = roundCompetitors(wcif, info.roundId, new Set())
+      const byId = personsById(wcif)
+      const competitors: Competitor[] = known.ids
+        .map((id) => byId.get(id))
+        .filter((p): p is NonNullable<typeof p> => !!p && p.registrantId != null)
+        .map((p) => ({ registrantId: p.registrantId!, name: p.name, wcaId: p.wcaId }))
+      if ((known.source === 'results' || known.source === 'previousResults') && competitors.length > 0) {
+        plans.push({
+          info,
+          groups: [{ key: ADVANCERS_KEY, printed: '', label: 'Classificados', competitors }],
+          fromGroups: false,
+          suggestedBlank: 0,
+          advancers: known.source,
+        })
+      } else {
+        // Ainda sem resultados: só súmulas em branco (sugestão pela condição).
+        plans.push({ info, groups: [], fromGroups: false, suggestedBlank: advancingFrom(prev), advancers: null })
+      }
     }
   }
   return plans
@@ -147,5 +178,37 @@ export function buildRoundScorecards(
   for (let i = 0; i < sel.blank; i++) {
     out.push({ ...base, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank' })
   }
+  return out
+}
+
+// ------------------------------------------------------------- em branco genéricas
+/** Rodada "virtual" das súmulas em branco genéricas (uma por nº de tentativas). */
+export const genericRoundId = (attempts: GenericAttempts) => `em-branco-${attempts}-tentativas`
+
+/**
+ * Súmulas em branco que NÃO dependem de modalidade (como no Groupifier): só a
+ * competição (e a logo); modalidade, rodada, limite e corte para preencher à mão.
+ */
+export function buildGenericScorecards(
+  competitionName: string,
+  attempts: GenericAttempts,
+  count: number,
+  locale: Locale = 'pt',
+): ScorecardModel[] {
+  const layout = buildGenericLayout(attempts, locale)
+  const S = SCORECARD_STRINGS[locale]
+  const out: ScorecardModel[] = []
+  for (let i = 0; i < count; i++)
+    out.push({
+      competitionName,
+      eventName: S.blankEventLine,
+      layout,
+      roundId: genericRoundId(attempts),
+      competitorId: '',
+      wcaId: null,
+      group: '',
+      competitorName: '',
+      groupKey: 'generic',
+    })
   return out
 }
