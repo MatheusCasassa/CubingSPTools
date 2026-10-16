@@ -55,6 +55,41 @@ export async function fetchWcif(token: string, competitionId: string): Promise<W
 }
 
 /**
+ * PATCH parcial do WCIF com as chaves pedidas (ex.: só `extensions` para um
+ * rascunho, ou persons + schedule + extensions para publicar grupos).
+ * Remove `registration` de cada pessoa (a API reavalia o status senão).
+ */
+export async function patchWcifParts(
+  token: string,
+  competitionId: string,
+  wcif: Wcif,
+  parts: ('persons' | 'schedule' | 'extensions')[],
+): Promise<void> {
+  const body: Record<string, unknown> = {}
+  if (parts.includes('persons'))
+    body.persons = wcif.persons.map((p) => {
+      const { registration: _omit, ...rest } = p
+      void _omit
+      return rest
+    })
+  if (parts.includes('schedule')) body.schedule = wcif.schedule
+  if (parts.includes('extensions')) body.extensions = wcif.extensions ?? []
+  const res = await fetch(`${config.wcaApiBase}/competitions/${competitionId}/wcif`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new WcaApiError(`Falha ao salvar WCIF (${res.status}). ${text.slice(0, 500)}`, res.status)
+  }
+}
+
+/**
  * Salva as mudanças na WCA via PATCH parcial do WCIF (persons + schedule).
  * Remove `registration` de cada pessoa (a API reavalia o status senão) —
  * mesmo cuidado do Groupifier.

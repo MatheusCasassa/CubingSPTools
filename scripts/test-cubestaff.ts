@@ -1,0 +1,383 @@
+// Regras do CubeStaff conferidas na competição de demonstração.
+//   npx tsx scripts/test-cubestaff.ts
+import assert from 'node:assert/strict'
+import { demoCubeStaffWcif, demoPlan } from '../src/tools/cubestaff/model/demo'
+import {
+  agendaFor,
+  generate,
+  pendingRounds,
+  scramblersFor,
+  slotsByRound,
+  slotOf,
+} from '../src/tools/cubestaff/model/engine'
+import { checkPlan } from '../src/tools/cubestaff/model/report'
+import {
+  buildWcif,
+  changedOutside,
+  planFromWcif,
+  readExtension,
+  diffAssignments,
+} from '../src/tools/cubestaff/model/publish'
+import { addStaff, moveCompetitor } from '../src/tools/cubestaff/model/edits'
+import { isDelegate, isNewcomer, personsById, rankKey } from '../src/tools/cubestaff/model/people'
+import { parseCsv, toCsv } from '../src/tools/cubestaff/model/csv'
+import { detectColumns, parseAvailability, parseEvents, readRows } from '../src/tools/cubestaff/model/staffImport'
+import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
+import { encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
+import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
+
+let n = 0
+const ok = (msg: string) => {
+  n++
+  console.log(`✓ ${msg}`)
+}
+
+const wcif = demoCubeStaffWcif()
+const base = demoPlan(wcif)
+const byId = personsById(wcif)
+const firstRounds = wcif.events.map((e) => e.rounds[0].id)
+const { plan, notes } = generate(wcif, base, { roundIds: firstRounds, now: '2026-10-16T12:00:00Z' })
+const groups = Object.values(plan.rounds).flatMap((rp) => rp.groups.map((g) => ({ roundId: rp.roundId, g })))
+
+// 1. Todos os inscritos presentes competem exatamente uma vez por rodada.
+for (const roundId of firstRounds) {
+  const eventId = roundId.split('-')[0]
+  const expected = wcif.persons
+    .filter((p) => p.registration?.eventIds.includes(eventId))
+    .map((p) => p.registrantId!)
+    .sort()
+  const got = plan.rounds[roundId].groups.flatMap((g) => g.competitors).sort()
+  assert.deepEqual(got, expected, roundId)
+}
+ok('todos os inscritos competem uma vez em cada 1ª rodada')
+
+// 2. Uma função por vez — nenhum conflito de horário (inclusive entre palcos).
+const errors = checkPlan(wcif, plan).filter((i) => i.level === 'error')
+assert.equal(errors.length, 0, JSON.stringify(errors.slice(0, 3)))
+for (const { g } of groups) {
+  const staff = [...g.judges, ...g.scramblers, ...g.runners]
+  assert.equal(new Set(staff).size, staff.length)
+  for (const r of staff) assert.ok(!g.competitors.includes(refId(r)!))
+}
+ok('uma função por vez, sem conflito entre palcos simultâneos')
+
+// 3. Novatos nunca são juízes nem embaralhadores; só a lista vira staff.
+const list = new Set(base.staff.map((s) => s.registrantId))
+for (const { g } of groups) {
+  for (const r of [...g.judges, ...g.scramblers, ...g.runners]) {
+    const p = byId.get(refId(r)!)!
+    assert.ok(!isNewcomer(p), `novato no staff: ${p.name}`)
+    assert.ok(list.has(p.registrantId!), `fora da lista: ${p.name}`)
+  }
+}
+ok('novatos fora do staff; só candidatos aprovados')
+
+// 4. Embaralhadores: 1 a cada 8 competidores; juízes ≤ estações.
+assert.equal(scramblersFor(8, 8), 1)
+assert.equal(scramblersFor(9, 8), 2)
+assert.equal(scramblersFor(16, 8), 2)
+assert.equal(scramblersFor(17, 8), 3)
+for (const { roundId, g } of groups) {
+  if (roundId.startsWith('333fm')) continue
+  assert.ok(g.judges.length <= plan.config.stations)
+  assert.ok(g.scramblers.length <= scramblersFor(g.competitors.length, 8))
+}
+ok('embaralhadores proporcionais (8 em 8) e juízes até o nº de estações')
+
+// 5. Embaralhadores bem ranqueados: todos têm resultado no evento.
+for (const { roundId, g } of groups)
+  for (const r of g.scramblers) {
+    const p = byId.get(refId(r)!)!
+    const k = rankKey(p, roundId.split('-')[0])
+    assert.ok(k[0] !== Infinity || k[1] !== Infinity, `${p.name} embaralhando ${roundId} sem resultado`)
+  }
+ok('embaralhadores sempre com resultado no evento')
+
+// 6. Disponibilidade: quem só está na manhã de sábado não é escalado à tarde.
+const partial = base.staff
+  .filter((s) => s.availability?.['2026-11-14']?.afternoon === false)
+  .map((s) => `p${s.registrantId}`)
+const scheds = slotsByRound(wcif, plan)
+for (const { roundId, g } of groups) {
+  const slot = slotOf(scheds.get(roundId), g.number)
+  if (slot.start == null) continue
+  const sp = new Date(slot.start)
+  const afternoonSat = sp.toISOString().startsWith('2026-11-14') && sp.getUTCHours() - 3 >= 12
+  if (!afternoonSat) continue
+  for (const r of [...g.judges, ...g.scramblers, ...g.runners])
+    assert.ok(!partial.includes(r), `${r} indisponível em ${roundId}`)
+}
+ok('disponibilidade (manhã/tarde) respeitada')
+
+// 7. Novatos concentrados nos primeiros grupos (100%).
+const g333 = plan.rounds['333-r1'].groups
+const newcomersIn = (i: number) => g333[i].competitors.filter((id) => isNewcomer(byId.get(id)!)).length
+assert.ok(newcomersIn(0) >= newcomersIn(g333.length - 1))
+assert.equal(newcomersIn(g333.length - 1), 0)
+ok('novatos concentrados nos grupos iniciais')
+
+// 8. Modo mesclado espalha novatos.
+const mixed = generate(
+  wcif,
+  { ...base, config: { ...base.config, distribution: 'mixed' } },
+  { roundIds: ['333-r1'] },
+).plan
+const nm = mixed.rounds['333-r1'].groups.map((g) => g.competitors.filter((id) => isNewcomer(byId.get(id)!)).length)
+assert.ok(Math.max(...nm) - Math.min(...nm) <= 1, String(nm))
+ok('modo mesclado distribui novatos por igual')
+
+// 9. 50% novatos.
+const half = generate(wcif, { ...base, config: { ...base.config, newcomerShare: 50 } }, { roundIds: ['333-r1'] }).plan
+const g1 = half.rounds['333-r1'].groups[0]
+const n1 = g1.competitors.filter((id) => isNewcomer(byId.get(id)!)).length
+assert.ok(n1 <= Math.ceil(g1.competitors.length / 2))
+ok('grupos com 50% de novatos')
+
+// 10. Delegados: fora do staff quando há staff expressivo.
+const lots = structuredClone(base)
+lots.config.stations = 4
+const lotsPlan = generate(wcif, lots, { roundIds: ['222-r1'] }).plan
+for (const g of lotsPlan.rounds['222-r1'].groups)
+  for (const r of [...g.judges, ...g.scramblers])
+    assert.ok(!isDelegate(byId.get(refId(r)!)!), 'Delegado escalado com staff de sobra')
+ok('Delegados fora de juiz/embaralhador com staff expressivo')
+
+// 11. Travas: edição manual sobrevive a gerar de novo.
+const someone = plan.rounds['333-r1'].groups[0].competitors.at(-1)!
+let edited: Plan = moveCompetitor(plan, '333-r1', someone, 3)
+const judgeRef = base.staff
+  .map((s) => `p${s.registrantId}`)
+  .find(
+    (r) =>
+      !edited.rounds['222-r1'].groups[1].competitors.includes(refId(r)!) &&
+      !edited.rounds['222-r1'].groups[1].judges.includes(r),
+  )!
+edited = addStaff(edited, '222-r1', 2, 'judge', judgeRef)
+const regen = generate(wcif, edited, { roundIds: ['333-r1', '222-r1'] }).plan
+assert.ok(regen.rounds['333-r1'].groups[2].competitors.includes(someone))
+assert.ok(regen.rounds['222-r1'].groups[1].judges.includes(judgeRef))
+assert.ok(regen.rounds['222-r1'].groups[1].locked.includes(lockKey('judge', judgeRef)))
+ok('itens travados preservados ao gerar de novo')
+
+// 12. Rodadas seguintes: geradas só com resultados; o resto fica intacto.
+const pending = pendingRounds(wcif, plan)
+assert.deepEqual(
+  pending.map((p) => p.roundId),
+  ['pyram-r2'],
+)
+assert.equal(pending[0].count, 16)
+const upd = generate(wcif, plan, { roundIds: ['pyram-r2'] }).plan
+assert.deepEqual(upd.rounds['333-r1'], plan.rounds['333-r1'])
+assert.equal(upd.rounds['pyram-r2'].groups.flatMap((g) => g.competitors).length, 16)
+assert.ok(notes.every((x) => x.roundId !== '333-r2'))
+ok('"Atualizar rodadas seguintes" gera só o que tem resultado, sem mexer no resto')
+
+// 13. Publicação no WCIF: atividades evento-rN-gK + assignments, lidas pelo ScoreComps.
+const built = buildWcif(wcif, upd)
+assert.deepEqual(built.skipped, [])
+const gs = listGroups(built.wcif, '333-r1')
+assert.equal(gs.length, 4)
+assert.equal(
+  gs.reduce((s, g) => s + competitorsInGroup(built.wcif, g.activityIds).length, 0),
+  upd.rounds['333-r1'].groups.flatMap((g) => g.competitors).length,
+)
+const ids = new Set<number>()
+const walk = (as: { id: number; childActivities: typeof as }[]) =>
+  as.forEach((a) => (assert.ok(!ids.has(a.id), 'id duplicado'), ids.add(a.id), walk(a.childActivities)))
+built.wcif.schedule.venues.forEach((v) => v.rooms.forEach((r) => walk(r.activities)))
+const fm = built.wcif.persons.find((p) => p.registration?.eventIds.includes('333fm'))!
+assert.equal(fm.assignments.filter((a) => a.assignmentCode === 'competitor' && ids.has(a.activityId)).length > 0, true)
+ok('publica grupos no WCIF (ids únicos, FMC nas tentativas)')
+
+// 14. Extensão: o plano volta igual (vinculado à competição) e detecta edição externa.
+const back = planFromWcif(built.wcif)
+assert.equal(back.from, 'extension')
+const norm = (p: Plan) =>
+  Object.fromEntries(
+    Object.entries(p.rounds).map(([id, rp]) => [
+      id,
+      rp.groups.map((g) => ({
+        ...g,
+        competitors: [...g.competitors].sort(),
+        judges: [...g.judges].sort(),
+        scramblers: [...g.scramblers].sort(),
+        runners: [...g.runners].sort(),
+      })),
+    ]),
+  )
+assert.deepEqual(norm(back.plan), norm(upd))
+assert.deepEqual(back.plan.config, upd.config)
+assert.deepEqual(back.plan.extras, upd.extras)
+assert.deepEqual(readExtension(built.wcif)!.staff, upd.staff)
+assert.deepEqual(changedOutside(built.wcif, back.plan), [])
+const tampered = structuredClone(built.wcif)
+const g1ids = new Set(listGroups(tampered, '333-r1')[0].activityIds)
+const victim = tampered.persons.find((p) =>
+  p.assignments.some((a) => a.assignmentCode === 'competitor' && g1ids.has(a.activityId)),
+)!
+victim.assignments = victim.assignments.filter((a) => !g1ids.has(a.activityId))
+assert.ok(changedOutside(tampered, back.plan).length > 0)
+ok('plano salvo na extensão e edição fora do CubeStaff detectada')
+
+// 15. Republicar não duplica atividades nem muda ids.
+const again = buildWcif(built.wcif, back.plan)
+assert.deepEqual(
+  listGroups(again.wcif, '333-r1').map((g) => g.activityIds),
+  gs.map((g) => g.activityIds),
+)
+assert.equal(diffAssignments(built.wcif, again.wcif).length, 0)
+ok('republicar é idempotente')
+
+// 16. Importa grupos já existentes (Groupifier / Delegate Dashboard).
+const foreign = structuredClone(built.wcif)
+foreign.extensions = []
+const imported = planFromWcif(foreign)
+assert.equal(imported.from, 'wcif')
+assert.deepEqual(
+  imported.plan.rounds['333-r1'].groups.map((g) => g.competitors.length),
+  upd.rounds['333-r1'].groups.map((g) => g.competitors.length),
+)
+ok('importa grupos criados em outras ferramentas')
+
+// 17. CSV do Google Forms (Brasileiro 2026).
+const headers = [
+  'Carimbo de data/hora',
+  'Email para contato:',
+  'Número para whatsapp',
+  'Qual sua ID da WCA? Caso não tenha uma, preencha com seu nome completo.',
+  'Você tem interesse em ser embaralhador no Brasileiro?',
+  'Indique se quer ser embaralhador no Brasileiro e, se sim, selecione os puzzles os quais você tem experiência embaralhando em campeonatos da WCA.',
+  'Se indicou querer ser embaralhador, liste todos os eventos em quais é permitido que o embaralhamento esteja incorreto e qual a condição para que seja permitido enviar um puzzle embaralhado incorretamente. (Caso não souber, escreva "Não sei.")',
+  'Se indicou querer ser embaralhador, explique qual o procedimento extra de verificação de embaralhamento recomendado para competidores capazes de algum recorde e competidores em uma final de campeonato nacional, continental ou mundial. (Caso não souber, escreva "Não sei.")',
+  'Selecione todos que se apliquem.',
+  'Você tem interesse em ajudar na equipe de Marketing?',
+  'Se selecionou que quer fazer parte da equipe de Marketing, liste a baixo quaisquer links relevantes sobre sua experiência em Marketing.',
+  'Selecione todos os eventos para os quais está inscrito no Brasileiro.',
+  'Selecione todos os horários em que estará presente no campeonato (e portanto disponível para agir como staff). [Manhã]',
+  'Selecione todos os horários em que estará presente no campeonato (e portanto disponível para agir como staff). [Tarde]',
+]
+const p1 = wcif.persons[10]
+const p2 = wcif.persons.find((p) => !p.wcaId)!
+const csv = toCsv([
+  headers,
+  [
+    '2026/07/01',
+    'x@y.com',
+    '11 9',
+    p1.wcaId,
+    'Sim',
+    '3x3x3, Pyraminx, Clock',
+    'Não sei.',
+    'Não sei.',
+    'Juiz, Runner',
+    'Não',
+    '',
+    '3x3x3',
+    'Sábado, Domingo',
+    'Sábado',
+  ],
+  [
+    '2026/07/02',
+    'z@y.com',
+    '11 8',
+    p2.name.toUpperCase(),
+    'Não',
+    '',
+    '',
+    '',
+    'Juiz',
+    'Não',
+    '',
+    '3x3x3',
+    '',
+    'Domingo',
+  ],
+])
+const table = parseCsv(csv)
+assert.equal(table.length, 3)
+const map = detectColumns(table[0])
+assert.equal(map.fields.identity, 3)
+assert.equal(map.fields.email, 1)
+assert.equal(map.fields.phone, 2)
+assert.equal(map.fields.scramblerInterest, 4)
+assert.equal(map.fields.scramblePuzzles, 5)
+assert.equal(map.fields.applies, 8)
+assert.deepEqual(map.availability, [12, 13])
+assert.deepEqual(map.notes, [6, 7])
+const rows = readRows(wcif, table, map)
+assert.equal(rows[0].registrantId, p1.registrantId)
+assert.equal(rows[0].how, 'wcaId')
+assert.deepEqual(rows[0].roles, ['judge', 'runner', 'scrambler'])
+assert.deepEqual(rows[0].scramblePuzzles, ['333', 'pyram', 'clock'])
+assert.deepEqual(rows[0].availability, {
+  '2026-11-14': { morning: true, afternoon: true },
+  '2026-11-15': { morning: true, afternoon: false },
+})
+assert.equal(rows[1].registrantId, p2.registrantId)
+assert.equal(rows[1].scrambler, false)
+assert.deepEqual(rows[1].availability, {
+  '2026-11-14': { morning: false, afternoon: false },
+  '2026-11-15': { morning: false, afternoon: true },
+})
+assert.deepEqual(parseEvents('2x2x2 Cube, 3x3x3 Blindfolded, Square-1, Megaminx'), ['222', '333bf', 'sq1', 'minx'])
+assert.deepEqual(parseAvailability(['[Sábado]'], [0], ['Manhã'], ['2026-11-14', '2026-11-15'])!['2026-11-14'], {
+  morning: true,
+  afternoon: false,
+})
+ok('importa CSV do formulário (ID/nome, funções, puzzles, manhã/tarde)')
+
+// 18. Agenda do plano bate com a conferência.
+assert.ok(agendaFor(wcif, upd).staffCount(upd.rounds['333-r1'].groups[0].judges[0]) >= 1)
+ok('carga de staff contabilizada')
+
+// 19. Suplentes: livres no horário (nem competem nem fazem staff em grupo simultâneo).
+{
+  const ag = agendaFor(wcif, plan)
+  const sc = slotsByRound(wcif, plan)
+  for (const { roundId, g } of groups) {
+    const slot = slotOf(sc.get(roundId), g.number)
+    for (const r of g.reserves) assert.ok(!ag.isBusy(r, slot), `suplente ocupado: ${r} em ${roundId} g${g.number}`)
+    assert.ok(g.reserves.length <= plan.config.reservesPerGroup)
+  }
+}
+ok('suplentes livres no horário do grupo')
+
+// 20. Extensão cabe no limite da WCA (coluna TEXT de 64 KB) numa competição grande.
+{
+  const big = demoCubeStaffWcif()
+  const orig = big.persons.slice()
+  for (let k = 1; k < 5; k++)
+    for (const p of orig)
+      big.persons.push({
+        ...structuredClone(p),
+        registrantId: p.registrantId! + 100 * k,
+        name: `${p.name} ${k}`,
+        wcaId: p.wcaId ? p.wcaId.slice(0, 8) + String(k).padStart(2, '0') : null,
+      })
+  const bp = demoPlan(big)
+  bp.staff = big.persons
+    .filter((p) => p.wcaId)
+    .slice(0, 250)
+    .map((p) => ({
+      registrantId: p.registrantId!,
+      roles: [],
+      preferred: [],
+      scrambler: true,
+      scramblePuzzles: ['333', '222'],
+      availability: {
+        '2026-11-14': { morning: true, afternoon: false },
+        '2026-11-15': { morning: true, afternoon: true },
+      },
+    }))
+  for (const k of Object.keys(bp.config.groupsByRound)) bp.config.groupsByRound[k] *= 4
+  const gen = generate(big, bp, { roundIds: big.events.map((e) => e.rounds[0].id) }).plan
+  assert.ok(encodedSize(encodePlan(gen, big)) < EXTENSION_MAX_BYTES, 'rascunho grande demais')
+  const pub = buildWcif(big, gen)
+  const back2 = readExtension(pub.wcif)!
+  assert.equal(back2.staff.length, 250)
+  assert.deepEqual(back2.staff[0].availability, bp.staff[0].availability)
+  assert.equal(Object.keys(back2.rounds).length, Object.keys(gen.rounds).length)
+}
+ok('extensão compacta cabe no limite da WCA (420 competidores)')
+
+console.log(`\n${n} testes do CubeStaff OK`)

@@ -39,7 +39,7 @@ const TOOLS: Tool[] = [
     name: 'CubeStaff',
     mark: <CubeStaffMark className="h-10 w-10" />,
     category: 'before',
-    ready: false,
+    ready: true,
     login: true,
     description: 'cubestaff',
   },

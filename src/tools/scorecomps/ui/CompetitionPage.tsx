@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../../lib/auth/AuthContext'
 import { fetchWcif } from '../../../lib/wca/api'
 import type { Wcif } from '../../../lib/wca/types'
@@ -12,13 +12,14 @@ import { planOutput, type OrderMode, type SplitMode, type RoundBatch } from '../
 import { layoutFor, PAPERS, PAPER_IDS, type PaperId } from '../pdf/paper'
 import type { RenderProgress } from '../pdf/core'
 import { generateFiles, deliver, openInNewTab } from '../pdf/generate'
-import { LogoPicker, loadLogo, saveLogo } from './LogoPicker'
+import { LogoPicker, loadLogo, saveLogo, toGrayscale } from './LogoPicker'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import type { Logo } from '../pdf/ScorecardDocument'
 import { useI18n } from '../../../i18n/I18nProvider'
 import type { Locale } from '../../../i18n/locales'
 import { roundName } from '../model/build'
 import { WcaApiError } from '../../../lib/wca/api'
+import { loadPreviewWcif, PREVIEW_PARAM } from '../../cubestaff/model/storage'
 
 // ----------------------------------------------------------------- preferências
 interface Prefs {
@@ -29,6 +30,12 @@ interface Prefs {
   cutLines: boolean
   /** Idioma impresso na súmula ('auto' = o idioma do site). */
   pdfLocale: Locale | 'auto'
+  /** Logo em preto e branco (economiza tinta colorida). */
+  logoBw: boolean
+  /** Logo pequena ao lado do nome da competição. */
+  logoHeader: boolean
+  /** Logo grande e 75% transparente no fundo do cartão. */
+  logoWatermark: boolean
 }
 const DEFAULT_PREFS: Prefs = {
   paperId: 'a4',
@@ -37,6 +44,9 @@ const DEFAULT_PREFS: Prefs = {
   sortBy: 'name',
   cutLines: true,
   pdfLocale: 'auto',
+  logoBw: false,
+  logoHeader: true,
+  logoWatermark: false,
 }
 const PREFS_KEY = 'scorecomps.prefs'
 
@@ -225,7 +235,13 @@ export default function CompetitionPage() {
   const location = useLocation()
   const { status, token } = useAuth()
   const { m, lp, locale } = useI18n()
-  const isDemo = competitionId === 'demo'
+  const [search] = useSearchParams()
+  // Grupos ainda não publicados, vindos do CubeStaff (mesmo navegador).
+  const preview = useMemo(
+    () => (search.get('fonte') === PREVIEW_PARAM ? loadPreviewWcif(competitionId) : null),
+    [search, competitionId],
+  )
+  const isDemo = competitionId === 'demo' || !!preview
   const [wcif, setWcif] = useState<Wcif | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -241,6 +257,10 @@ export default function CompetitionPage() {
   // ---- carrega o WCIF
   useEffect(() => {
     setError(null)
+    if (preview) {
+      setWcif(preview.wcif)
+      return
+    }
     if (isDemo) {
       setWcif(demoWcif())
       return
@@ -263,7 +283,7 @@ export default function CompetitionPage() {
     return () => {
       active = false
     }
-  }, [competitionId, isDemo, token])
+  }, [competitionId, isDemo, preview, token])
 
   useEffect(() => setLogo(loadLogo(competitionId)), [competitionId])
 
@@ -318,13 +338,17 @@ export default function CompetitionPage() {
   const totalSheets = files.reduce((n, f) => n + f.slots.length / perPage, 0)
 
   // ---- geração
-  const request = (fs = files) => ({
-    files: fs,
-    paperId: prefs.paperId,
-    cutLines: prefs.cutLines,
-    logo,
-    title: m.scorecomps.pdfTitle(name),
-  })
+  const request = async (fs = files) => {
+    const printLogo = logo && prefs.logoBw ? await toGrayscale(logo) : logo
+    return {
+      files: fs,
+      paperId: prefs.paperId,
+      cutLines: prefs.cutLines,
+      logo: prefs.logoHeader ? printLogo : null,
+      watermark: prefs.logoWatermark ? printLogo : null,
+      title: m.scorecomps.pdfTitle(name),
+    }
+  }
 
   const run = async (kind: 'download' | 'preview') => {
     if (!files.length) return
@@ -335,10 +359,10 @@ export default function CompetitionPage() {
       if (kind === 'preview') {
         // Prévia: só a primeira folha do primeiro arquivo.
         const first = { ...files[0], slots: files[0].slots.slice(0, perPage), name: 'previa.pdf' }
-        const [out] = await generateFiles(request([first]), setProgress)
+        const [out] = await generateFiles(await request([first]), setProgress)
         openInNewTab(out)
       } else {
-        const out = await generateFiles(request(), setProgress)
+        const out = await generateFiles(await request(), setProgress)
         deliver(out, `sumulas-${(wcif?.id ?? competitionId).replace(/[^\w-]/g, '')}-${prefs.paperId}.zip`)
       }
     } catch (e) {
@@ -396,7 +420,7 @@ export default function CompetitionPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
           {isDemo && (
-            <p className="mt-1 text-sm text-fg-muted">{m.scorecomps.demoNote}</p>
+            <p className="mt-1 text-sm text-fg-muted">{preview ? m.scorecomps.previewNote : m.scorecomps.demoNote}</p>
           )}
         </div>
         {wcif && (
@@ -536,13 +560,53 @@ export default function CompetitionPage() {
                 />
               </label>
 
-              <LogoPicker
-                logo={logo}
-                onChange={(l) => {
-                  setLogo(l)
-                  saveLogo(competitionId, l)
-                }}
-              />
+              <div className="space-y-3">
+                <LogoPicker
+                  logo={logo}
+                  bw={prefs.logoBw}
+                  onChange={(l) => {
+                    setLogo(l)
+                    saveLogo(competitionId, l)
+                  }}
+                />
+                {logo && (
+                  <>
+                    <div>
+                      <span className="label">{m.scorecomps.logoColors}</span>
+                      <Seg
+                        value={prefs.logoBw ? 'bw' : 'color'}
+                        onChange={(v) => setPrefs({ ...prefs, logoBw: v === 'bw' })}
+                        options={[
+                          { value: 'color', label: m.scorecomps.logoColor },
+                          { value: 'bw', label: m.scorecomps.logoBw, title: m.scorecomps.logoBwHint },
+                        ]}
+                      />
+                      {prefs.logoBw && <p className="mt-1.5 text-xs text-fg-faint">{m.scorecomps.logoBwHint}</p>}
+                    </div>
+                    <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                      <span>{m.scorecomps.logoHeader}</span>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-brand-600"
+                        checked={prefs.logoHeader}
+                        onChange={(e) => setPrefs({ ...prefs, logoHeader: e.target.checked })}
+                      />
+                    </label>
+                    <div>
+                      <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                        <span>{m.scorecomps.logoWatermark}</span>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-brand-600"
+                          checked={prefs.logoWatermark}
+                          onChange={(e) => setPrefs({ ...prefs, logoWatermark: e.target.checked })}
+                        />
+                      </label>
+                      <p className="mt-1 text-xs text-fg-faint">{m.scorecomps.logoWatermarkHint}</p>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* ação (fixa no rodapé em telas pequenas) */}

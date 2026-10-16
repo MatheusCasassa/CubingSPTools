@@ -10,11 +10,11 @@ Produção: **https://cubingspferramentas.mcasassa.workers.dev/**
 |---|---|---|---|
 | **ScoreComps** (`/scorecomps`) | Súmulas oficiais em PDF a partir dos grupos do WCIF | WCA | ✅ disponível |
 | **Calcumulative** (`/calcumulative`) | Limite de tempo cumulativo e média de 5 com BPA/WPA e meta | — | ✅ disponível |
-| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Runner) gravados na WCA | WCA | 🔜 em breve |
+| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Runner) gravados na WCA | WCA | ✅ disponível |
 
 Tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem secret) e
 os PDFs são gerados localmente num Web Worker. Nenhum servidor nosso recebe
-token ou dados.
+token ou dados — o CubeStaff grava direto no WCIF da competição na WCA.
 
 ---
 
@@ -27,7 +27,9 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-- **Sem login:** abra `http://localhost:5173/scorecomps/demo` — competição
+- **Sem login:** abra `http://localhost:5173/cubestaff/demo` (CubeStaff, dois
+  palcos, rodadas seguintes, FMC, novatos e lista de staff) ou
+  `http://localhost:5173/scorecomps/demo` — competição
   fictícia com todos os casos (Ao5 com/sem corte, Mo3, 3BLD cumulativo, FMC,
   finais em branco, nomes CJK/cirílico/longos). Dá para testar tudo, inclusive
   logo e todos os formatos de download.
@@ -114,7 +116,13 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 | Ordem | Natural · Corte e empilhe (4/folha: corte o maço em 4 pilhas e empilhe) |
 | Arquivos | Um PDF · Um PDF por rodada (.zip) · Um PDF por grupo (.zip) |
 | Ordenar | Nome · ID |
-| Extras | Linhas de corte tracejadas, logo da competição (ao lado do nome) |
+| Extras | Linhas de corte tracejadas, logo da competição |
+| Logo | Colorida ou preto e branco · ao lado do nome e/ou marca d'água (grande, 75% transparente, atrás da súmula) |
+
+A logo **preto e branco** é gravada como PNG em tons de cinza de verdade
+(cinza + alfa), então o PDF a embute como *DeviceGray*: a impressora usa só a
+tinta preta. Amostras com marca d'água:
+`npm run samples -- --logo logo.png --aspect 1.5 --watermark [--no-header-logo]`.
 
 ---
 
@@ -131,6 +139,54 @@ página/idioma de onde saiu.
 
 Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
 
+## CubeStaff — como funciona
+
+1. Login WCA → competições `managed_by_me` → abre a competição (`/cubestaff/:id`).
+2. **Staff:** importe o CSV do Google Forms (ou monte à mão) com os
+   candidatos **aprovados** — só eles são escalados automaticamente. Quem se
+   oferece no dia entra como **ajudante extra** (escalado à mão).
+3. **Configuração:** nº de estações (por palco, se houver mais de um), nº de
+   grupos por rodada (com a conta "≈ N por grupo"), distribuição de novatos,
+   runners e limites de carga.
+4. **Gerar grupos** → revisar na aba Grupos (mover, trocar por suplente,
+   travar, adicionar) → **Salvar rascunho** (só a extensão) ou **Publicar na
+   WCA** (atividades + assignments). Os grupos aparecem no Competition Groups,
+   no Delegate Dashboard e no ScoreComps.
+5. No dia: depois de sincronizar o WCA Live, **Atualizar rodadas seguintes**
+   gera só as rodadas cujos classificados já são conhecidos.
+
+### Regras de geração
+
+- Base: inscritos aceitos e presentes (marque ausentes na aba Pessoas).
+- **Uma função por vez**: quem compete num grupo só compete; ninguém faz
+  duas coisas ao mesmo tempo, inclusive em palcos simultâneos.
+- **Novatos** (sem WCA ID) nunca são juízes nem embaralhadores.
+- **Delegados** evitados como juiz/embaralhador (embaralhador só se bem
+  ranqueado); com staff "expressivo" (staff livre ≥ 1,5 × vagas, ajustável)
+  ficam totalmente de fora.
+- **Embaralhadores**: os mais bem ranqueados no evento (e que marcaram aquele
+  puzzle no formulário), 1 a cada 8 competidores (1–8 → 1, 9–16 → 2…),
+  revezando quem já embaralhou muito.
+- **Juízes**: até o nº de estações, preferindo quem competiu no grupo anterior.
+- **Runners** só se habilitado. **Suplentes** por grupo (livres no horário).
+- **Disponibilidade** Manhã/Tarde do formulário respeitada.
+- **Competidores**: novatos nos grupos iniciais (100% ou 50% novatos) ou
+  mesclados; experientes por ranking, mais rápidos nos últimos grupos.
+- Edições manuais ficam **travadas** e sobrevivem a "Gerar de novo".
+
+### Onde fica salvo
+
+- **Na WCA**, numa extensão do WCIF (`CubingSP.CubeStaff`, formato em
+  [`docs/cubestaff-extension.md`](docs/cubestaff-extension.md)): vale para
+  qualquer aparelho e qualquer Delegado/Organizador. A extensão é pública, por
+  isso não leva e-mail, WhatsApp nem respostas de formulário.
+- **Neste navegador**: rascunho automático (para não perder nada antes de
+  salvar) e os dados privados do formulário.
+- Edição simultânea é detectada pela revisão do plano; edições feitas fora
+  (Delegate Dashboard) depois de publicar são detectadas por rodada.
+
+Testes das regras: `npx tsx scripts/test-cubestaff.ts` (também no `npm test`).
+
 ## Calcumulative — regras
 
 - **Limite cumulativo** (Regulamento A1a2/A1a4/A1a5): limite de cada tentativa
@@ -145,11 +201,11 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
 
 ```
 src/
-├── main.tsx, App.tsx              # rotas: / · /scorecomps · /scorecomps/:id · /cubestaff
+├── main.tsx, App.tsx              # rotas: / · /scorecomps(/:id) · /calcumulative · /cubestaff(/:id)
 ├── styles/index.css               # tokens da CubingSP (claro/escuro)
 ├── components/layout/             # Navbar (sticky, blur) e Footer (créditos)
 ├── components/ui/, auth/          # ícones, feedback, botão de login WCA
-├── pages/                         # Home do hub, CubeStaff (em breve), 404
+├── pages/                         # Home do hub, 404
 ├── lib/
 │   ├── config.ts, theme.ts
 │   ├── auth/                      # OAuth implícito da WCA
@@ -159,7 +215,10 @@ src/
     │   ├── model/                 # regras, plano de rodadas, ordem, saída, demo
     │   ├── pdf/                   # react-pdf: documento, fontes, papel, Worker
     │   └── ui/                    # páginas da ferramenta
-    └── cubestaff/grouping.ts      # motor de grupos (base para o CubeStaff)
+    └── cubestaff/
+        ├── model/                 # motor, regras, cronograma, WCIF ⇄ plano, extensão, CSV
+        └── ui/                    # páginas da ferramenta
+docs/cubestaff-extension.md        # formato da extensão WCIF do CubeStaff
 public/fonts/                      # Arimo + Noto SC/KR (gerados por scripts/build-fonts.py)
 scripts/                           # samples, stress, build-fonts
 ```

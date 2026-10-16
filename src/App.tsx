@@ -5,20 +5,22 @@ import { Footer } from './components/layout/Footer'
 import { Spinner } from './components/ui/Feedback'
 import { useI18n } from './i18n/I18nProvider'
 import Home from './pages/Home'
-import CubeStaff from './pages/CubeStaff'
 import NotFound from './pages/NotFound'
 
-// O ScoreComps (react-pdf, fontkit…) só é baixado quando a ferramenta é aberta.
+// Cada ferramenta só é baixada quando é aberta (o ScoreComps leva react-pdf e fontkit).
 const ScoreCompsHome = lazy(() => import('./tools/scorecomps/ui/ScoreCompsHome'))
 const CompetitionPage = lazy(() => import('./tools/scorecomps/ui/CompetitionPage'))
 const CalcumulativePage = lazy(() => import('./tools/calcumulative/ui/CalcumulativePage'))
+const CubeStaffHome = lazy(() => import('./tools/cubestaff/ui/CubeStaffHome'))
+const CompetitionStaffPage = lazy(() => import('./tools/cubestaff/ui/CompetitionStaffPage'))
 
 const PAGES: { path: string; element: ReactElement }[] = [
   { path: '', element: <Home /> },
   { path: 'scorecomps', element: <ScoreCompsHome /> },
   { path: 'scorecomps/:competitionId', element: <CompetitionPage /> },
   { path: 'calcumulative', element: <CalcumulativePage /> },
-  { path: 'cubestaff', element: <CubeStaff /> },
+  { path: 'cubestaff', element: <CubeStaffHome /> },
+  { path: 'cubestaff/:competitionId', element: <CompetitionStaffPage /> },
 ]
 
 // Português sem prefixo; inglês em /en/… e espanhol em /es/… (como o site da CubingSP).

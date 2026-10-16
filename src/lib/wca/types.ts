@@ -16,13 +16,39 @@ export interface WcifCutoff {
   attemptResult: number
 }
 
+export interface WcifAttempt {
+  result: number
+}
+
+/** Resultado de uma pessoa numa rodada (o WCA Live sincroniza com a WCA). */
+export interface WcifResult {
+  personId: number
+  ranking: number | null
+  attempts: WcifAttempt[]
+  best?: number
+  average?: number
+}
+
+export interface WcifAdvancementCondition {
+  type: 'ranking' | 'percent' | 'attemptResult'
+  level: number
+}
+
 export interface WcifRound {
   id: string // ex.: "333-r1"
   format: WcifFormatId
   timeLimit: WcifTimeLimit | null
   cutoff: WcifCutoff | null
-  advancementCondition: unknown | null
-  results?: unknown[]
+  advancementCondition: WcifAdvancementCondition | null
+  results?: WcifResult[]
+  extensions?: WcifExtension[]
+}
+
+/** Extensão do WCIF: dados livres de uma ferramenta (PÚBLICOS no WCIF). */
+export interface WcifExtension {
+  id: string
+  specUrl: string
+  data: unknown
 }
 
 export interface WcifEvent {
@@ -57,6 +83,11 @@ export interface WcifPerson {
   registration: WcifRegistration | null
   assignments: WcifAssignment[]
   personalBests?: WcifPersonalBest[]
+  /** "delegate" | "trainee-delegate" | "organizer" | ... */
+  roles?: string[]
+  /** Só vem no WCIF gerenciável (Delegados/Organizadores). */
+  email?: string
+  extensions?: WcifExtension[]
 }
 
 export interface WcifActivity {
@@ -66,6 +97,7 @@ export interface WcifActivity {
   startTime?: string
   endTime?: string
   childActivities: WcifActivity[]
+  extensions?: WcifExtension[]
 }
 
 export interface WcifRoom {
@@ -77,10 +109,14 @@ export interface WcifRoom {
 export interface WcifVenue {
   id: number
   name: string
+  /** Fuso IANA do local (ex.: "America/Sao_Paulo"). */
+  timezone?: string
   rooms: WcifRoom[]
 }
 
 export interface WcifSchedule {
+  startDate?: string
+  numberOfDays?: number
   venues: WcifVenue[]
 }
 
@@ -91,6 +127,7 @@ export interface Wcif {
   persons: WcifPerson[]
   events: WcifEvent[]
   schedule: WcifSchedule
+  extensions?: WcifExtension[]
 }
 
 // ------- API pública de competições / usuário -------

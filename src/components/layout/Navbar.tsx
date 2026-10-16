@@ -29,7 +29,7 @@ function ThemeToggle() {
 const TOOLS = [
   { to: '/scorecomps', label: 'ScoreComps' },
   { to: '/calcumulative', label: 'Calcumulative' },
-  { to: '/cubestaff', label: 'CubeStaff', soon: true },
+  { to: '/cubestaff', label: 'CubeStaff' },
 ]
 
 function ToolLink({ to, label, soon, onClick }: { to: string; label: string; soon?: boolean; onClick?: () => void }) {
