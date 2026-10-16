@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Wcif } from '../../../lib/wca/types'
 import { fetchWcif, patchWcifParts, WcaApiError } from '../../../lib/wca/api'
-import type { Plan } from '../model/types'
+import { emptyPlan, type Plan } from '../model/types'
 import { generate, pendingRounds, type Note } from '../model/engine'
 import {
   buildWcif,
@@ -13,8 +13,9 @@ import {
   readExtension,
   roundFromWcif,
   withExtensionOnly,
+  clearWcif,
 } from '../model/publish'
-import { clearDraft, loadDraft, saveDraft, savePreviewWcif, type LocalDraft } from '../model/storage'
+import { clearDraft, clearLocal, loadDraft, saveDraft, savePreviewWcif, type LocalDraft } from '../model/storage'
 import { checkPlan, type Issue } from '../model/report'
 import { demoCubeStaffWcif, demoPlan, DEMO_ID } from '../model/demo'
 
@@ -44,7 +45,7 @@ export function useCubeStaff(competitionId: string, token: string | null, meName
   const [pendingDraft, setPendingDraft] = useState<LocalDraft | null>(null)
   const [outside, setOutside] = useState<string[]>([])
   const [conflict, setConflict] = useState<Conflict | null>(null)
-  const [saving, setSaving] = useState<null | 'draft' | 'publish' | 'refresh'>(null)
+  const [saving, setSaving] = useState<null | 'draft' | 'publish' | 'refresh' | 'reset'>(null)
   const [lastNotes, setLastNotes] = useState<Note[]>([])
 
   // ---- carregamento
@@ -280,6 +281,44 @@ export function useCubeStaff(competitionId: string, token: string | null, meName
     setOutside([])
   }, [wcif, plan, outside, commit])
 
+  /**
+   * Limpar tudo: plano vazio (configuração padrão, sem staff, sem grupos) e
+   * nada guardado neste navegador. Com `alsoWca`, também tira os grupos, as
+   * atribuições e o plano salvos na WCA. Só local: dá para desfazer.
+   */
+  const resetAll = useCallback(
+    async (alsoWca: boolean): Promise<boolean> => {
+      if (!plan) return false
+      clearLocal(storageId)
+      setPendingDraft(null)
+      setOutside([])
+      setLastNotes([])
+      if (!alsoWca || isDemo) {
+        commit({ ...emptyPlan(), revision: baseRevision, updatedAt: new Date().toISOString() })
+        return true
+      }
+      setSaving('reset')
+      try {
+        return await guarded(async (fresh) => {
+          const out = clearWcif(fresh, plan)
+          await patchWcifParts(token!, competitionId, out, ['persons', 'schedule', 'extensions'])
+          setWcif(out)
+          setPlan(emptyPlan())
+          setPast([])
+          setFuture([])
+          setFrom('empty')
+          setBaseRevision(0)
+          setRemoteSavedAt(null)
+          setDirty(false)
+          clearLocal(storageId)
+        }, true)
+      } finally {
+        setSaving(null)
+      }
+    },
+    [plan, storageId, isDemo, commit, baseRevision, guarded, token, competitionId],
+  )
+
   /** WCIF com os grupos do plano para o ScoreComps (sem publicar). */
   const preparePreview = useCallback(() => {
     if (!wcif || !plan) return null
@@ -319,6 +358,7 @@ export function useCubeStaff(competitionId: string, token: string | null, meName
     acceptRemote,
     dismissConflict: () => setConflict(null),
     preparePreview,
+    resetAll,
     issues,
     lastNotes,
     clearNotes: () => setLastNotes([]),

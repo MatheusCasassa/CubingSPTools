@@ -17,6 +17,7 @@ import {
   planFromWcif,
   readExtension,
   diffAssignments,
+  clearWcif,
 } from '../src/tools/cubestaff/model/publish'
 import { addStaff, candidates, moveCompetitor } from '../src/tools/cubestaff/model/edits'
 import { isDelegate, isNewcomer, personsById, rankKey } from '../src/tools/cubestaff/model/people'
@@ -448,5 +449,43 @@ ok('só inscrições aprovadas (pendentes/canceladas ficam de fora)')
   assert.equal(decodeStaffRow(['a', '', '', '', '1011'], days).availability?.['2026-11-14'].afternoon, false)
 }
 ok('extensão sobrevive à WCA removendo null (embaralhadores voltam)')
+
+// 23. "Limpar tudo" na WCA: sem grupos, sem atribuições deles, sem extensão;
+// cronograma (rodadas) e outras atribuições intactos.
+{
+  const pub = buildWcif(wcif, upd).wcif
+  const other = pub.persons[0]
+  const roundAct = pub.schedule.venues[0].rooms[0].activities.find((a) => a.activityCode === '333-r1')!
+  other.assignments.push({ activityId: roundAct.id, assignmentCode: 'staff-dataentry', stationNumber: null })
+  const cleared = clearWcif(pub, back.plan)
+  for (const r of ['333-r1', '222-r1', 'pyram-r2']) assert.equal(listGroups(cleared, r).length, 0)
+  const ids = new Set<number>()
+  const all = (as: { id: number; activityCode: string; childActivities: typeof as }[]) =>
+    as.forEach((a) => (ids.add(a.id), all(a.childActivities)))
+  cleared.schedule.venues.forEach((v) => v.rooms.forEach((r) => all(r.activities)))
+  const fmIds = new Set<number>()
+  cleared.schedule.venues.forEach((v) =>
+    v.rooms.forEach((r) =>
+      r.activities.filter((a) => a.activityCode.startsWith('333fm')).forEach((a) => fmIds.add(a.id)),
+    ),
+  )
+  for (const p of cleared.persons)
+    for (const a of p.assignments) {
+      assert.ok(ids.has(a.activityId), 'atribuição apontando para atividade removida')
+      assert.ok(!(fmIds.has(a.activityId) && a.assignmentCode === 'competitor'), 'FMC continua atribuído')
+    }
+  assert.ok(
+    cleared.persons[0].assignments.some((a) => a.assignmentCode === 'staff-dataentry'),
+    'apagou atribuição de fora',
+  )
+  assert.equal(readExtension(cleared), null)
+  assert.equal(planFromWcif(cleared).from, 'empty')
+  assert.equal(
+    cleared.schedule.venues[0].rooms[0].activities.length,
+    pub.schedule.venues[0].rooms[0].activities.length,
+    'rodadas do cronograma mantidas',
+  )
+}
+ok('"Limpar tudo" na WCA volta a competição ao estado sem CubeStaff')
 
 console.log(`\n${n} testes do CubeStaff OK`)

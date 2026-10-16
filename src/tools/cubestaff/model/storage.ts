@@ -57,6 +57,13 @@ export const clearDraft = (id: string) => remove(key('draft', id))
 export const loadPrivate = (id: string) => read<Record<string, PrivateInfo>>(key('private', id)) ?? {}
 export const savePrivate = (id: string, data: Record<string, PrivateInfo>) => write(key('private', id), data)
 
+/** Apaga tudo o que o CubeStaff guardou neste navegador para a competição. */
+export function clearLocal(id: string) {
+  remove(key('draft', id))
+  remove(key('private', id))
+  remove(key('preview', id))
+}
+
 // ScoreComps: WCIF com os grupos ainda não publicados (mesmo navegador).
 export const PREVIEW_PARAM = 'cubestaff'
 export const savePreviewWcif = (id: string, wcif: Wcif) =>

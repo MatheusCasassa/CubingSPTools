@@ -316,6 +316,76 @@ function PublishDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
   )
 }
 
+function ResetDialog({ onClose, onDone }: { onClose: () => void; onDone: (wca: boolean) => void }) {
+  const { m } = useI18n()
+  const t = m.cubestaff
+  const { s, plan } = useCs()
+  const onWca = !s.isDemo && (plan.published.length > 0 || s.remoteSavedAt != null)
+  const [wca, setWca] = useState(onWca)
+  const [error, setError] = useState<string | null>(null)
+  const errorText = useErrorText()
+  const go = async () => {
+    setError(null)
+    try {
+      if (await s.resetAll(wca)) {
+        onClose()
+        onDone(wca)
+      }
+    } catch (e) {
+      setError(errorText(e))
+    }
+  }
+  return (
+    <Modal
+      title={t.resetTitle}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn-ghost btn-sm" onClick={onClose}>
+            {t.cancel}
+          </button>
+          <button
+            className="btn btn-sm bg-accent-red text-white hover:bg-red-700"
+            disabled={s.saving != null}
+            onClick={go}
+          >
+            {s.saving === 'reset' && <IconSpinner />}
+            {wca ? t.resetConfirmWca : t.resetConfirm}
+          </button>
+        </>
+      }
+    >
+      <p className="text-sm">{t.resetText}</p>
+      {!s.isDemo && (
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-border-subtle p-3">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-brand-600"
+            checked={wca}
+            onChange={(e) => setWca(e.target.checked)}
+          />
+          <span>
+            <span className="block text-sm font-medium">{t.resetWca}</span>
+            <span className="mt-0.5 block text-xs text-fg-muted">{t.resetWcaHint}</span>
+          </span>
+        </label>
+      )}
+      {wca ? (
+        <div className="mt-3">
+          <Alert tone="warn">{t.resetWcaWarn}</Alert>
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-fg-muted">{t.resetLocalHint}</p>
+      )}
+      {error && (
+        <div className="mt-3">
+          <Alert>{error}</Alert>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
 function Workspace() {
   const { m, lp, locale } = useI18n()
   const t = m.cubestaff
@@ -325,7 +395,7 @@ function Workspace() {
     Object.keys(plan.rounds).length > 0 ? 'groups' : plan.staff.length > 0 ? 'config' : 'staff',
   )
   const [dialog, setDialog] = useState<
-    null | { kind: 'generate'; initial?: string[] } | { kind: 'update' } | { kind: 'publish' }
+    null | { kind: 'generate'; initial?: string[] } | { kind: 'update' } | { kind: 'publish' } | { kind: 'reset' }
   >(null)
   const [msg, setMsg] = useState<{ tone: 'info' | 'error'; text: string } | null>(null)
   const errorText = useErrorText()
@@ -446,6 +516,13 @@ function Workspace() {
             <span className="hidden md:inline">{t.scorecards}</span>
             <span className="md:hidden">PDF</span>
           </button>
+          <button
+            className="btn-ghost btn-sm text-red-600 hover:text-red-700 dark:text-red-300"
+            title={t.resetTitle}
+            onClick={() => setDialog({ kind: 'reset' })}
+          >
+            {t.resetAll}
+          </button>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <span
               className={`hidden text-xs lg:inline ${s.dirty ? 'text-amber-700 dark:text-amber-300' : 'text-fg-faint'}`}
@@ -532,6 +609,15 @@ function Workspace() {
         <GenerateDialog initial={dialog.initial} onClose={() => setDialog(null)} onRun={runGenerate} />
       )}
       {dialog?.kind === 'update' && <UpdateDialog onClose={() => setDialog(null)} onRun={runGenerate} />}
+      {dialog?.kind === 'reset' && (
+        <ResetDialog
+          onClose={() => setDialog(null)}
+          onDone={(wca) => {
+            setMsg({ tone: 'info', text: wca ? t.resetDoneWca : t.resetDone })
+            setTab('staff')
+          }}
+        />
+      )}
       {dialog?.kind === 'publish' && (
         <PublishDialog onClose={() => setDialog(null)} onDone={() => setMsg({ tone: 'info', text: t.saved })} />
       )}

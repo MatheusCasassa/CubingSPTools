@@ -261,6 +261,20 @@ export const en: Messages = {
     peopleHint: 'Only registrations approved on the WCA are considered. Mark absent people before generating: they are left out of the groups.',
     absentToggle: 'Absent',
     noAssignments: 'No assignments.',
+    resetAll: 'Clear all',
+    resetTitle: 'Clear everything and start over',
+    resetText:
+      'Deletes the staff list, extra helpers, groups, locks and absences and resets the settings — as if CubeStaff had never been used for this competition. Also deletes what was kept in this browser (draft and form answers).',
+    resetWca: 'Also clear on the WCA',
+    resetWcaHint:
+      'Removes all groups (event-rN-gK) and the competitor and staff assignments tied to them, and deletes the saved plan. The schedule and rounds stay as they are.',
+    resetWcaWarn:
+      'This changes the competition on the WCA right away: groups disappear from Competition Groups and ScoreComps (including groups created in Delegate Dashboard or Groupifier). It cannot be undone.',
+    resetLocalHint: 'Only in CubeStaff, and you can undo it. Groups already published stay on the WCA — to remove them, tick the option above.',
+    resetConfirm: 'Clear all',
+    resetConfirmWca: 'Clear all, including on the WCA',
+    resetDone: 'Everything cleared in CubeStaff (use Undo to go back). Groups already published stay on the WCA.',
+    resetDoneWca: 'Everything cleared, including on the WCA. The competition is as if CubeStaff had never been used.',
     saveTitle: 'Publish to WCA',
     saveHint:
       'Saves the group activities and assignments to the official WCIF. They show up on Competition Groups, Delegate Dashboard and ScoreComps.',

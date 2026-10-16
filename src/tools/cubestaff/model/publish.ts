@@ -279,6 +279,44 @@ export function buildWcif(source: Wcif, plan: Plan, roundIds?: string[], withExt
   return { wcif, skipped, published }
 }
 
+/**
+ * "Limpar tudo" na WCA: tira TODOS os grupos (atividades "evento-rN-gK") e as
+ * atribuições ligadas a eles, as atribuições de competidor das tentativas de
+ * FMC/MBLD publicadas pelo plano, e apaga a extensão do CubeStaff — a
+ * competição volta a ficar como se o CubeStaff nunca tivesse sido usado.
+ * Atividades de rodada, cronograma e demais atribuições ficam intactos.
+ */
+export function clearWcif(source: Wcif, plan: Plan): Wcif {
+  const wcif: Wcif = structuredClone(source)
+  const removed = new Set<number>()
+  const groupRe = /^.+-r\d+-g\d+$/
+  const drop = (as: WcifActivity[]): WcifActivity[] =>
+    as
+      .filter((a) => {
+        if (groupRe.test(a.activityCode)) {
+          const mark = (x: WcifActivity) => (removed.add(x.id), x.childActivities?.forEach(mark))
+          mark(a)
+          return false
+        }
+        return true
+      })
+      .map((a) => ({ ...a, childActivities: drop(a.childActivities ?? []) }))
+  for (const v of wcif.schedule?.venues ?? []) for (const r of v.rooms ?? []) r.activities = drop(r.activities ?? [])
+  // FMC / MBLD: competidores atribuídos às tentativas pelas rodadas publicadas.
+  const attempts = new Set<number>()
+  const published = new Set([...plan.published, ...(readExtension(source)?.published ?? [])])
+  for (const roundId of published) {
+    const sched = roundSchedule(wcif, roundId, 1)
+    if (sched.kind === 'attempts') sched.attempts.forEach((a) => attempts.add(a.activityId))
+  }
+  for (const p of wcif.persons)
+    p.assignments = p.assignments.filter(
+      (a) => !removed.has(a.activityId) && !(attempts.has(a.activityId) && a.assignmentCode === 'competitor'),
+    )
+  wcif.extensions = (wcif.extensions ?? []).filter((e) => e.id !== EXTENSION_ID)
+  return wcif
+}
+
 /** Só a extensão (rascunho na WCA, sem publicar assignments). */
 export function withExtensionOnly(source: Wcif, plan: Plan): Wcif {
   const wcif = structuredClone(source)

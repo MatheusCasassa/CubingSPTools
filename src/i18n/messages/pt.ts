@@ -271,6 +271,20 @@ export const pt = {
     absentToggle: 'Ausente',
     noAssignments: 'Sem atribuições.',
     // salvar
+    resetAll: 'Limpar tudo',
+    resetTitle: 'Limpar tudo e começar do zero',
+    resetText:
+      'Apaga a lista de staff, os ajudantes extras, os grupos, as travas, os ausentes e volta a configuração ao padrão — como se o CubeStaff ainda não tivesse sido usado nesta competição. Também apaga o que ficou guardado neste navegador (rascunho e respostas do formulário).',
+    resetWca: 'Também limpar na WCA',
+    resetWcaHint:
+      'Tira todos os grupos (evento-rN-gK) e as atribuições de competidor e staff ligadas a eles, e apaga o plano salvo. Cronograma e rodadas continuam como estão.',
+    resetWcaWarn:
+      'Isso muda a competição na WCA na hora: os grupos somem do Competition Groups e do ScoreComps (inclusive grupos criados no Delegate Dashboard ou Groupifier). Não dá para desfazer.',
+    resetLocalHint: 'Só no CubeStaff, e dá para desfazer. Grupos já publicados continuam na WCA — para tirá-los, marque a opção acima.',
+    resetConfirm: 'Limpar tudo',
+    resetConfirmWca: 'Limpar tudo, inclusive na WCA',
+    resetDone: 'Tudo limpo no CubeStaff (use Desfazer para voltar). Grupos já publicados continuam na WCA.',
+    resetDoneWca: 'Tudo limpo, inclusive na WCA. A competição está como se o CubeStaff nunca tivesse sido usado.',
     saveTitle: 'Publicar na WCA',
     saveHint:
       'Grava as atividades de grupo e as atribuições no WCIF oficial. Elas aparecem no Competition Groups, no Delegate Dashboard e no ScoreComps.',
