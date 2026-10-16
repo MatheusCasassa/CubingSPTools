@@ -84,6 +84,10 @@ export const pt = {
       ['Rodadas seguintes', 'Depois dos resultados no WCA Live, gere só as próximas rodadas sem desfazer o resto.'],
     ] as [string, string][],
     // página da competição
+    manualLink: 'Como os grupos são feitos (manual)',
+    rankEvent: (p: number) => `top ${p}% no evento`,
+    rankBase: (ev: string, p: number) => `top ${p}% no ${ev}`,
+    rankSor: (p: number) => `top ${p}% no Sum of Ranks`,
     loading: 'Carregando competição…',
     demoNote: 'Competição fictícia para testar o CubeStaff — nada é gravado na WCA.',
     tabs: { config: 'Configuração', staff: 'Staff', groups: 'Grupos', people: 'Pessoas' },

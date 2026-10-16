@@ -171,9 +171,15 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
 - **Delegados** evitados como juiz/embaralhador (embaralhador só se bem
   ranqueado); com staff "expressivo" (staff livre ≥ 1,5 × vagas, ajustável)
   ficam totalmente de fora.
-- **Embaralhadores**: os mais bem ranqueados no evento (e que marcaram aquele
-  puzzle no formulário), 1 a cada 8 competidores (1–8 → 1, 9–16 → 2…),
-  revezando quem já embaralhou muito.
+- **Embaralhadores**: 1 a cada 8 competidores (1–8 → 1, 9–16 → 2…), os mais
+  bem classificados no ranking de embaralhador, revezando quem já embaralhou
+  muito. O ranking compara percentis entre os aprovados da competição:
+  - o próprio evento;
+  - nas variantes, também a modalidade principal (3BLD/OH/Multi/FMC → 3x3,
+    4BLD → 4x4, 5BLD → 5x5);
+  - o Sum of Ranks — em pé de igualdade em evento novo (menos de 50% dos
+    inscritos com resultado, ex.: FTO) e só para completar nos demais.
+  Quem marcou no formulário que não quer embaralhar nunca é escalado.
 - **Juízes**: até o nº de estações, preferindo quem competiu no grupo anterior.
 - **Runners** só se habilitado. **Suplentes** por grupo (livres no horário).
 - **Disponibilidade** Manhã/Tarde do formulário respeitada.
@@ -191,6 +197,8 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
   salvar) e os dados privados do formulário.
 - Edição simultânea é detectada pela revisão do plano; edições feitas fora
   (Delegate Dashboard) depois de publicar são detectadas por rodada.
+
+Manual com todos os critérios (PT/EN/ES): `/cubestaff/manual` no site.
 
 Testes das regras: `npx tsx scripts/test-cubestaff.ts` (também no `npm test`).
 

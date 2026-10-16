@@ -675,6 +675,12 @@ export default function CompetitionStaffPage() {
       </Link>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{name}</h1>
       {isDemo && <p className="mt-1 text-sm text-fg-muted">{t.demoNote}</p>}
+      <Link
+        to={lp('/cubestaff/manual')}
+        className="mt-1 inline-block text-sm text-brand-600 hover:underline dark:text-brand-300"
+      >
+        {t.manualLink}
+      </Link>
       {s.state === 'loading' && <Spinner label={t.loading} />}
       {s.state === 'error' && (
         <div className="mt-6">

@@ -3,18 +3,10 @@
 
 import type { Wcif } from '../../../lib/wca/types'
 import { type GroupPlan, type Plan, type Ref, type StaffRole, lockKey, pref, refId } from './types'
+import { compareScramblers, scramblerRanking, type ScrambleRank } from './scramblerRank'
 import { agendaFor, isAvailable, slotOf, slotsByRound } from './engine'
 import { competitionTimezone, overlaps } from './schedule'
-import {
-  compareRank,
-  findRound,
-  hasResultIn,
-  isAccepted,
-  isApproved,
-  isDelegate,
-  isNewcomer,
-  personsById,
-} from './people'
+import { findRound, hasResultIn, isAccepted, isApproved, isDelegate, isNewcomer, personsById } from './people'
 
 const touch = (plan: Plan) => {
   plan.updatedAt = new Date().toISOString()
@@ -172,8 +164,10 @@ export interface Candidate {
   /** Função que a pessoa já tem neste grupo (staff). */
   roleHere: StaffRole | 'reserve' | null
   load: number
-  /** Posição no ranking do evento entre os candidatos (embaralhador). */
+  /** Tem resultado no evento. */
   hasResult: boolean
+  /** Ranking de embaralhador: por onde a pessoa se classifica (ver scramblerRank). */
+  scramble: ScrambleRank | null
   extra: boolean
 }
 
@@ -193,6 +187,7 @@ export function candidates(
   const tz = competitionTimezone(wcif)
   const eventId = roundId.split('-')[0]
   const info = findRound(wcif, roundId)
+  const ranking = scramblerRanking(wcif, eventId)
   const out: Candidate[] = []
   // Só inscrições aprovadas; para competir, só competidores aprovados.
   for (const p of wcif.persons) {
@@ -218,6 +213,7 @@ export function candidates(
       roleHere,
       load: agenda.staffCount(ref),
       hasResult: hasResultIn(p, eventId),
+      scramble: ranking.byId.get(p.registrantId) ?? null,
       extra: false,
     })
   }
@@ -237,6 +233,7 @@ export function candidates(
       roleHere: roleIn(g, ref),
       load: agenda.staffCount(ref),
       hasResult: false,
+      scramble: null,
       extra: true,
     })
   }
@@ -256,7 +253,7 @@ export function candidates(
       if (rankSort) {
         const pa = byId.get(refId(a.ref) ?? -1)
         const pb = byId.get(refId(b.ref) ?? -1)
-        if (pa && pb) return compareRank(pa, pb, eventId)
+        if (pa && pb) return compareScramblers(pa, pb, ranking)
       }
       return a.load - b.load || a.name.localeCompare(b.name, 'pt-BR')
     })

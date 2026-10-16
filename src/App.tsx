@@ -13,6 +13,7 @@ const CompetitionPage = lazy(() => import('./tools/scorecomps/ui/CompetitionPage
 const CalcumulativePage = lazy(() => import('./tools/calcumulative/ui/CalcumulativePage'))
 const CubeStaffHome = lazy(() => import('./tools/cubestaff/ui/CubeStaffHome'))
 const CompetitionStaffPage = lazy(() => import('./tools/cubestaff/ui/CompetitionStaffPage'))
+const CubeStaffManual = lazy(() => import('./tools/cubestaff/ui/ManualPage'))
 
 const PAGES: { path: string; element: ReactElement }[] = [
   { path: '', element: <Home /> },
@@ -20,6 +21,7 @@ const PAGES: { path: string; element: ReactElement }[] = [
   { path: 'scorecomps/:competitionId', element: <CompetitionPage /> },
   { path: 'calcumulative', element: <CalcumulativePage /> },
   { path: 'cubestaff', element: <CubeStaffHome /> },
+  { path: 'cubestaff/manual', element: <CubeStaffManual /> },
   { path: 'cubestaff/:competitionId', element: <CompetitionStaffPage /> },
 ]
 

@@ -68,7 +68,7 @@ export function Navbar() {
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white">
             <IconGrid className="h-4 w-4" />
           </span>
-          <span className="text-[15px] font-semibold tracking-tight">{m.nav.tools}</span>
+          <span className="hidden text-[15px] font-semibold tracking-tight min-[420px]:inline">{m.nav.tools}</span>
         </Link>
 
         <nav className="ml-2 hidden items-center gap-1 md:flex" aria-label={m.nav.tools}>

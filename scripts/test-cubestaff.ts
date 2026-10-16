@@ -20,7 +20,14 @@ import {
   clearWcif,
 } from '../src/tools/cubestaff/model/publish'
 import { addStaff, candidates, moveCompetitor } from '../src/tools/cubestaff/model/edits'
-import { isDelegate, isNewcomer, personsById, rankKey } from '../src/tools/cubestaff/model/people'
+import {
+  compareRank,
+  isAccepted,
+  isApproved,
+  isDelegate,
+  isNewcomer,
+  personsById,
+} from '../src/tools/cubestaff/model/people'
 import { parseCsv, toCsv } from '../src/tools/cubestaff/model/csv'
 import {
   detectColumns,
@@ -30,6 +37,7 @@ import {
   readRows,
 } from '../src/tools/cubestaff/model/staffImport'
 import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
+import { BASE_EVENT, isRareEvent, puzzleAllowed, scramblerRanking } from '../src/tools/cubestaff/model/scramblerRank'
 import { decodeStaffRow, encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
 import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
 
@@ -91,14 +99,25 @@ for (const { roundId, g } of groups) {
 }
 ok('embaralhadores proporcionais (8 em 8) e juízes até o nº de estações')
 
-// 5. Embaralhadores bem ranqueados: todos têm resultado no evento.
-for (const { roundId, g } of groups)
+// 5. Embaralhadores bem ranqueados: quem tem resultado no evento (ou na
+// modalidade principal) vem antes do Sum of Ranks, que só completa a lista.
+for (const { roundId, g } of groups) {
+  const ranking = scramblerRanking(wcif, roundId.split('-')[0])
   for (const r of g.scramblers) {
     const p = byId.get(refId(r)!)!
-    const k = rankKey(p, roundId.split('-')[0])
-    assert.ok(k[0] !== Infinity || k[1] !== Infinity, `${p.name} embaralhando ${roundId} sem resultado`)
+    assert.ok(ranking.byId.has(p.registrantId!), `${p.name} embaralhando ${roundId} sem ranking`)
   }
-ok('embaralhadores sempre com resultado no evento')
+}
+{
+  const ranking = scramblerRanking(wcif, '333')
+  const scores = [...ranking.byId.values()]
+  assert.ok(scores.filter((x) => x.source === 'event').every((x) => x.score <= 1))
+  assert.ok(
+    scores.filter((x) => x.source === 'sor').every((x) => x.score >= 1),
+    'SOR só completa em evento normal',
+  )
+}
+ok('embaralhadores pelo ranking (evento antes do Sum of Ranks)')
 
 // 6. Disponibilidade: quem só está na manhã de sábado não é escalado à tarde.
 const partial = base.staff
@@ -487,5 +506,50 @@ ok('extensão sobrevive à WCA removendo null (embaralhadores voltam)')
   )
 }
 ok('"Limpar tudo" na WCA volta a competição ao estado sem CubeStaff')
+
+// 24. Variantes usam a modalidade principal (3BLD/OH/MBLD → 3x3, 4BLD → 4x4,
+// 5BLD → 5x5) e evento novo (poucos com resultado, ex.: FTO) usa o Sum of Ranks.
+{
+  assert.equal(BASE_EVENT['333bf'], '333')
+  assert.equal(BASE_EVENT['333oh'], '333')
+  assert.equal(BASE_EVENT['333mbf'], '333')
+  assert.equal(BASE_EVENT['444bf'], '444')
+  assert.equal(BASE_EVENT['555bf'], '555')
+  // Quem é o melhor no 3x3 mas nunca fez 3BLD fica no topo do 3BLD.
+  const w2 = structuredClone(wcif)
+  const best333 = w2.persons
+    .filter((p) => isApproved(p) && p.personalBests?.some((b) => b.eventId === '333' && b.type === 'average'))
+    .sort((a, b) => compareRank(a, b, '333'))[0]
+  best333.personalBests = best333.personalBests!.filter((b) => b.eventId !== '333bf')
+  const bld = scramblerRanking(w2, '333bf')
+  assert.equal(bld.byId.get(best333.registrantId!)?.source, 'base')
+  assert.equal(bld.byId.get(best333.registrantId!)?.score, 0)
+  // FTO novo: quase ninguém tem resultado → Sum of Ranks vale igual.
+  const w3 = structuredClone(wcif)
+  w3.events.push({
+    id: 'fto',
+    rounds: [{ id: 'fto-r1', format: 'a', timeLimit: null, cutoff: null, advancementCondition: null }],
+  })
+  const ftoPeople = w3.persons.filter((p) => isAccepted(p) && p.wcaId).slice(0, 20)
+  ftoPeople.forEach((p) => p.registration!.eventIds.push('fto'))
+  ftoPeople[19].personalBests = [...(ftoPeople[19].personalBests ?? []), { eventId: 'fto', best: 9000, type: 'single' }]
+  for (const p of w3.persons)
+    p.personalBests = (p.personalBests ?? []).map((b, i) => ({
+      ...b,
+      worldRanking: b.worldRanking ?? 1000 + ((p.registrantId! * 37 + i * 11) % 5000),
+    }))
+  assert.ok(isRareEvent(w3, 'fto'))
+  const fto = scramblerRanking(w3, 'fto')
+  assert.ok(fto.rare)
+  const top = [...fto.byId.entries()].sort((a, b) => a[1].score - b[1].score)[0]
+  assert.equal(top[1].source, 'sor')
+  assert.ok(top[1].score < 1, 'em evento novo o Sum of Ranks não é só reserva')
+  // Puzzles do formulário: 3x3 marcado libera 3BLD; FTO novo não exclui ninguém.
+  const entry = { scrambler: true, scramblePuzzles: ['333'] }
+  assert.ok(puzzleAllowed(entry, scramblerRanking(wcif, '333bf')))
+  assert.ok(!puzzleAllowed(entry, scramblerRanking(wcif, 'skewb')))
+  assert.ok(puzzleAllowed(entry, fto))
+}
+ok('variantes pela modalidade principal e evento novo pelo Sum of Ranks')
 
 console.log(`\n${n} testes do CubeStaff OK`)

@@ -20,6 +20,9 @@ import {
   unlockRound,
 } from '../model/edits'
 import { useCs } from './ctx'
+import { BASE_EVENT } from '../model/scramblerRank'
+
+const NXN_LABEL: Record<string, string> = { '333': '3x3', '444': '4x4', '555': '5x5' }
 import { IconChevron, IconLock, IconPlus, Menu, MenuItem, Modal, Tag } from './primitives'
 
 type Kind = 'competitor' | StaffRole | 'reserve'
@@ -300,6 +303,18 @@ function Picker({
                 {!c.inList && !c.extra && kind !== 'competitor' && <Tag>{t.notInListTag}</Tag>}
                 {kind !== 'competitor' && c.load > 0 && (
                   <span className="text-[11px] text-fg-faint">{t.tasks(c.load)}</span>
+                )}
+                {kind === 'scrambler' && c.scramble && (
+                  <span className="text-[11px] text-fg-muted">
+                    {c.scramble.source === 'event'
+                      ? t.rankEvent(Math.max(1, Math.round(c.scramble.pct * 100)))
+                      : c.scramble.source === 'base'
+                        ? t.rankBase(
+                            NXN_LABEL[BASE_EVENT[roundId.split('-')[0]]] ?? '',
+                            Math.max(1, Math.round(c.scramble.pct * 100)),
+                          )
+                        : t.rankSor(Math.max(1, Math.round(c.scramble.pct * 100)))}
+                  </span>
                 )}
               </span>
             </button>

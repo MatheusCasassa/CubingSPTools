@@ -123,9 +123,14 @@ export default function CubeStaffHome() {
   const { status, error } = useAuth()
   const { m, lp } = useI18n()
   const demo = (
-    <Link to={lp('/cubestaff/demo')} className="btn-ghost">
-      {m.cubestaff.demo}
-    </Link>
+    <>
+      <Link to={lp('/cubestaff/demo')} className="btn-ghost">
+        {m.cubestaff.demo}
+      </Link>
+      <Link to={lp('/cubestaff/manual')} className="btn-ghost">
+        {m.cubestaff.manualLink}
+      </Link>
+    </>
   )
   return (
     <div className="container-page py-12 sm:py-16">
@@ -160,7 +165,7 @@ export default function CubeStaffHome() {
         {status === 'authenticated' && (
           <div className="mt-10 animate-fade-up">
             <CompetitionList />
-            <div className="mt-8 border-t border-border-subtle pt-6">{demo}</div>
+            <div className="mt-8 flex flex-wrap gap-3 border-t border-border-subtle pt-6">{demo}</div>
           </div>
         )}
       </div>

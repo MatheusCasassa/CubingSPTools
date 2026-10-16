@@ -29,10 +29,10 @@ import {
   refId,
 } from './types'
 import { overlaps, periodOf, roundSchedule, splitEven, type RoundSchedule, type Slot } from './schedule'
+import { compareScramblers, puzzleAllowed, scramblerRanking } from './scramblerRank'
 import {
   compareRank,
   findRound,
-  hasResultIn,
   isApproved,
   isDelegate,
   isNewcomer,
@@ -390,22 +390,18 @@ function pickStaff(
     ctx.agenda.add(ref, { start: wg.slot.start, end: wg.slot.end, roundId: wg.roundId, group: wg.number, role })
   }
 
-  // --- Embaralhadores: os mais bem ranqueados no evento, revezando a carga.
+  // --- Embaralhadores: os mais bem ranqueados (evento, modalidade principal
+  // das variantes e Sum of Ranks em evento novo — ver scramblerRank.ts),
+  // revezando a carga.
   {
     const need = needs.scrambler - wg.plan.scramblers.length
+    const ranking = scramblerRanking(ctx.wcif, wg.eventId)
     const cands = pool
       .filter((c) => !taken.has(pref(c.id)))
       .filter((c) => canDo(c.entry, 'scrambler') && c.entry.scrambler !== false)
-      .filter(
-        (c) =>
-          !(
-            c.entry.scrambler === true &&
-            c.entry.scramblePuzzles.length > 0 &&
-            !c.entry.scramblePuzzles.includes(wg.eventId)
-          ),
-      )
-      .filter((c) => hasResultIn(c.person, wg.eventId))
-      .sort((a, b) => compareRank(a.person, b.person, wg.eventId))
+      .filter((c) => puzzleAllowed(c.entry, ranking))
+      .filter((c) => ranking.byId.has(c.id))
+      .sort((a, b) => compareScramblers(a.person, b.person, ranking))
     const window = Math.max(6, need * 3)
     for (let n = 0; n < need; n++) {
       const open = cands.filter((c) => !taken.has(pref(c.id)))
