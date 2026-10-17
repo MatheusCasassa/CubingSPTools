@@ -4,9 +4,11 @@ import { Tabs } from '../../../components/ui/Tabs'
 import { CalcumulativeMark } from '../../../components/ui/icons'
 import { TimeInput } from './TimeInput'
 import { PenaltyToggle } from './PenaltyToggle'
-import { digitsToCentis, formatDuration, formatResult, type Penalty } from '../model/time'
+import { centisToDigits, digitsToCentis, formatDuration, formatResult, type Penalty } from '../model/time'
 import { computeCumulative, type AttemptOutcome } from '../model/cumulative'
-import { computeAverage, neededForTarget } from '../model/average'
+import { computeAverage, neededForTarget, SOLVES, type AverageFormat } from '../model/average'
+import { PersonPRPicker, type PickedPR } from './PersonPRPicker'
+import { eventName } from '../../../lib/wca/format'
 import { useI18n } from '../../../i18n/I18nProvider'
 import type { Messages } from '../../../i18n/messages/pt'
 
@@ -213,25 +215,51 @@ function CumulativeCalc() {
 // ------------------------------------------------------------------ média
 function AverageCalc() {
   const { m } = useI18n()
+  const [format, setFormat] = useState<AverageFormat>('ao5')
+  // Sempre 5 linhas guardadas: trocar Ao5 ↔ Mo3 não apaga os 3 primeiros tempos.
   const [rows, setRows] = useState<Row[]>(emptyRows(5))
   const [targetDigits, setTargetDigits] = useState('')
+  const [picked, setPicked] = useState<PickedPR | null>(null)
+  const n = SOLVES[format]
   const out = useMemo(
-    () => computeAverage(rows.map((r) => ({ cs: digitsToCentis(r.digits), penalty: r.penalty }))),
-    [rows],
+    () => computeAverage(rows.map((r) => ({ cs: digitsToCentis(r.digits), penalty: r.penalty })), format),
+    [rows, format],
   )
   const target = digitsToCentis(targetDigits)
   const setRow = (i: number, patch: Partial<Row>) =>
     setRows((prev) => prev.map((r, k) => (k === i ? { ...r, ...patch } : r)))
 
-  const four = out.count === 4 ? (out.values.filter((v) => v != null) as number[]) : null
-  const need = four && target ? neededForTarget(four, target) : null
-  const fifthIndex = out.count === 4 ? out.values.findIndex((v) => v == null) : -1
+  // Falta só o último solve → quanto precisa nele para ficar abaixo da meta.
+  const known = out.count === n - 1 ? (out.values.filter((v) => v != null) as number[]) : null
+  const need = known && target ? neededForTarget(known, target, format) : null
+  const lastIndex = out.count === n - 1 ? out.values.findIndex((v) => v == null) : -1
+  // A meta é o PR escolhido (enquanto ninguém mexer nela à mão).
+  const prActive = picked && target === picked.pr ? picked : null
+  const goalText = (t: number) => (prActive ? m.calc.forBeatPr(formatResult(t)) : m.calc.forAverageBelow(formatResult(t)))
+
+  const pick = (p: PickedPR) => {
+    setPicked(p)
+    setFormat(p.format)
+    setTargetDigits(centisToDigits(p.pr))
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="card space-y-6 p-5 sm:p-6">
+        <div>
+          <span className="label">{m.calc.formatLabel}</span>
+          <div className="seg max-w-md">
+            {(['ao5', 'mo3'] as const).map((f) => (
+              <button key={f} type="button" aria-pressed={format === f} onClick={() => setFormat(f)}>
+                {f === 'ao5' ? m.calc.formatAo5 : m.calc.formatMo3}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-fg-faint">{m.calc.formatHint}</p>
+        </div>
+
         <ol className="space-y-2.5">
-          {rows.map((r, i) => {
+          {rows.slice(0, n).map((r, i) => {
             const v = out.values[i]
             const dropped = out.dropped.includes(i)
             return (
@@ -243,7 +271,7 @@ function AverageCalc() {
                 <PenaltyToggle value={r.penalty} onChange={(p) => setRow(i, { penalty: p })} label={m.calc.solvePenalty(i + 1)} />
                 <span className="w-full text-right font-mono text-sm tabular-nums sm:w-28">
                   {v == null ? (
-                    <span className="text-fg-faint">{i === fifthIndex ? m.calc.missingThis : ''}</span>
+                    <span className="text-fg-faint">{i === lastIndex ? m.calc.missingThis : ''}</span>
                   ) : (
                     <span className={dropped ? 'text-fg-faint' : v === Infinity ? 'text-accent-red' : 'text-fg'}>
                       {dropped ? '(' : ''}
@@ -256,7 +284,7 @@ function AverageCalc() {
             )
           })}
         </ol>
-        <p className="text-xs leading-relaxed text-fg-faint">{m.calc.averageNote}</p>
+        <p className="text-xs leading-relaxed text-fg-faint">{format === 'ao5' ? m.calc.averageNote : m.calc.averageNoteMo3}</p>
         <div className="flex justify-end">
           <button type="button" className="btn-ghost btn-sm" onClick={() => setRows(emptyRows(5))}>
             {m.calc.clearTimes}
@@ -266,7 +294,7 @@ function AverageCalc() {
 
       <aside className="order-first space-y-3 lg:sticky lg:top-24 lg:order-none lg:self-start">
         <div className="card space-y-3 p-5">
-          {out.count === 5 ? (
+          {out.count === n ? (
             <Stat label={m.calc.average} value={fmtAvg(out.average)} tone={out.average === Infinity ? 'bad' : 'brand'} big />
           ) : (
             <Stat
@@ -275,42 +303,68 @@ function AverageCalc() {
               hint={
                 out.count === 0
                   ? m.calc.typeTimes
-                  : out.count < 4
+                  : out.count < n - 1
                     ? m.calc.partialMean(out.count, fmtAvg(out.partialMean))
                     : m.calc.oneLeft
               }
             />
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="BPA" value={fmtAvg(out.bpa)} tone="good" hint={m.calc.bestPossible} />
-            <Stat label="WPA" value={fmtAvg(out.wpa)} tone={out.wpa === Infinity ? 'bad' : 'default'} hint={m.calc.worstPossible} />
-          </div>
-          <p className="text-xs text-fg-faint">{m.calc.bpaWpaNote}</p>
+          {format === 'ao5' ? (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Stat label="BPA" value={fmtAvg(out.bpa)} tone="good" hint={m.calc.bestPossible} />
+                <Stat label="WPA" value={fmtAvg(out.wpa)} tone={out.wpa === Infinity ? 'bad' : 'default'} hint={m.calc.worstPossible} />
+              </div>
+              <p className="text-xs text-fg-faint">{m.calc.bpaWpaNote}</p>
+            </>
+          ) : (
+            <p className="text-xs text-fg-faint">{m.calc.bpaWpaNoteMo3}</p>
+          )}
         </div>
 
         <div className="card space-y-3 p-5">
           <Field label={m.calc.target} hint={m.calc.targetHint}>
             <TimeInput digits={targetDigits} onChange={setTargetDigits} label={m.calc.targetShort} placeholder="0.00" />
           </Field>
-          {target && out.count !== 4 && <p className="text-sm text-fg-muted">{m.calc.targetNeedFour}</p>}
+          {prActive && (
+            <p className="rounded-lg bg-brand-600/10 px-3 py-2 text-xs leading-relaxed text-brand-700 dark:text-brand-300">
+              {m.calc.prTargetInfo(prActive.name, eventName(prActive.eventId), formatResult(prActive.pr), prActive.format === 'mo3' ? 'Mo3' : 'Ao5')}
+            </p>
+          )}
+          {target && out.count < n - 1 && <p className="text-sm text-fg-muted">{m.calc.targetNeed(n - 1)}</p>}
           {need?.kind === 'guaranteed' && (
             <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              {m.calc.guaranteed(formatResult(target!))}
+              {prActive ? m.calc.prGuaranteed : m.calc.guaranteed(formatResult(target!))}
             </p>
           )}
           {need?.kind === 'impossible' && (
             <p className="text-sm font-medium text-accent-red">
-              {m.calc.impossible(formatResult(target!))}
+              {prActive ? m.calc.prImpossible : m.calc.impossible(formatResult(target!))}
             </p>
           )}
           {need?.kind === 'needed' && (
-            <Stat
-              label={m.calc.needLast}
-              value={`≤ ${formatResult(need.maxResult)}`}
-              tone="brand"
-              hint={m.calc.forAverageBelow(formatResult(target!))}
-            />
+            <Stat label={m.calc.needLast} value={`≤ ${formatResult(need.maxResult)}`} tone="brand" hint={goalText(target!)} />
           )}
+          {target && out.count === n && out.average != null && (
+            <p
+              className={
+                'text-sm font-medium ' +
+                (out.average < target ? 'text-emerald-600 dark:text-emerald-400' : 'text-accent-red')
+              }
+            >
+              {out.average < target
+                ? prActive
+                  ? m.calc.prBeaten(formatResult(target - out.average))
+                  : m.calc.targetMet
+                : !Number.isFinite(out.average)
+                  ? m.calc.targetMissedDnf
+                  : out.average === target
+                    ? m.calc.targetTie
+                    : m.calc.targetMissed(formatResult(out.average - target))}
+            </p>
+          )}
+
+          <PersonPRPicker picked={picked} onPick={pick} onClear={() => setPicked(null)} />
         </div>
       </aside>
     </div>

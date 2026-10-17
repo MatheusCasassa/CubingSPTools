@@ -222,6 +222,14 @@ Testes das regras: `npx tsx scripts/test-cubestaff.ts` (também no `npm test`).
   chega ao limite vira DNF; esgotado o cumulativo, o resto é DNS.
 - **Média de 5** (9f8, 9f1/9f2): descarta melhor e pior; 2 DNFs → DNF;
   BPA/WPA com 4 tempos; "meta sub-X" diz o máximo no último solve.
+- **Média de 3 (Mo3)** — 6x6x6, 7x7x7, 4BLD, 5BLD: média simples dos 3,
+  sem descartes; qualquer DNF → DNF. A meta funciona com 2 tempos.
+- **Bater o PR de alguém:** busca pública na WCA por nome ou WCA ID
+  (`/api/v0/persons?q=…`, sem login, já traz os PRs); mostra as modalidades
+  com média válida em tempo (sem FMC, Multi-Blind e extintas) e, ao escolher
+  uma, usa o PR de média como meta e o formato certo (Ao5/Mo3). "Bater" =
+  média estritamente abaixo do PR. `src/lib/wca/persons.ts`,
+  `src/tools/calcumulative/model/events.ts`, `ui/PersonPRPicker.tsx`.
 - Testes com os exemplos do próprio regulamento: `npm test`.
 
 ## Estrutura

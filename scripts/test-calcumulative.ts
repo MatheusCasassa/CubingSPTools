@@ -2,7 +2,9 @@
 //   npx tsx scripts/test-calcumulative.ts
 import assert from 'node:assert/strict'
 import { computeCumulative } from '../src/tools/calcumulative/model/cumulative'
-import { computeAverage, neededForTarget, ao5 } from '../src/tools/calcumulative/model/average'
+import { computeAverage, neededForTarget, ao5, mo3 } from '../src/tools/calcumulative/model/average'
+import { averageFormatOf, eventsWithAverage } from '../src/tools/calcumulative/model/events'
+import { parsePersons } from '../src/lib/wca/persons'
 import { digitsToCentis, formatDigits, formatResult, formatDuration, roundAverage } from '../src/tools/calcumulative/model/time'
 
 const t = (m: number, s: number, c = 0) => (m * 60 + s) * 100 + c
@@ -135,6 +137,57 @@ ok('meta de média (sub-X) no 5º solve', () => {
   }
   assert.equal(neededForTarget([1000, 1100, 1200, 1500], 1300).kind, 'guaranteed')
   assert.equal(neededForTarget([1000, 1100, 1200, 1500], 1100).kind, 'impossible')
+})
+
+ok('média de 3 (Mo3): sem descartes, DNF derruba', () => {
+  const sv = (cs: number) => ({ cs, penalty: 'ok' as const })
+  const r = computeAverage([sv(t(3, 0)), sv(t(3, 10)), sv(t(3, 20)), sv(1), sv(1)], 'mo3')
+  assert.equal(r.count, 3) // só os 3 primeiros contam
+  assert.equal(r.average, t(3, 10))
+  assert.deepEqual(r.dropped, [])
+  assert.equal(r.bpa, null)
+  // 9f1: média arredondada ao centésimo (1.005 → 1.01)
+  assert.equal(mo3([100, 100, 101]), 100)
+  assert.equal(mo3([100, 101, 101]), 101)
+  const d = computeAverage([sv(t(3, 0)), { cs: null, penalty: 'dnf' }, sv(t(3, 20))], 'mo3')
+  assert.equal(d.average, Infinity)
+  const p = computeAverage([sv(t(3, 0)), sv(t(3, 20))], 'mo3')
+  assert.equal(p.average, null)
+  assert.equal(p.partialMean, t(3, 10))
+})
+
+ok('meta no último solve da média de 3', () => {
+  // 6x6: 3:00 e 3:10, meta (PR) 3:05 → precisa x com (360+370+x)/3 < 305 s → x < 3:05 (≈ 3:04.99)
+  const r = neededForTarget([t(3, 0), t(3, 10)], t(3, 5), 'mo3')
+  assert.equal(r.kind, 'needed')
+  if (r.kind === 'needed') {
+    assert.ok(mo3([t(3, 0), t(3, 10), r.maxResult]) < t(3, 5))
+    assert.ok(mo3([t(3, 0), t(3, 10), r.maxResult + 1]) >= t(3, 5))
+  }
+  // Mo3 nunca é "garantido" (DNF no último derruba a média).
+  assert.notEqual(neededForTarget([100, 100], 99999, 'mo3').kind, 'guaranteed')
+  assert.equal(neededForTarget([t(3, 0), Infinity], t(5, 0), 'mo3').kind, 'impossible')
+})
+
+ok('PRs de média vindos da WCA', () => {
+  const [p] = parsePersons([
+    {
+      person: { name: 'Fulano', wca_id: '2017TEST01', country_iso2: 'BR' },
+      personal_records: {
+        '333': { average: { best: 1467 } },
+        '666': { average: { best: 31628 } },
+        '333fm': { average: { best: 3500 } }, // movimentos — fora
+        '333mbf': {}, // sem média — fora
+        '444bf': {}, // só single — fora
+        '333ft': { average: { best: 37986 } }, // extinta — fora
+      },
+    },
+  ])
+  assert.equal(p.wcaId, '2017TEST01')
+  const evs = eventsWithAverage(p.averages)
+  assert.deepEqual(evs.map((e) => [e.id, e.format, e.pr]), [['333', 'ao5', 1467], ['666', 'mo3', 31628]])
+  for (const id of ['666', '777', '444bf', '555bf']) assert.equal(averageFormatOf(id), 'mo3')
+  assert.equal(averageFormatOf('333bf'), 'ao5')
 })
 
 console.log(`\n${n} testes OK`)
