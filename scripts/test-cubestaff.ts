@@ -675,4 +675,40 @@ ok('Delegados separados em grupos diferentes ao competir')
 }
 ok('embaralhadores: inscritos no evento primeiro, não inscritos só em último caso')
 
+// 28. Equilíbrio: os melhores embaralhadores não ficam todos no último grupo
+// (senão não sobra ninguém bom para embaralhá-lo). Rodada com 2 grupos: os
+// melhores capazes se dividem entre os dois, e o 1º continua no último grupo.
+{
+  const entries = new Map(plan.staff.map((s) => [s.registrantId, s]))
+  let checked = 0
+  for (const rp of Object.values(plan.rounds)) {
+    if (rp.groups.length !== 2) continue
+    const eventId = rp.roundId.split('-')[0]
+    const rk = scramblerRanking(wcif, eventId)
+    const all = rp.groups.flatMap((g) => g.competitors)
+    const capable = all
+      .filter((id) => {
+        const p = byId.get(id)!
+        const e = entries.get(id)
+        return e && !isNewcomer(p) && !isDelegate(p) && e.scrambler !== false && rk.byId.has(id) && puzzleAllowed(e, rk)
+      })
+      .sort((a, b) => compareScramblers(byId.get(a)!, byId.get(b)!, rk))
+    if (capable.length < 4) continue
+    checked++
+    const top4 = capable.slice(0, 4)
+    const inLast = top4.filter((id) => rp.groups[1].competitors.includes(id)).length
+    assert.ok(inLast >= 1 && inLast <= 3, `${rp.roundId}: ${inLast} dos 4 melhores no último grupo`)
+    assert.ok(rp.groups[1].competitors.includes(capable[0]), `${rp.roundId}: o melhor fica no último grupo`)
+    // Quem embaralha o último grupo está entre os melhores disponíveis.
+    const pos = (id: number) => capable.indexOf(id)
+    const scr = rp.groups[1].scramblers.map((r) => refId(r)!).filter((id) => pos(id) >= 0)
+    assert.ok(
+      scr.some((id) => pos(id) < 8),
+      `${rp.roundId}: último grupo sem nenhum bom embaralhador`,
+    )
+  }
+  assert.ok(checked >= 2, 'deveria haver rodadas com 2 grupos')
+}
+ok('melhores embaralhadores equilibrados entre os grupos')
+
 console.log(`\n${n} testes do CubeStaff OK`)

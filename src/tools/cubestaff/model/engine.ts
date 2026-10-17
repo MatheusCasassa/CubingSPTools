@@ -29,7 +29,7 @@ import {
   refId,
 } from './types'
 import { overlaps, periodOf, roundSchedule, splitEven, type RoundSchedule, type Slot } from './schedule'
-import { compareScramblers, puzzleAllowed, scramblerRanking } from './scramblerRank'
+import { compareScramblers, puzzleAllowed, scramblerRanking, type ScrambleRanking } from './scramblerRank'
 import { presentAt } from './presence'
 import {
   compareRank,
@@ -364,6 +364,88 @@ function separateDelegates(
   }
 }
 
+/**
+ * Equilíbrio dos bons embaralhadores entre os grupos (Matheus, 16/10): com os
+ * mais rápidos todos no último grupo, não sobra ninguém bom para embaralhá-lo.
+ * Os melhores embaralhadores possíveis da rodada (da lista de staff, não
+ * Delegados) — o suficiente para que, fora de cada grupo, sobrem pelo menos 2×
+ * as vagas de embaralhador dele — são espalhados em "cobra" a partir do último
+ * grupo (o melhor continua no último): 2 grupos e 2 vagas → 8 melhores, com
+ * 1º, 4º, 5º e 8º no grupo 2 e 2º, 3º, 6º e 7º no grupo 1. Cada um troca de lugar com
+ * o competidor experiente de nível mais parecido do grupo de destino, sem
+ * criar conflito de horário; travados não se movem.
+ */
+function balanceScramblers(
+  groups: number[][],
+  slots: { start: number | null; end: number | null }[],
+  byId: Map<number, WcifPerson>,
+  eventId: string,
+  agenda: Agenda,
+  locked: Set<number>,
+  ranking: ScrambleRanking,
+  entries: Map<number, StaffEntry>,
+  perScrambler: number,
+): void {
+  const G = groups.length
+  if (G < 2) return
+  const total = groups.reduce((a, g) => a + g.length, 0)
+  const need = scramblersFor(Math.ceil(total / G), perScrambler)
+  const capable = (id: number) => {
+    const p = byId.get(id)
+    const e = entries.get(id)
+    return (
+      !!p &&
+      !!e &&
+      !isNewcomer(p) &&
+      !isDelegate(p) &&
+      canDo(e, 'scrambler') &&
+      e.scrambler !== false &&
+      puzzleAllowed(e, ranking) &&
+      ranking.byId.has(id)
+    )
+  }
+  const elite = groups
+    .flat()
+    .filter(capable)
+    .sort((a, b) => compareScramblers(byId.get(a)!, byId.get(b)!, ranking))
+    .slice(0, Math.ceil((2 * need * G) / (G - 1)))
+  if (elite.length < 2) return
+  const eliteSet = new Set(elite)
+  // Cobra a partir do último grupo: G-1, G-2, …, 0, 0, 1, …
+  const target = elite.map((_, i) => {
+    const lap = Math.floor(i / G)
+    const k = i % G
+    return lap % 2 === 0 ? G - 1 - k : k
+  })
+  const where = new Map<number, number>()
+  groups.forEach((g, gi) => g.forEach((id) => where.set(id, gi)))
+  elite.forEach((id, i) => {
+    const from = where.get(id)!
+    const to = target[i]
+    if (from === to || locked.has(id) || agenda.isBusy(pref(id), slots[to])) return
+    const me = byId.get(id)!
+    const partner = groups[to]
+      .filter((o) => {
+        const p = byId.get(o)!
+        return (
+          !eliteSet.has(o) &&
+          !locked.has(o) &&
+          !isDelegate(p) &&
+          !isNewcomer(p) &&
+          !agenda.isBusy(pref(o), slots[from])
+        )
+      })
+      .sort(
+        (a, b) => Math.abs(compareRank(byId.get(a)!, me, eventId)) - Math.abs(compareRank(byId.get(b)!, me, eventId)),
+      )[0]
+    if (partner == null) return
+    groups[from][groups[from].indexOf(id)] = partner
+    groups[to][groups[to].indexOf(partner)] = id
+    where.set(id, to)
+    where.set(partner, from)
+  })
+}
+
 /** Troca competidores com conflito de horário com alguém de outro grupo. */
 function repairCompetitorConflicts(
   groups: number[][],
@@ -489,7 +571,9 @@ function pickStaff(
       .filter((c) => puzzleAllowed(c.entry, ranking))
       .filter((c) => ranking.byId.has(c.id))
       .sort((a, b) => compareScramblers(a.person, b.person, ranking))
-    const window = Math.max(6, need * 3)
+    // Rodízio só entre os mais bem colocados livres (2× as vagas, mínimo 4):
+    // a qualidade vem antes de dividir a carga.
+    const window = Math.max(4, need * 2)
     const registered = (c: (typeof cands)[number]) => !!ranking.byId.get(c.id)?.registered
     for (let n = 0; n < need; n++) {
       const open = cands.filter((c) => !taken.has(pref(c.id)))
@@ -505,8 +589,7 @@ function pickStaff(
             c,
             score:
               i +
-              4 * ctx.agenda.roleCount(pref(c.id), 'scrambler') +
-              2 * ctx.agenda.staffCount(pref(c.id)) +
+              2 * ctx.agenda.roleCount(pref(c.id), 'scrambler') +
               prefScore(c.entry, 'scrambler') +
               (isDelegate(c.person) ? 6 : 0),
           }))
@@ -669,6 +752,17 @@ export function generate(wcif: Wcif, source: Plan, opts: GenerateOptions): Gener
     const groupsIds = distributeCompetitors(ids, slots.length, byId, info.eventId, config, lockedPlacement)
     const unresolved = repairCompetitorConflicts(groupsIds, slots, agenda, new Set(lockedPlacement.keys()))
     separateDelegates(groupsIds, slots, byId, info.eventId, agenda, new Set(lockedPlacement.keys()))
+    balanceScramblers(
+      groupsIds,
+      slots,
+      byId,
+      info.eventId,
+      agenda,
+      new Set(lockedPlacement.keys()),
+      scramblerRanking(wcif, info.eventId),
+      entries,
+      config.competitorsPerScrambler,
+    )
     if (unresolved > 0) notes.push({ level: 'warn', code: 'competitorConflict', roundId, count: unresolved })
 
     const groups: WorkGroup[] = slots.map((slot, gi) => {

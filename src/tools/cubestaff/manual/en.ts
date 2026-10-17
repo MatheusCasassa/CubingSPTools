@@ -50,6 +50,7 @@ export const en: Manual = {
         'You set the **number of groups** for each round. Groups have nearly equal sizes (at most 1 apart). Each group gets an equal slice of the round time in the WCA schedule; rounds on more than one stage split the groups between stages.',
         '**Ranking used**: the personal record **average** in the event (in blindfolded events, the **single**). Someone without a result counts as the slowest.',
         'Experienced competitors are ordered **slowest to fastest**: the first groups get the slowest and **the fastest end up in the last groups** (good for streaming, and it frees the best scramblers early on). Inside a group, the order (and station, if numbered) goes fastest to slowest.',
+        '**Scrambler balance**: if all the best were in the last group, nobody good would be left to scramble it. So the round\'s best scramblers (from the staff list, no Delegates) are spread across groups in a "snake" starting from the last: with 2 groups and 2 scrambler slots, the top 8 go like this — 1st, 4th, 5th and 8th in the last group; 2nd, 3rd, 6th and 7th in the other. Enough are spread so that, outside each group, at least 2× its scrambler slots remain. Each one swaps with the competitor of closest level in the other group. The best stays in the last group.',
         'There are two ways to handle **newcomers**:',
         {
           table: [
@@ -94,7 +95,7 @@ export const en: Manual = {
       blocks: [
         `**How many**: 1 scrambler per ${C.competitorsPerScrambler} competitors in the group (1–${C.competitorsPerScrambler} → 1, ${C.competitorsPerScrambler + 1}–${C.competitorsPerScrambler * 2} → 2, …). Adjustable under Advanced.`,
         '**Who**: the best placed **registered for the event** — like the Psych Sheet. People not registered for the event only scramble as a **last resort** (when no registered person is free), even if they are very good at it. In manual picks they show at the end of the list tagged "not registered".',
-        'Since the fastest compete in the last groups, the scramblers for the last group come from earlier groups — so lower Psych Sheet positions show up there (e.g. with 29 registered and 2 groups, group 2 has the top 14, and its scramblers come from 15th onwards).',
+        'People competing in a group do not scramble it. Thanks to the scrambler balance (section 3), there are always good scramblers outside every group, including the last.',
         'Among registered people, the order follows the scrambler ranking:',
         {
           list: [
@@ -117,7 +118,7 @@ export const en: Manual = {
           ],
         },
         '**Form**: whoever answered they do **not** want to scramble is never assigned. Whoever ticked the puzzles they can scramble only scrambles those — but ticking the **main event** (e.g. 3x3) also allows its variants (3BLD, OH…), and a new event excludes no one (it is usually not even in the form).',
-        '**Rotation**: among the best placed (a "window" of 3× the slots, at least 6), whoever has scrambled more loses priority to the next one. This way the best people are not stuck scrambling the whole competition.',
+        '**Rotation**: only among the best placed free people (a "window" of 2× the slots, at least 4), whoever has scrambled more loses priority to the next one. Quality comes first: rotation never swaps one of the best for someone outside that window.',
       ],
     },
     {

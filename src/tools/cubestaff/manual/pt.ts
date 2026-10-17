@@ -50,6 +50,7 @@ export const pt: Manual = {
         'O **número de grupos** de cada rodada é definido por você. Os grupos ficam com tamanhos quase iguais (diferença de no máximo 1). O horário de cada grupo é uma fatia igual do horário da rodada no cronograma da WCA; rodadas em mais de um palco dividem os grupos entre os palcos.',
         '**Ranking usado**: o recorde pessoal de **média** no evento (nos eventos às cegas, o **single**). Quem não tem resultado no evento fica como o mais lento.',
         'Os experientes são ordenados **do mais lento ao mais rápido**: os primeiros grupos recebem os mais lentos e **os mais rápidos ficam nos últimos grupos** (bom para a transmissão e libera os melhores embaralhadores no começo). Dentro do grupo, a ordem (e a estação, se numerada) vai do mais rápido ao mais lento.',
+        '**Equilíbrio dos embaralhadores**: se todos os melhores ficassem no último grupo, não sobraria ninguém bom para embaralhá-lo. Por isso os melhores embaralhadores da rodada (da lista de staff, sem Delegados) são espalhados entre os grupos, em "cobra" a partir do último: com 2 grupos e 2 vagas de embaralhador, os 8 melhores ficam assim — 1º, 4º, 5º e 8º no último grupo; 2º, 3º, 6º e 7º no outro. São separados o suficiente para que, fora de cada grupo, sobrem pelo menos 2× as vagas de embaralhador dele. Cada um troca de lugar com o competidor de nível mais parecido do outro grupo. O melhor continua no último grupo.',
         'Há duas formas de tratar os **novatos**:',
         {
           table: [
@@ -94,7 +95,7 @@ export const pt: Manual = {
       blocks: [
         `**Quantidade**: 1 embaralhador a cada ${C.competitorsPerScrambler} competidores do grupo (1–${C.competitorsPerScrambler} → 1, ${C.competitorsPerScrambler + 1}–${C.competitorsPerScrambler * 2} → 2, …). Ajustável no Avançado.`,
         '**Quem**: os mais bem classificados **inscritos na modalidade** — como na Psych Sheet. Quem não está inscrito na modalidade só embaralha em **último caso** (quando não sobra nenhum inscrito livre), mesmo que seja muito bom nela. Na escolha manual, essas pessoas aparecem no fim da lista com a etiqueta "não inscrito".',
-        'Como os mais rápidos competem nos últimos grupos, quem embaralha o último grupo vem dos grupos anteriores — por isso ali aparecem posições mais baixas da Psych Sheet (ex.: com 29 inscritos e 2 grupos, o grupo 2 tem os 14 melhores, e os embaralhadores dele saem do 15º em diante).',
+        'Quem compete num grupo não embaralha esse grupo. Graças ao equilíbrio dos embaralhadores (seção 3), sempre há bons embaralhadores fora de cada grupo, inclusive do último.',
         'Entre os inscritos, a ordem segue o ranking de embaralhador:',
         {
           list: [
@@ -117,7 +118,7 @@ export const pt: Manual = {
           ],
         },
         '**Formulário**: quem respondeu que **não** quer embaralhar nunca é escalado. Quem marcou os puzzles que sabe embaralhar só embaralha esses — mas marcar a **modalidade principal** (ex.: 3x3) libera as variantes (3BLD, OH…), e evento novo não exclui ninguém (ele costuma nem estar no formulário).',
-        '**Rodízio**: entre os mais bem classificados (uma "janela" de 3× as vagas, no mínimo 6), quem já embaralhou mais vezes perde prioridade para o próximo da lista. Assim os melhores não ficam presos embaralhando a competição inteira.',
+        '**Rodízio**: só entre os mais bem classificados livres (uma "janela" de 2× as vagas, no mínimo 4), quem já embaralhou mais vezes perde prioridade para o próximo da lista. A qualidade vem antes: o rodízio nunca troca um dos melhores por alguém de fora dessa janela.',
       ],
     },
     {

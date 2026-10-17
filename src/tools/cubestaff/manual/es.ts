@@ -50,6 +50,7 @@ export const es: Manual = {
         'El **número de grupos** de cada ronda lo defines tú. Los grupos quedan con tamaños casi iguales (diferencia máxima de 1). El horario de cada grupo es una parte igual del horario de la ronda en el cronograma de la WCA; las rondas en más de un escenario reparten los grupos entre ellos.',
         '**Ranking usado**: el récord personal de **media** en el evento (en los eventos a ciegas, el **single**). Quien no tiene resultado cuenta como el más lento.',
         'Los experimentados se ordenan **del más lento al más rápido**: los primeros grupos reciben a los más lentos y **los más rápidos quedan en los últimos grupos** (bueno para la transmisión y libera a los mejores mezcladores al inicio). Dentro del grupo, el orden (y la estación, si se numera) va del más rápido al más lento.',
+        '**Equilibrio de mezcladores**: si todos los mejores quedaran en el último grupo, no quedaría nadie bueno para mezclarlo. Por eso los mejores mezcladores de la ronda (de la lista de staff, sin Delegados) se reparten entre los grupos en "serpiente" desde el último: con 2 grupos y 2 vacantes de mezclador, los 8 mejores quedan así — 1º, 4º, 5º y 8º en el último grupo; 2º, 3º, 6º y 7º en el otro. Se reparten los suficientes para que, fuera de cada grupo, queden al menos 2× sus vacantes de mezclador. Cada uno cambia de lugar con el competidor de nivel más parecido del otro grupo. El mejor sigue en el último grupo.',
         'Hay dos formas de tratar a los **novatos**:',
         {
           table: [
@@ -94,7 +95,7 @@ export const es: Manual = {
       blocks: [
         `**Cantidad**: 1 mezclador cada ${C.competitorsPerScrambler} competidores del grupo (1–${C.competitorsPerScrambler} → 1, ${C.competitorsPerScrambler + 1}–${C.competitorsPerScrambler * 2} → 2, …). Ajustable en Avanzado.`,
         '**Quién**: los mejor ubicados **inscritos en la modalidad** — como en la Psych Sheet. Quien no está inscrito en la modalidad solo mezcla como **último recurso** (cuando no queda ningún inscrito libre), aunque sea muy bueno en ella. En la elección manual aparecen al final de la lista con la etiqueta "no inscrito".',
-        'Como los más rápidos compiten en los últimos grupos, quienes mezclan el último grupo vienen de los grupos anteriores — por eso ahí aparecen posiciones más bajas de la Psych Sheet (ej.: con 29 inscritos y 2 grupos, el grupo 2 tiene a los 14 mejores, y sus mezcladores salen del 15º en adelante).',
+        'Quien compite en un grupo no lo mezcla. Gracias al equilibrio de mezcladores (sección 3), siempre hay buenos mezcladores fuera de cada grupo, incluso del último.',
         'Entre los inscritos, el orden sigue el ranking de mezclador:',
         {
           list: [
@@ -117,7 +118,7 @@ export const es: Manual = {
           ],
         },
         '**Formulario**: quien respondió que **no** quiere mezclar nunca es asignado. Quien marcó los puzzles que sabe mezclar solo mezcla esos — pero marcar la **modalidad principal** (ej.: 3x3) habilita las variantes (3BLD, OH…), y un evento nuevo no excluye a nadie (normalmente ni está en el formulario).',
-        '**Rotación**: entre los mejor ubicados (una "ventana" de 3× las vacantes, mínimo 6), quien ya mezcló más veces pierde prioridad frente al siguiente. Así los mejores no quedan mezclando toda la competición.',
+        '**Rotación**: solo entre los mejor ubicados libres (una "ventana" de 2× las vacantes, mínimo 4), quien ya mezcló más veces pierde prioridad frente al siguiente. La calidad va primero: la rotación nunca cambia a uno de los mejores por alguien fuera de esa ventana.',
       ],
     },
     {
