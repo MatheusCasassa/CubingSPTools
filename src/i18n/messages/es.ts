@@ -143,6 +143,10 @@ export const es: Messages = {
     runnersHint: 'Apagado: no se asignan runners automáticamente (puedes agregarlos a mano).',
     stationNumbers: 'Numerar estaciones',
     stationNumbersHint: 'Guarda el nº de estación de competidores y jueces (aparece en Competition Groups).',
+    presenceByEvents: 'Presencia por días de las modalidades',
+    presenceByEventsHint:
+      'Quien está inscrito solo en modalidades de un día no se asigna en los otros días (ej.: solo 3BLD el sábado → fuera el domingo). El staff no competidor cuenta siempre como presente.',
+    otherDayTag: 'otro día',
     advanced: 'Avanzado',
     perScrambler: 'Competidores por mezclador',
     perScramblerHint: (n: number) => `1 mezclador hasta ${n}, 2 hasta ${n * 2}, y así sucesivamente.`,
@@ -223,6 +227,7 @@ export const es: Messages = {
     noIssues: 'No se encontraron problemas.',
     issue: {
       notApproved: (who: string, where: string) => `${who} no tiene inscripción aprobada en la WCA (${where}).`,
+      otherDay: (who: string, where: string) => `${who} solo compite otro día — no se espera en el lugar (${where}).`,
       conflict: (who: string, where: string) => `${who}: dos funciones al mismo tiempo (${where}).`,
       newcomerStaff: (who: string, where: string) => `${who} es novato y está en el staff (${where}).`,
       delegateStaff: (who: string, where: string) => `${who} es Delegado y está en el staff (${where}).`,

@@ -143,6 +143,10 @@ export const en: Messages = {
     runnersHint: 'Off: runners are not assigned automatically (you can add them by hand).',
     stationNumbers: 'Number stations',
     stationNumbersHint: 'Saves the station number for competitors and judges (shown on Competition Groups).',
+    presenceByEvents: 'Presence by event days',
+    presenceByEventsHint:
+      'People registered only for events on one day are not assigned on the other days (e.g. only 3BLD on Saturday → out on Sunday). Non-competing staff always count as present.',
+    otherDayTag: 'other day',
     advanced: 'Advanced',
     perScrambler: 'Competitors per scrambler',
     perScramblerHint: (n: number) => `1 scrambler up to ${n}, 2 up to ${n * 2}, and so on.`,
@@ -223,6 +227,7 @@ export const en: Messages = {
     noIssues: 'No problems found.',
     issue: {
       notApproved: (who: string, where: string) => `${who} does not have an approved WCA registration (${where}).`,
+      otherDay: (who: string, where: string) => `${who} only competes on another day — not expected at the venue (${where}).`,
       conflict: (who: string, where: string) => `${who}: two roles at the same time (${where}).`,
       newcomerStaff: (who: string, where: string) => `${who} is a newcomer and is on staff (${where}).`,
       delegateStaff: (who: string, where: string) => `${who} is a Delegate and is on staff (${where}).`,

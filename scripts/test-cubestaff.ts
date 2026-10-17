@@ -38,6 +38,7 @@ import {
 } from '../src/tools/cubestaff/model/staffImport'
 import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
 import { BASE_EVENT, isRareEvent, puzzleAllowed, scramblerRanking } from '../src/tools/cubestaff/model/scramblerRank'
+import { presentAt } from '../src/tools/cubestaff/model/presence'
 import { decodeStaffRow, encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
 import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
 
@@ -112,12 +113,13 @@ for (const { roundId, g } of groups) {
   const ranking = scramblerRanking(wcif, '333')
   const scores = [...ranking.byId.values()]
   assert.ok(scores.filter((x) => x.source === 'event').every((x) => x.score <= 1))
+  assert.ok(!ranking.rare)
   assert.ok(
-    scores.filter((x) => x.source === 'sor').every((x) => x.score >= 1),
-    'SOR só completa em evento normal',
+    scores.every((x) => x.source !== 'sor'),
+    'Sum of Ranks não vale em evento normal',
   )
 }
-ok('embaralhadores pelo ranking (evento antes do Sum of Ranks)')
+ok('embaralhadores pelo ranking do evento (Sum of Ranks fora em evento normal)')
 
 // 6. Disponibilidade: quem só está na manhã de sábado não é escalado à tarde.
 const partial = base.staff
@@ -551,5 +553,43 @@ ok('"Limpar tudo" na WCA volta a competição ao estado sem CubeStaff')
   assert.ok(puzzleAllowed(entry, fto))
 }
 ok('variantes pela modalidade principal e evento novo pelo Sum of Ranks')
+
+// 25. Presença pelos dias das modalidades: quem só faz 3BLD (domingo na demo)
+// não é escalado no sábado — nem como suplente.
+{
+  const w4 = structuredClone(wcif)
+  const sundayOnly = w4.persons
+    .filter((p) => isAccepted(p) && p.wcaId && base.staff.some((s) => s.registrantId === p.registrantId))
+    .slice(0, 6)
+  sundayOnly.forEach((p) => (p.registration!.eventIds = ['333bf']))
+  const ids = new Set(sundayOnly.map((p) => `p${p.registrantId}`))
+  assert.ok(!presentAt(w4, sundayOnly[0], Date.parse('2026-11-14T13:00:00Z')))
+  assert.ok(presentAt(w4, sundayOnly[0], Date.parse('2026-11-15T13:00:00Z')))
+  const gen = generate(w4, base, { roundIds: w4.events.map((e) => e.rounds[0].id) }).plan
+  const sc = slotsByRound(w4, gen)
+  let sundayStaff = 0
+  for (const rp of Object.values(gen.rounds))
+    for (const g of rp.groups) {
+      const start = slotOf(sc.get(rp.roundId), g.number).start!
+      const saturday = new Date(start - 3 * 3600000).toISOString().startsWith('2026-11-14')
+      for (const r of [...g.judges, ...g.scramblers, ...g.runners, ...g.reserves])
+        if (ids.has(r)) {
+          assert.ok(!saturday, `${r} escalado no sábado sem modalidade no sábado`)
+          sundayStaff++
+        }
+    }
+  assert.ok(sundayStaff > 0, 'deveria ser escalado no domingo')
+  assert.equal(checkPlan(w4, gen).filter((i) => i.code === 'otherDay').length, 0)
+  // Desligado: pode ser escalado no sábado.
+  const off = generate(
+    w4,
+    { ...base, config: { ...base.config, presenceByEvents: false } },
+    { roundIds: ['333-r1'] },
+  ).plan
+  assert.ok(
+    off.rounds['333-r1'].groups.some((g) => [...g.judges, ...g.scramblers, ...g.reserves].some((r) => ids.has(r))),
+  )
+}
+ok('presença pelos dias das modalidades inscritas')
 
 console.log(`\n${n} testes do CubeStaff OK`)

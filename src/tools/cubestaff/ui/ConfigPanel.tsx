@@ -82,6 +82,12 @@ export function ConfigPanel() {
             label={t.stationNumbers}
             hint={t.stationNumbersHint}
           />
+          <Toggle
+            checked={cfg.presenceByEvents}
+            onChange={(v) => set('presenceByEvents', v)}
+            label={t.presenceByEvents}
+            hint={t.presenceByEventsHint}
+          />
         </section>
 
         <details className="card group p-5">

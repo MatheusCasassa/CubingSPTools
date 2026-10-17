@@ -49,6 +49,11 @@ export interface CubeStaffConfig {
   maxConsecutive: number
   /** Máximo de tarefas de staff por pessoa na competição — 0 = sem limite. */
   maxTasksPerPerson: number
+  /**
+   * Presença pelos dias das modalidades inscritas: quem só compete num dia não
+   * é escalado (nem sugerido como suplente) nos outros dias.
+   */
+  presenceByEvents: boolean
   /** Suplentes sugeridos por grupo. */
   reservesPerGroup: number
   /** Nº de grupos por rodada (chave = round id, ex.: "333-r1"). */
@@ -68,6 +73,7 @@ export const DEFAULT_CONFIG: CubeStaffConfig = {
   delegateThreshold: 1.5,
   maxConsecutive: 3,
   maxTasksPerPerson: 0,
+  presenceByEvents: true,
   reservesPerGroup: 3,
   groupsByRound: {},
   absent: [],

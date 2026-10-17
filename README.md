@@ -177,12 +177,14 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
   - o próprio evento;
   - nas variantes, também a modalidade principal (3BLD/OH/Multi/FMC → 3x3,
     4BLD → 4x4, 5BLD → 5x5);
-  - o Sum of Ranks — em pé de igualdade em evento novo (menos de 50% dos
-    inscritos com resultado, ex.: FTO) e só para completar nos demais.
+  - o Sum of Ranks — **só** em evento novo (menos de 50% dos inscritos com
+    resultado, ex.: FTO), em pé de igualdade; nos demais não é usado.
   Quem marcou no formulário que não quer embaralhar nunca é escalado.
 - **Juízes**: até o nº de estações, preferindo quem competiu no grupo anterior.
 - **Runners** só se habilitado. **Suplentes** por grupo (livres no horário).
 - **Disponibilidade** Manhã/Tarde do formulário respeitada.
+- **Dias das modalidades**: quem só está inscrito em modalidades de um dia não
+  é escalado nos outros dias (ex.: só 3BLD no sábado → fora do domingo).
 - **Competidores**: novatos nos grupos iniciais (100% ou 50% novatos) ou
   mesclados; experientes por ranking, mais rápidos nos últimos grupos.
 - Edições manuais ficam **travadas** e sobrevivem a "Gerar de novo".

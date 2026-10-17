@@ -4,6 +4,7 @@
 import type { Wcif } from '../../../lib/wca/types'
 import { type GroupPlan, type Plan, type Ref, type StaffRole, lockKey, pref, refId } from './types'
 import { compareScramblers, scramblerRanking, type ScrambleRank } from './scramblerRank'
+import { presentAt } from './presence'
 import { agendaFor, isAvailable, slotOf, slotsByRound } from './engine'
 import { competitionTimezone, overlaps } from './schedule'
 import { findRound, hasResultIn, isAccepted, isApproved, isDelegate, isNewcomer, personsById } from './people'
@@ -164,6 +165,8 @@ export interface Candidate {
   /** Função que a pessoa já tem neste grupo (staff). */
   roleHere: StaffRole | 'reserve' | null
   load: number
+  /** Só compete em outro(s) dia(s) — não deve estar no local. */
+  otherDay: boolean
   /** Tem resultado no evento. */
   hasResult: boolean
   /** Ranking de embaralhador: por onde a pessoa se classifica (ver scramblerRank). */
@@ -208,6 +211,7 @@ export function candidates(
       newcomer: isNewcomer(p),
       delegate: isDelegate(p),
       available: isAvailable(entries.get(p.registrantId), slot, tz),
+      otherDay: plan.config.presenceByEvents && !presentAt(wcif, p, slot.start),
       busy: busy || competingHere,
       competingHere,
       roleHere,
@@ -231,6 +235,7 @@ export function candidates(
       busy: agenda.get(ref).some((b) => overlaps(b, slot)),
       competingHere: false,
       roleHere: roleIn(g, ref),
+      otherDay: false,
       load: agenda.staffCount(ref),
       hasResult: false,
       scramble: null,
@@ -245,7 +250,7 @@ export function candidates(
         (c.busy ? 100 : 0) +
         (c.roleHere ? 40 : 0) +
         (c.newcomer && role !== 'competitor' ? 50 : 0) +
-        (!c.available ? 30 : 0) +
+        (!c.available || c.otherDay ? 30 : 0) +
         (!c.inList && !c.extra ? 10 : 0) +
         (c.delegate ? 5 : 0)
       const d = score(a) - score(b)

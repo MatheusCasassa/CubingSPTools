@@ -148,6 +148,10 @@ export const pt = {
     runnersHint: 'Desligado: o programa não escala runners (você pode adicionar à mão).',
     stationNumbers: 'Numerar estações',
     stationNumbersHint: 'Grava o nº da estação de competidores e juízes (aparece no Competition Groups).',
+    presenceByEvents: 'Presença pelos dias das modalidades',
+    presenceByEventsHint:
+      'Quem está inscrito só em modalidades de um dia não é escalado nos outros dias (ex.: só 3BLD no sábado → fora do domingo). Staff não competidor conta como presente sempre.',
+    otherDayTag: 'outro dia',
     advanced: 'Avançado',
     perScrambler: 'Competidores por embaralhador',
     perScramblerHint: (n: number) => `1 embaralhador até ${n}, 2 até ${n * 2}, e assim por diante.`,
@@ -231,6 +235,7 @@ export const pt = {
     noIssues: 'Nenhum problema encontrado.',
     issue: {
       notApproved: (who: string, where: string) => `${who} não tem inscrição aprovada na WCA (${where}).`,
+      otherDay: (who: string, where: string) => `${who} só compete em outro dia — não deve estar no local (${where}).`,
       conflict: (who: string, where: string) => `${who}: duas funções ao mesmo tempo (${where}).`,
       newcomerStaff: (who: string, where: string) => `${who} é novato e está no staff (${where}).`,
       delegateStaff: (who: string, where: string) => `${who} é Delegado e está no staff (${where}).`,

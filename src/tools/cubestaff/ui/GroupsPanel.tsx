@@ -46,6 +46,7 @@ export function IssuesBox({ issues, onJump }: { issues: Issue[]; onJump?: (round
       case 'newcomerStaff':
       case 'delegateStaff':
       case 'unavailable':
+      case 'otherDay':
       case 'notInList':
         return t.issue[i.code](who, w)
       case 'shortJudges':
@@ -297,6 +298,7 @@ function Picker({
                 {c.busy && !c.competingHere && <Tag tone="danger">{t.busy}</Tag>}
                 {c.roleHere && <Tag tone="brand">{t.roles[c.roleHere]}</Tag>}
                 {!c.available && <Tag tone="warn">{t.unavailableTag}</Tag>}
+                {c.otherDay && <Tag tone="warn">{t.otherDayTag}</Tag>}
                 {c.newcomer && <Tag tone="warn">{t.tags.newcomer}</Tag>}
                 {c.delegate && <Tag tone="brand">{t.tags.delegate}</Tag>}
                 {c.extra && <Tag>{t.tags.extra}</Tag>}

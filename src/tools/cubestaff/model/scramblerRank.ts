@@ -6,11 +6,10 @@
 //     3BLD, 3x3 OH, Multi-BLD, FMC → 3x3 · 4BLD → 4x4 · 5BLD → 5x5.
 //     Quem é muito bom no 3x3 é bom embaralhador de 3BLD mesmo sem nunca ter
 //     feito 3BLD.
-//  3. Evento "novo" (ex.: FTO no começo), onde poucos inscritos já têm
-//     resultado: o Sum of Ranks entra em pé de igualdade — quem se destaca em
-//     todas ou quase todas as modalidades costuma ser bom embaralhador.
-//     Em eventos normais, o Sum of Ranks só completa a lista quando faltam
-//     pessoas com resultado no evento (ou na modalidade principal).
+//  3. Evento "novo" (ex.: FTO no começo), onde menos da metade dos inscritos
+//     já tem resultado: o Sum of Ranks entra em pé de igualdade — quem se
+//     destaca em todas ou quase todas as modalidades costuma ser bom
+//     embaralhador. Em eventos normais o Sum of Ranks NÃO é usado.
 //
 // Para comparar eventos diferentes, cada ranking vira um PERCENTIL entre as
 // pessoas aprovadas da competição (0 = melhor da competição, 1 = pior).
@@ -34,7 +33,7 @@ export const RARE_SHARE = 0.5
 export type ScrambleSource = 'event' | 'base' | 'sor'
 
 export interface ScrambleRank {
-  /** Menor = melhor. Percentil (0–1); fallback do Sum of Ranks soma 1. */
+  /** Menor = melhor. Percentil (0–1). */
   score: number
   source: ScrambleSource
   /** Percentil que decidiu (0–1). */
@@ -120,10 +119,10 @@ export function scramblerRanking(wcif: Wcif, eventId: string): ScrambleRanking {
       const options: ScrambleRank[] = []
       if (ev.has(id)) options.push({ score: ev.get(id)!, source: 'event', pct: ev.get(id)! })
       if (base.has(id)) options.push({ score: base.get(id)!, source: 'base', pct: base.get(id)! })
-      if (sor.has(id)) {
+      // Sum of Ranks SÓ em evento novo (menos da metade com resultado).
+      if (rare && sor.has(id)) {
         const s = sor.get(id)!
-        // Evento raro: Sum of Ranks vale igual. Normal: só completa a lista.
-        options.push({ score: rare ? s : 1 + s, source: 'sor', pct: s })
+        options.push({ score: s, source: 'sor', pct: s })
       }
       if (options.length === 0) continue
       options.sort((a, b) => a.score - b.score)

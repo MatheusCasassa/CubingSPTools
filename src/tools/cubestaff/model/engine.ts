@@ -30,6 +30,7 @@ import {
 } from './types'
 import { overlaps, periodOf, roundSchedule, splitEven, type RoundSchedule, type Slot } from './schedule'
 import { compareScramblers, puzzleAllowed, scramblerRanking } from './scramblerRank'
+import { presentAt } from './presence'
 import {
   compareRank,
   findRound,
@@ -347,6 +348,7 @@ function eligible(
     const ref = pref(id)
     if (taken.has(ref)) continue
     if (!isAvailable(entry, wg.slot, ctx.tz)) continue
+    if (ctx.config.presenceByEvents && !presentAt(ctx.wcif, person, wg.slot.start)) continue
     if (ctx.agenda.isBusy(ref, wg.slot)) continue
     if (ctx.config.maxTasksPerPerson > 0 && ctx.agenda.staffCount(ref) >= ctx.config.maxTasksPerPerson) continue
     if (ctx.config.maxConsecutive > 0 && ctx.agenda.consecutiveBefore(ref, wg.slot.start) >= ctx.config.maxConsecutive)

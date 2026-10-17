@@ -15,6 +15,7 @@ import {
   stationsForRoom,
 } from './engine'
 import { competitionTimezone, overlaps } from './schedule'
+import { presentAt } from './presence'
 import { isAccepted, isApproved, isDelegate, isNewcomer, personsById } from './people'
 
 export type IssueCode =
@@ -23,6 +24,7 @@ export type IssueCode =
   | 'newcomerStaff'
   | 'delegateStaff'
   | 'unavailable'
+  | 'otherDay'
   | 'notInList'
   | 'shortJudges'
   | 'shortScramblers'
@@ -91,6 +93,8 @@ export function checkPlan(wcif: Wcif, plan: Plan): Issue[] {
             issues.push({ level: 'info', code: 'notInList', roundId, group: g.number, ref, role })
           if (id != null && !isAvailable(entries.get(id), slot, tz))
             issues.push({ level: 'warn', code: 'unavailable', roundId, group: g.number, ref, role })
+          if (person && cfg.presenceByEvents && !presentAt(wcif, person, slot.start))
+            issues.push({ level: 'warn', code: 'otherDay', roundId, group: g.number, ref, role })
         }
       }
 
