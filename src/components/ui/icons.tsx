@@ -1,3 +1,4 @@
+import { useId } from 'react'
 // Ícones em SVG inline (sem dependências, sem emoji).
 type P = { className?: string }
 
@@ -15,6 +16,11 @@ export const IconMoon = ({ className = 'h-4 w-4' }: P) => (
 export const IconGrid = ({ className = 'h-5 w-5' }: P) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
     {[0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={3 + c * 6.3} y={3 + r * 6.3} width="5.1" height="5.1" rx="1.1" />))}
+  </svg>
+)
+export const IconChevronDown = ({ className = 'h-4 w-4' }: P) => (
+  <svg viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M5 8l5 5 5-5" />
   </svg>
 )
 export const IconArrowLeft = ({ className = 'h-4 w-4' }: P) => (
@@ -124,5 +130,26 @@ export function CalcumulativeMark({ className = 'h-7 w-7' }: P) {
         <path d="M13.5 6.5h5M16 6.5v3.3M16 18l3.6-3.6M23 10.6l1.6-1.6" />
       </g>
     </svg>
+  )
+}
+
+/**
+ * Logo do CSPTools: chave de boca (ferramenta/ajuda) + cubo em perspectiva
+ * com as cores da CubingSP (branco, vermelho e preto) sobre o azul royal.
+ * Mesmo desenho do public/favicon.svg.
+ */
+const BRAND_SVG =
+  '<defs><linearGradient id="__ID__g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b5bea"/><stop offset="1" stop-color="#1d3391"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#__ID__g)"/>' +
+  '<mask id="__ID__j" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><g transform="translate(46 18) rotate(-45.0)"><rect x="0" y="-2.3" width="12.5" height="4.6" fill="#000"/><circle r="2.3" fill="#000"/></g></mask><g mask="url(#__ID__j)" fill="#fff"><circle cx="46" cy="18" r="9.5"/><path d="M46 18L21 43" stroke="#fff" stroke-width="7" stroke-linecap="round"/></g><polygon points="24.50,25.50 37.06,32.75 24.50,40.00 11.94,32.75" fill="#ffffff"/><polygon points="11.94,32.75 24.50,40.00 24.50,54.50 11.94,47.25" fill="#c81e3c"/><polygon points="24.50,40.00 37.06,32.75 37.06,47.25 24.50,54.50" fill="#0b0c10"/><path d="M18.22 29.12L30.78 36.38M30.78 29.12L18.22 36.38M11.94 40.00L24.50 47.25M18.22 36.38L18.22 50.88M24.50 47.25L37.06 40.00M30.78 36.38L30.78 50.88M24.50 40.00L11.94 32.75M24.50 40.00L37.06 32.75M24.50 40.00L24.50 54.50" stroke="#2340b8" stroke-width="1.1" stroke-linecap="round"/><polygon points="24.50,25.50 37.06,32.75 37.06,47.25 24.50,54.50 11.94,47.25 11.94,32.75" fill="none" stroke="#2340b8" stroke-width="1.7600000000000002" stroke-linejoin="round"/>'
+
+export function BrandMark({ className = 'h-8 w-8' }: P) {
+  const id = 'b' + useId().replace(/[^a-zA-Z0-9]/g, '')
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className={className}
+      aria-hidden
+      dangerouslySetInnerHTML={{ __html: BRAND_SVG.replace(/__ID__/g, id) }}
+    />
   )
 }

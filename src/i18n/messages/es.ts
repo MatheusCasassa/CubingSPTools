@@ -2,7 +2,7 @@ import type { Messages } from './pt'
 
 export const es: Messages = {
   meta: {
-    title: 'Herramientas — ScoreComps · Calcumulative · CubeStaff',
+    title: 'CSPTools — CubingSP Tools',
     languageName: 'Español',
   },
   common: {
@@ -45,16 +45,16 @@ export const es: Messages = {
     button: 'Entrar con la cuenta WCA',
   },
   home: {
-    title: 'Herramientas',
+    title: 'CSPTools',
     intro:
-      'Herramientas que facilitan a Delegados, Organizadores y competidores las principales tareas de una competición: **Agrupamiento**, **Asignación de Tareas**, **Generación de Hojas de Tiempo en PDF** y cálculos de tiempo, todo a partir de los datos oficiales de la WCA.',
+      'CubingSP Tools es una herramienta hecha para facilitarles a Delegados, Organizadores y competidores las principales tareas de una competición: **Agrupamiento**, **Asignación de Tareas**, **Generación de Hojas de Tiempo en PDF** y cálculos de tiempo, todo a partir de los datos oficiales de la WCA.',
     footnote:
       'Las herramientas para Delegados y Organizadores requieren iniciar sesión con tu cuenta WCA. Ninguna contraseña ni dato se guarda aquí: todo funciona 100% en tu navegador.',
     categories: {
-      before: { title: 'Antes de la Competición', description: 'Planificación: grupos, staff y hojas de tiempo listos para el día.' },
-      during: { title: 'Durante la Competición', description: 'En el día: cálculos rápidos para jueces, Delegados y competidores.' },
-      after: { title: 'Después de la Competición', description: 'Revisión y envío de resultados.' },
-      aux: { title: 'Herramientas Auxiliares', description: 'Utilidades que ayudan en cualquier momento.' },
+      before: { title: 'Antes de la Competición', short: 'Antes', description: 'Planificación: grupos, staff y hojas de tiempo listos para el día.' },
+      during: { title: 'Durante la Competición', short: 'Durante', description: 'En el día: cálculos rápidos para jueces, Delegados y competidores.' },
+      after: { title: 'Después de la Competición', short: 'Después', description: 'Revisión y envío de resultados.' },
+      aux: { title: 'Herramientas Auxiliares', short: 'Auxiliares', description: 'Utilidades que ayudan en cualquier momento.' },
     },
     emptyCategory: 'Aún no hay herramientas aquí — pronto habrá novedades.',
     tools: {

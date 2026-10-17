@@ -4,7 +4,7 @@
 
 export const pt = {
   meta: {
-    title: 'Ferramentas — ScoreComps · Calcumulative · CubeStaff',
+    title: 'CSPTools — CubingSP Tools',
     languageName: 'Português',
   },
   common: {
@@ -47,16 +47,16 @@ export const pt = {
     button: 'Entrar com a conta WCA',
   },
   home: {
-    title: 'Ferramentas',
+    title: 'CSPTools',
     intro:
-      'Ferramentas feitas para facilitar Delegados, Organizadores e competidores com as principais tarefas de uma competição: **Agrupamento**, **Atribuição de Tarefas**, **Geração de Súmulas em PDF** e cálculos de tempo, tudo a partir dos dados oficiais da WCA.',
+      'CubingSP Tools é uma ferramenta feita para facilitar Delegados, Organizadores e competidores com as principais tarefas de uma competição: **Agrupamento**, **Atribuição de Tarefas**, **Geração de Súmulas em PDF** e cálculos de tempo, tudo a partir dos dados oficiais da WCA.',
     footnote:
       'As ferramentas de Delegados e Organizadores pedem login na sua conta WCA. Nenhuma senha ou armazenamento passam por aqui, roda 100% no seu navegador.',
     categories: {
-      before: { title: 'Antes da Competição', description: 'Planejamento: grupos, staff e súmulas prontos para o dia.' },
-      during: { title: 'Durante a Competição', description: 'Apoio no dia: cálculos rápidos para juízes, Delegados e competidores.' },
-      after: { title: 'Depois da Competição', description: 'Conferência e envio de resultados.' },
-      aux: { title: 'Ferramentas Auxiliares', description: 'Utilitários que ajudam em qualquer momento.' },
+      before: { title: 'Antes da Competição', short: 'Antes', description: 'Planejamento: grupos, staff e súmulas prontos para o dia.' },
+      during: { title: 'Durante a Competição', short: 'Durante', description: 'Apoio no dia: cálculos rápidos para juízes, Delegados e competidores.' },
+      after: { title: 'Depois da Competição', short: 'Depois', description: 'Conferência e envio de resultados.' },
+      aux: { title: 'Ferramentas Auxiliares', short: 'Auxiliares', description: 'Utilitários que ajudam em qualquer momento.' },
     },
     emptyCategory: 'Nenhuma ferramenta aqui ainda — novidades em breve.',
     tools: {

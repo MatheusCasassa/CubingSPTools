@@ -2,7 +2,7 @@ import type { Messages } from './pt'
 
 export const en: Messages = {
   meta: {
-    title: 'Tools — ScoreComps · Calcumulative · CubeStaff',
+    title: 'CSPTools — CubingSP Tools',
     languageName: 'English',
   },
   common: {
@@ -45,16 +45,16 @@ export const en: Messages = {
     button: 'Sign in with WCA',
   },
   home: {
-    title: 'Tools',
+    title: 'CSPTools',
     intro:
-      'Tools that help Delegates, Organizers and competitors with the main tasks of a competition: **Grouping**, **Staff Assignments**, **PDF Scorecards** and time calculations, all from official WCA data.',
+      'CubingSP Tools is a toolkit that makes life easier for Delegates, Organizers and competitors with the main tasks of a competition: **Grouping**, **Staff Assignments**, **PDF Scorecards** and time calculations, all from official WCA data.',
     footnote:
       'The Delegate and Organizer tools require signing in with your WCA account. No passwords or data are stored here — everything runs 100% in your browser.',
     categories: {
-      before: { title: 'Before the Competition', description: 'Planning: groups, staff and scorecards ready for the day.' },
-      during: { title: 'During the Competition', description: 'On the day: quick calculations for judges, Delegates and competitors.' },
-      after: { title: 'After the Competition', description: 'Checking and submitting results.' },
-      aux: { title: 'Auxiliary Tools', description: 'Utilities that help at any time.' },
+      before: { title: 'Before the Competition', short: 'Before', description: 'Planning: groups, staff and scorecards ready for the day.' },
+      during: { title: 'During the Competition', short: 'During', description: 'On the day: quick calculations for judges, Delegates and competitors.' },
+      after: { title: 'After the Competition', short: 'After', description: 'Checking and submitting results.' },
+      aux: { title: 'Auxiliary Tools', short: 'Auxiliary', description: 'Utilities that help at any time.' },
     },
     emptyCategory: 'No tools here yet — more coming soon.',
     tools: {
