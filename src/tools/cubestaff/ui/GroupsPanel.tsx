@@ -566,10 +566,10 @@ export function GroupsPanel({ onGenerate }: { onGenerate: (ids: string[]) => voi
           )
         }}
       />
-      <div className="flex flex-wrap gap-1.5" role="tablist">
+      <div className="flex flex-wrap gap-2" role="tablist">
         <button
           type="button"
-          className={`chip ${event === 'all' ? 'border-brand-500/60 bg-brand-500/10' : 'border-border-subtle'}`}
+          className={`chip px-3 text-sm ${event === 'all' ? 'border-brand-500/60 bg-brand-500/10' : 'border-border-subtle'}`}
           onClick={() => setEvent('all')}
         >
           {m.cubestaff.allEvents}
@@ -579,10 +579,10 @@ export function GroupsPanel({ onGenerate }: { onGenerate: (ids: string[]) => voi
             key={e.id}
             type="button"
             title={eventName(e.id)}
-            className={`chip ${event === e.id ? 'border-brand-500/60 bg-brand-500/10' : 'border-border-subtle'}`}
+            className={`chip px-2 py-1.5 ${event === e.id ? 'border-brand-500/60 bg-brand-500/10' : 'border-border-subtle'}`}
             onClick={() => setEvent(e.id)}
           >
-            <EventIcon eventId={e.id} className="h-4 w-4" />
+            <EventIcon eventId={e.id} className="h-6 w-6" />
           </button>
         ))}
       </div>
