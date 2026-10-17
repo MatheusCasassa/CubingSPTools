@@ -279,6 +279,91 @@ function countLocked(locked: Map<number, number>, g: number, ids: number[]): num
   return n
 }
 
+/**
+ * Delegados competindo na mesma rodada ficam em grupos DIFERENTES (Matheus,
+ * 16/10): com 3 Delegados e 2 grupos → 2 num grupo e 1 no outro, nunca 3
+ * juntos. Move o mínimo possível: cada Delegado fica no seu grupo se couber, e
+ * quem precisa mudar troca de lugar com um competidor experiente (não
+ * Delegado) de nível parecido no grupo de destino, sem criar conflito de horário.
+ */
+function separateDelegates(
+  groups: number[][],
+  slots: { start: number | null; end: number | null }[],
+  byId: Map<number, WcifPerson>,
+  eventId: string,
+  agenda: Agenda,
+  locked: Set<number>,
+): void {
+  const G = groups.length
+  if (G < 2) return
+  const where = new Map<number, number>()
+  groups.forEach((g, gi) => g.forEach((id) => where.set(id, gi)))
+  const delegates = [...where.keys()].filter((id) => isDelegate(byId.get(id)!))
+  const D = delegates.length
+  if (D < 2) return
+  const low = Math.floor(D / G)
+  let extras = D % G
+  const counts = Array(G).fill(0)
+  const placed = new Set<number>()
+  // Travados não se movem.
+  for (const id of delegates)
+    if (locked.has(id)) {
+      counts[where.get(id)!]++
+      placed.add(id)
+    }
+  const order = delegates.filter((id) => !placed.has(id))
+  // 1º: fica onde está enquanto o grupo tem menos que o mínimo.
+  for (const id of order) {
+    const g = where.get(id)!
+    if (counts[g] < low) {
+      counts[g]++
+      placed.add(id)
+    }
+  }
+  // 2º: fica onde está ocupando uma das vagas "a mais".
+  for (const id of order) {
+    if (placed.has(id)) continue
+    const g = where.get(id)!
+    if (counts[g] === low && extras > 0) {
+      counts[g]++
+      extras--
+      placed.add(id)
+    }
+  }
+  // 3º: os que sobraram mudam de grupo.
+  for (const id of order) {
+    if (placed.has(id)) continue
+    const from = where.get(id)!
+    const targets = [...Array(G).keys()]
+      .filter((g) => g !== from && (counts[g] < low || (counts[g] === low && extras > 0)))
+      .sort((a, b) => counts[a] - counts[b] || Math.abs(a - from) - Math.abs(b - from))
+    let moved = false
+    for (const to of targets) {
+      if (agenda.isBusy(pref(id), slots[to])) continue
+      const me = byId.get(id)!
+      const partner = groups[to]
+        .filter((o) => {
+          const p = byId.get(o)!
+          return !locked.has(o) && !isDelegate(p) && !isNewcomer(p) && !agenda.isBusy(pref(o), slots[from])
+        })
+        .sort(
+          (a, b) => Math.abs(compareRank(byId.get(a)!, me, eventId)) - Math.abs(compareRank(byId.get(b)!, me, eventId)),
+        )[0]
+      if (partner == null) continue
+      groups[from][groups[from].indexOf(id)] = partner
+      groups[to][groups[to].indexOf(partner)] = id
+      where.set(id, to)
+      where.set(partner, from)
+      if (counts[to] >= low) extras--
+      counts[to]++
+      moved = true
+      break
+    }
+    if (!moved) counts[from]++
+    placed.add(id)
+  }
+}
+
 /** Troca competidores com conflito de horário com alguém de outro grupo. */
 function repairCompetitorConflicts(
   groups: number[][],
@@ -576,6 +661,7 @@ export function generate(wcif: Wcif, source: Plan, opts: GenerateOptions): Gener
     }
     const groupsIds = distributeCompetitors(ids, slots.length, byId, info.eventId, config, lockedPlacement)
     const unresolved = repairCompetitorConflicts(groupsIds, slots, agenda, new Set(lockedPlacement.keys()))
+    separateDelegates(groupsIds, slots, byId, info.eventId, agenda, new Set(lockedPlacement.keys()))
     if (unresolved > 0) notes.push({ level: 'warn', code: 'competitorConflict', roundId, count: unresolved })
 
     const groups: WorkGroup[] = slots.map((slot, gi) => {

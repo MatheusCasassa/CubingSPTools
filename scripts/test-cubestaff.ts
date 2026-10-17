@@ -592,4 +592,39 @@ ok('variantes pela modalidade principal e evento novo pelo Sum of Ranks')
 }
 ok('presença pelos dias das modalidades inscritas')
 
+// 26. Delegados competindo ficam em grupos diferentes (3 Delegados, 2 grupos → 2 + 1).
+{
+  const w5 = structuredClone(wcif)
+  const extra = w5.persons.filter((p) => isAccepted(p) && p.wcaId && !isDelegate(p)).slice(0, 2)
+  extra.forEach((p) => (p.roles = ['delegate']))
+  const cfg5 = {
+    ...base,
+    config: { ...base.config, groupsByRound: { ...base.config.groupsByRound, '333oh-r1': 2, '333-r1': 4 } },
+  }
+  const gen = generate(w5, cfg5, { roundIds: w5.events.map((e) => e.rounds[0].id) }).plan
+  const pById = personsById(w5)
+  let checked = 0
+  for (const rp of Object.values(gen.rounds)) {
+    if (rp.groups.length < 2) continue
+    const per = rp.groups.map((g) => g.competitors.filter((id) => isDelegate(pById.get(id)!)).length)
+    const total = per.reduce((a, b) => a + b, 0)
+    if (total < 2) continue
+    checked++
+    assert.ok(Math.max(...per) - Math.min(...per) <= 1, `${rp.roundId}: Delegados juntos ${per}`)
+    if (total <= rp.groups.length)
+      assert.ok(
+        per.every((x) => x <= 1),
+        `${rp.roundId}: ${per}`,
+      )
+  }
+  assert.ok(checked >= 3, 'deveria haver rodadas com vários Delegados')
+  // Todos continuam competindo exatamente uma vez.
+  for (const rp of Object.values(gen.rounds)) {
+    const all = rp.groups.flatMap((g) => g.competitors)
+    assert.equal(new Set(all).size, all.length)
+  }
+  assert.equal(checkPlan(w5, gen).filter((i) => i.level === 'error').length, 0)
+}
+ok('Delegados separados em grupos diferentes ao competir')
+
 console.log(`\n${n} testes do CubeStaff OK`)

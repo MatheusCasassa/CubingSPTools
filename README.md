@@ -10,7 +10,7 @@ Produção: **https://cubingspferramentas.mcasassa.workers.dev/**
 |---|---|---|---|
 | **ScoreComps** (`/scorecomps`) | Súmulas oficiais em PDF a partir dos grupos do WCIF | WCA | ✅ disponível |
 | **Calcumulative** (`/calcumulative`) | Limite de tempo cumulativo e média de 5 com BPA/WPA e meta | — | ✅ disponível |
-| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Runner) gravados na WCA | WCA | ✅ disponível |
+| **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Corredor) gravados na WCA | WCA | ✅ disponível |
 
 Tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem secret) e
 os PDFs são gerados localmente num Web Worker. Nenhum servidor nosso recebe
@@ -150,9 +150,9 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
 2. **Staff:** importe o CSV do Google Forms (ou monte à mão) com os
    candidatos **aprovados** — só eles são escalados automaticamente. Quem se
    oferece no dia entra como **ajudante extra** (escalado à mão).
-3. **Configuração:** nº de estações (por palco, se houver mais de um), nº de
+3. **Configuração:** número de estações (por palco, se houver mais de um), número de
    grupos por rodada (com a conta "≈ N por grupo"), distribuição de novatos,
-   runners e limites de carga.
+   corredores (runners) e limites de carga.
 4. **Gerar grupos** → revisar na aba Grupos (mover, trocar por suplente,
    travar, adicionar) → **Salvar rascunho** (só a extensão) ou **Publicar na
    WCA** (atividades + assignments). Os grupos aparecem no Competition Groups,
@@ -171,6 +171,8 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
 - **Delegados** evitados como juiz/embaralhador (embaralhador só se bem
   ranqueado); com staff "expressivo" (staff livre ≥ 1,5 × vagas, ajustável)
   ficam totalmente de fora.
+- **Delegados competindo** ficam em grupos diferentes (3 Delegados e 2 grupos →
+  2 + 1), para sempre haver Delegado livre.
 - **Embaralhadores**: 1 a cada 8 competidores (1–8 → 1, 9–16 → 2…), os mais
   bem classificados no ranking de embaralhador, revezando quem já embaralhou
   muito. O ranking compara percentis entre os aprovados da competição:
@@ -180,8 +182,8 @@ Amostras por idioma: `npm run samples -- --lang en` (ou `es`).
   - o Sum of Ranks — **só** em evento novo (menos de 50% dos inscritos com
     resultado, ex.: FTO), em pé de igualdade; nos demais não é usado.
   Quem marcou no formulário que não quer embaralhar nunca é escalado.
-- **Juízes**: até o nº de estações, preferindo quem competiu no grupo anterior.
-- **Runners** só se habilitado. **Suplentes** por grupo (livres no horário).
+- **Juízes**: até o número de estações, preferindo quem competiu no grupo anterior.
+- **Corredores** (runners) só se habilitado. **Suplentes** por grupo (livres no horário).
 - **Disponibilidade** Manhã/Tarde do formulário respeitada.
 - **Dias das modalidades**: quem só está inscrito em modalidades de um dia não
   é escalado nos outros dias (ex.: só 3BLD no sábado → fora do domingo).

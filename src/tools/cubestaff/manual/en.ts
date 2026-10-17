@@ -132,6 +132,7 @@ export const en: Manual = {
       title: '7. Delegates',
       blocks: [
         'Delegates (and trainees) are **spared** from judging and scrambling, so they can handle incidents and other tasks. Organizers follow the normal rules.',
+        '**When competing, Delegates go to different groups**: if two or more Delegates compete in a round with two or more groups, they are split up (e.g. 3 Delegates and 2 groups → Delegate 1 in Group 1, Delegate 2 in Group 2, Delegate 3 in Group 1). This way there is always a free Delegate to handle incidents. The program moves as little as possible, swapping with an experienced competitor of similar level.',
         `**Plenty of staff**: if the free staff at that time (not counting Delegates) is at least ${C.delegateThreshold}× the group slots, Delegates are left out entirely.`,
         'Without plenty of staff: a **well-ranked** Delegate may scramble, and as a judge they are only a **last resort** when nobody else is left. Checks show when that happens.',
       ],

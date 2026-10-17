@@ -8,7 +8,7 @@ export const pt: Manual = {
   title: 'Manual do CubeStaff',
   subtitle: 'Como os grupos e o staff são montados',
   intro:
-    'Este manual explica **cada critério** que o CubeStaff usa para montar os grupos e escolher juízes, embaralhadores, runners e suplentes. Tudo o que o programa decide pode ser ajustado à mão depois — e o que você ajusta fica travado.',
+    'Este manual explica **cada critério** que o CubeStaff usa para montar os grupos e escolher juízes, embaralhadores, corredores e suplentes. Tudo o que o programa decide pode ser ajustado à mão depois — e o que você ajusta fica travado.',
   toc: 'Nesta página',
   feedbackTitle: 'Sugestões e feedback',
   feedbackText:
@@ -24,7 +24,7 @@ export const pt: Manual = {
         {
           list: [
             '**Staff**: importe o CSV do formulário de staff (ou monte a lista à mão) com os candidatos **aprovados**.',
-            '**Configuração**: informe o nº de estações e o nº de grupos de cada rodada. Ao lado aparece a conta "≈ N por grupo".',
+            '**Configuração**: informe o número de estações e o número de grupos de cada rodada. Ao lado aparece a conta "≈ N por grupo".',
             '**Gerar grupos**: o programa distribui os competidores e escala o staff seguindo as regras abaixo.',
             '**Revisar**: na aba Grupos, mova pessoas, troque por suplentes, adicione ou remova. A Conferência aponta problemas.',
             '**Salvar rascunho** (só o plano, sem publicar) ou **Publicar na WCA** (grupos aparecem no Competition Groups e no ScoreComps).',
@@ -47,7 +47,7 @@ export const pt: Manual = {
       id: 'competidores',
       title: '3. Grupos de competidores',
       blocks: [
-        'O **nº de grupos** de cada rodada é definido por você. Os grupos ficam com tamanhos quase iguais (diferença de no máximo 1). O horário de cada grupo é uma fatia igual do horário da rodada no cronograma da WCA; rodadas em mais de um palco dividem os grupos entre os palcos.',
+        'O **número de grupos** de cada rodada é definido por você. Os grupos ficam com tamanhos quase iguais (diferença de no máximo 1). O horário de cada grupo é uma fatia igual do horário da rodada no cronograma da WCA; rodadas em mais de um palco dividem os grupos entre os palcos.',
         '**Ranking usado**: o recorde pessoal de **média** no evento (nos eventos às cegas, o **single**). Quem não tem resultado no evento fica como o mais lento.',
         'Os experientes são ordenados **do mais lento ao mais rápido**: os primeiros grupos recebem os mais lentos e **os mais rápidos ficam nos últimos grupos** (bom para a transmissão e libera os melhores embaralhadores no começo). Dentro do grupo, a ordem (e a estação, se numerada) vai do mais rápido ao mais lento.',
         'Há duas formas de tratar os **novatos**:',
@@ -120,11 +120,11 @@ export const pt: Manual = {
     },
     {
       id: 'juizes',
-      title: '6. Juízes e runners',
+      title: '6. Juízes e corredores',
       blocks: [
-        '**Juízes por grupo** = nº de estações (ou o tamanho do grupo, se for menor). Se a competição tem mais de um palco, cada palco pode ter seu nº de estações.',
+        '**Juízes por grupo** = número de estações (ou o tamanho do grupo, se for menor). Se a competição tem mais de um palco, cada palco pode ter seu número de estações.',
         'Prioridade: **quem competiu no grupo anterior** julga o grupo seguinte (já está ali e livre); depois, quem tem **menos tarefas**; depois, quem prefere ser juiz.',
-        '**Runners** só são escalados se a opção estiver ligada: 1 a cada 8 estações.',
+        '**Corredores** (runners) só são escalados se a opção estiver ligada: 1 a cada 8 estações.',
       ],
     },
     {
@@ -132,6 +132,7 @@ export const pt: Manual = {
       title: '7. Delegados',
       blocks: [
         'Delegados (e trainees) são **poupados** de juiz e embaralhador, para cuidarem de incidentes e de outras frentes. Organizadores seguem as regras normais.',
+        '**Ao competir, Delegados ficam em grupos diferentes**: se dois ou mais Delegados competem numa rodada com dois ou mais grupos, eles são separados (ex.: 3 Delegados e 2 grupos → Delegado 1 no Grupo 1, Delegado 2 no Grupo 2, Delegado 3 no Grupo 1). Assim sempre há Delegado livre para atender incidentes. O programa move o mínimo possível, trocando com um competidor experiente de nível parecido.',
         `**Staff expressivo**: se o staff livre no horário (sem contar Delegados) for de pelo menos ${C.delegateThreshold}× as vagas do grupo, Delegados ficam totalmente de fora.`,
         'Sem staff expressivo: um Delegado **bem ranqueado** pode embaralhar, e como juiz ele só entra como **último recurso**, quando não há mais ninguém. A Conferência mostra quando isso acontece.',
       ],
@@ -150,7 +151,7 @@ export const pt: Manual = {
       title: '9. Ajustes manuais e travas',
       blocks: [
         'Clique em qualquer nome para mover de grupo, trocar por suplente, travar ou remover. O **+** de cada seção adiciona alguém, mostrando quem está ocupado, indisponível, fora da lista ou já com outra função.',
-        'Tudo o que você muda à mão fica **travado** (cadeado): ao gerar de novo, os itens travados são mantidos e o resto é refeito ao redor deles. Se o nº de grupos de uma rodada mudar, as travas dela são descartadas.',
+        'Tudo o que você muda à mão fica **travado** (cadeado): ao gerar de novo, os itens travados são mantidos e o resto é refeito ao redor deles. Se o número de grupos de uma rodada mudar, as travas dela são descartadas.',
         'Desfazer e Refazer guardam até 50 passos.',
       ],
     },

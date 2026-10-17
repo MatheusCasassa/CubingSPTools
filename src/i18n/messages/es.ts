@@ -76,7 +76,7 @@ export const es: Messages = {
     restrictedText:
       'Tu cuenta WCA no es Delegada ni Organizadora de ninguna competición. CubeStaff es exclusivo para quien gestiona competiciones en la WCA.',
     features: [
-      ['Las reglas de tu competición', 'Una función a la vez, los novatos solo compiten, Delegados resguardados, 1 mezclador cada 8 competidores y jueces hasta el nº de estaciones.'],
+      ['Las reglas de tu competición', 'Una función a la vez, los novatos solo compiten, Delegados resguardados, 1 mezclador cada 8 competidores y jueces hasta el número de estaciones.'],
       ['Lista de staff', 'Importa el CSV de Google Forms (ID o nombre, funciones, puzzles y disponibilidad Mañana/Tarde) o arma la lista a mano.'],
       ['Vinculado a la competición', 'Borrador y grupos quedan guardados en la WCA: cierra en el PC y abre en el celular.'],
       ['Rondas siguientes', 'Con los resultados en WCA Live, genera solo las próximas rondas sin deshacer el resto.'],
@@ -142,7 +142,7 @@ export const es: Messages = {
     runners: 'Asignar runners',
     runnersHint: 'Apagado: no se asignan runners automáticamente (puedes agregarlos a mano).',
     stationNumbers: 'Numerar estaciones',
-    stationNumbersHint: 'Guarda el nº de estación de competidores y jueces (aparece en Competition Groups).',
+    stationNumbersHint: 'Guarda el número de estación de competidores y jueces (aparece en Competition Groups).',
     presenceByEvents: 'Presencia por días de las modalidades',
     presenceByEventsHint:
       'Quien está inscrito solo en modalidades de un día no se asigna en los otros días (ej.: solo 3BLD el sábado → fuera el domingo). El staff no competidor cuenta siempre como presente.',
@@ -245,7 +245,7 @@ export const es: Messages = {
       unknownCompetitors: (r: string) => `${r}: clasificados aún desconocidos.`,
       competitorConflict: (r: string, n: number) => `${r}: ${n} competidor(es) con conflicto de horario sin intercambio posible.`,
       delegatesUsed: (n: number) => `${n} vacante(s) de staff quedaron con Delegados por falta de otras personas.`,
-      locksDropped: (r: string) => `${r}: cambió el nº de grupos, los fijados de esta ronda se descartaron.`,
+      locksDropped: (r: string) => `${r}: cambió el número de grupos, los fijados de esta ronda se descartaron.`,
     },
     generated: (n: number) => (n === 1 ? '1 ronda generada.' : `${n} rondas generadas.`),
     group: (n: number) => `Grupo ${n}`,

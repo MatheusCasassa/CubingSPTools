@@ -65,20 +65,20 @@ export const pt = {
       calcumulative:
         'Calculadora de limite de tempo cumulativo e de média de 5 com BPA, WPA e quanto você precisa no último solve.',
       cubestaff:
-        'Agrupamento e atribuição de tarefas (Juiz, Embaralhador e Runner) integrados à WCA. Os grupos alimentam o ScoreComps.',
+        'Agrupamento e atribuição de tarefas (Juiz, Embaralhador e Corredor) integrados à WCA. Os grupos alimentam o ScoreComps.',
     },
   },
   cubestaff: {
     subtitle: 'Agrupamento e atribuição de tarefas integrados à WCA',
     intro:
-      'Gere os grupos e o staff (Juízes, Embaralhadores e Runners) da competição a partir da lista de candidatos aprovados, revise à mão e publique direto na WCA. Os grupos aparecem no **Competition Groups** e o **ScoreComps** já imprime as súmulas com eles.',
+      'Gere os grupos e o staff (Juízes, Embaralhadores e Corredores) da competição a partir da lista de candidatos aprovados, revise à mão e publique direto na WCA. Os grupos aparecem no **Competition Groups** e o **ScoreComps** já imprime as súmulas com eles.',
     loginNote:
       'Entre com a sua conta WCA (Delegado ou Organizador da competição). O plano fica salvo na própria competição na WCA: abra em qualquer aparelho e continue de onde parou.',
     demo: 'Ver com uma competição de demonstração',
     restrictedText:
       'Sua conta WCA não é Delegada nem Organizadora de nenhuma competição. O CubeStaff é exclusivo para quem gerencia competições na WCA.',
     features: [
-      ['Regras da sua competição', 'Uma função por vez, novatos só competem, Delegados poupados, 1 embaralhador a cada 8 competidores e juízes até o nº de estações.'],
+      ['Regras da sua competição', 'Uma função por vez, novatos só competem, Delegados poupados, 1 embaralhador a cada 8 competidores e juízes até o número de estações.'],
       ['Lista de staff', 'Importe o CSV do Google Forms (ID ou nome, funções, puzzles e disponibilidade Manhã/Tarde) ou monte a lista à mão.'],
       ['Vinculado à competição', 'Rascunho e grupos ficam salvos na WCA: feche no PC e abra no celular.'],
       ['Rodadas seguintes', 'Depois dos resultados no WCA Live, gere só as próximas rodadas sem desfazer o resto.'],
@@ -91,8 +91,8 @@ export const pt = {
     loading: 'Carregando competição…',
     demoNote: 'Competição fictícia para testar o CubeStaff — nada é gravado na WCA.',
     tabs: { config: 'Configuração', staff: 'Staff', groups: 'Grupos', people: 'Pessoas' },
-    roles: { competitor: 'Competidor', judge: 'Juiz', scrambler: 'Embaralhador', runner: 'Runner', reserve: 'Suplente' },
-    rolesPlural: { competitor: 'Competidores', judge: 'Juízes', scrambler: 'Embaralhadores', runner: 'Runners', reserve: 'Suplentes' },
+    roles: { competitor: 'Competidor', judge: 'Juiz', scrambler: 'Embaralhador', runner: 'Corredor', reserve: 'Suplente' },
+    rolesPlural: { competitor: 'Competidores', judge: 'Juízes', scrambler: 'Embaralhadores', runner: 'Corredores', reserve: 'Suplentes' },
     tags: { notApproved: 'Não aprovado', newcomer: 'Novato', delegate: 'Delegado', organizer: 'Organizador', staff: 'Staff', extra: 'Extra', absent: 'Ausente', locked: 'Travado' },
     // barra de ações
     generate: 'Gerar grupos',
@@ -144,10 +144,10 @@ export const pt = {
     share50: '50% novatos',
     share100Hint: 'Todos os Delegados podem acompanhar os grupos de novatos.',
     share50Hint: 'Meio a meio com experientes, para equilibrar os incidentes do grupo.',
-    runners: 'Escalar runners',
-    runnersHint: 'Desligado: o programa não escala runners (você pode adicionar à mão).',
+    runners: 'Escalar corredores',
+    runnersHint: 'Desligado: o programa não escala corredores (você pode adicionar à mão).',
     stationNumbers: 'Numerar estações',
-    stationNumbersHint: 'Grava o nº da estação de competidores e juízes (aparece no Competition Groups).',
+    stationNumbersHint: 'Grava o número da estação de competidores e juízes (aparece no Competition Groups).',
     presenceByEvents: 'Presença pelos dias das modalidades',
     presenceByEventsHint:
       'Quem está inscrito só em modalidades de um dia não é escalado nos outros dias (ex.: só 3BLD no sábado → fora do domingo). Staff não competidor conta como presente sempre.',
@@ -243,7 +243,7 @@ export const pt = {
       notInList: (who: string, where: string) => `${who} não está na lista de staff (${where}).`,
       shortJudges: (where: string, c: number, n: number) => `${where}: ${c} de ${n} juízes.`,
       shortScramblers: (where: string, c: number, n: number) => `${where}: ${c} de ${n} embaralhadores.`,
-      shortRunners: (where: string, c: number, n: number) => `${where}: ${c} de ${n} runners.`,
+      shortRunners: (where: string, c: number, n: number) => `${where}: ${c} de ${n} corredores.`,
       tooManyTasks: (who: string, c: number, n: number) => `${who}: ${c} tarefas (máx. ${n}).`,
       emptyGroup: (where: string) => `${where}: grupo vazio.`,
       noSchedule: (where: string) => `${where}: rodada sem horário no cronograma da WCA — não dá para publicar.`,
@@ -253,7 +253,7 @@ export const pt = {
       unknownCompetitors: (r: string) => `${r}: classificados ainda desconhecidos.`,
       competitorConflict: (r: string, n: number) => `${r}: ${n} competidor(es) com conflito de horário sem troca possível.`,
       delegatesUsed: (n: number) => `${n} vaga(s) de staff ficaram com Delegados por falta de outras pessoas.`,
-      locksDropped: (r: string) => `${r}: o nº de grupos mudou, as travas desta rodada foram descartadas.`,
+      locksDropped: (r: string) => `${r}: o número de grupos mudou, as travas desta rodada foram descartadas.`,
     },
     generated: (n: number) => (n === 1 ? '1 rodada gerada.' : `${n} rodadas geradas.`),
     group: (n: number) => `Grupo ${n}`,

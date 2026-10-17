@@ -24,7 +24,7 @@ export const es: Manual = {
         {
           list: [
             '**Staff**: importa el CSV del formulario de staff (o arma la lista a mano) con los voluntarios **aprobados**.',
-            '**Configuración**: indica el nº de estaciones y el nº de grupos de cada ronda. Al lado aparece la cuenta "≈ N por grupo".',
+            '**Configuración**: indica el número de estaciones y el número de grupos de cada ronda. Al lado aparece la cuenta "≈ N por grupo".',
             '**Generar grupos**: el programa distribuye a los competidores y asigna el staff según las reglas de abajo.',
             '**Revisar**: en la pestaña Grupos, mueve personas, cambia por suplentes, agrega o quita. La Revisión señala problemas.',
             '**Guardar borrador** (solo el plan, sin publicar) o **Publicar en la WCA** (los grupos aparecen en Competition Groups y ScoreComps).',
@@ -47,7 +47,7 @@ export const es: Manual = {
       id: 'competidores',
       title: '3. Grupos de competidores',
       blocks: [
-        'El **nº de grupos** de cada ronda lo defines tú. Los grupos quedan con tamaños casi iguales (diferencia máxima de 1). El horario de cada grupo es una parte igual del horario de la ronda en el cronograma de la WCA; las rondas en más de un escenario reparten los grupos entre ellos.',
+        'El **número de grupos** de cada ronda lo defines tú. Los grupos quedan con tamaños casi iguales (diferencia máxima de 1). El horario de cada grupo es una parte igual del horario de la ronda en el cronograma de la WCA; las rondas en más de un escenario reparten los grupos entre ellos.',
         '**Ranking usado**: el récord personal de **media** en el evento (en los eventos a ciegas, el **single**). Quien no tiene resultado cuenta como el más lento.',
         'Los experimentados se ordenan **del más lento al más rápido**: los primeros grupos reciben a los más lentos y **los más rápidos quedan en los últimos grupos** (bueno para la transmisión y libera a los mejores mezcladores al inicio). Dentro del grupo, el orden (y la estación, si se numera) va del más rápido al más lento.',
         'Hay dos formas de tratar a los **novatos**:',
@@ -122,7 +122,7 @@ export const es: Manual = {
       id: 'juizes',
       title: '6. Jueces y runners',
       blocks: [
-        '**Jueces por grupo** = nº de estaciones (o el tamaño del grupo, si es menor). Con más de un escenario, cada uno puede tener su nº de estaciones.',
+        '**Jueces por grupo** = número de estaciones (o el tamaño del grupo, si es menor). Con más de un escenario, cada uno puede tener su número de estaciones.',
         'Prioridad: **quien compitió en el grupo anterior** juzga el siguiente (ya está ahí y libre); después, quien tiene **menos tareas**; después, quien prefiere juzgar.',
         'Los **runners** solo se asignan si la opción está activada: 1 cada 8 estaciones.',
       ],
@@ -132,6 +132,7 @@ export const es: Manual = {
       title: '7. Delegados',
       blocks: [
         'Los Delegados (y trainees) quedan **resguardados** de juez y mezclador, para atender incidentes y otras tareas. Los organizadores siguen las reglas normales.',
+        '**Al competir, los Delegados quedan en grupos distintos**: si dos o más Delegados compiten en una ronda con dos o más grupos, se separan (ej.: 3 Delegados y 2 grupos → Delegado 1 en el Grupo 1, Delegado 2 en el Grupo 2, Delegado 3 en el Grupo 1). Así siempre hay un Delegado libre para atender incidentes. El programa mueve lo mínimo posible, intercambiando con un competidor experimentado de nivel parecido.',
         `**Staff abundante**: si el staff libre en ese horario (sin contar Delegados) es al menos ${C.delegateThreshold}× las vacantes del grupo, los Delegados quedan totalmente fuera.`,
         'Sin staff abundante: un Delegado **bien ubicado en el ranking** puede mezclar, y como juez solo entra como **último recurso**, cuando no queda nadie más. La Revisión muestra cuándo ocurre.',
       ],
@@ -150,7 +151,7 @@ export const es: Manual = {
       title: '9. Ajustes manuales y fijados',
       blocks: [
         'Haz clic en cualquier nombre para mover de grupo, cambiar por suplente, fijar o quitar. El **+** de cada sección agrega a alguien, mostrando quién está ocupado, no disponible, fuera de la lista o ya con otra función.',
-        'Todo lo que cambias a mano queda **fijado** (candado): al generar de nuevo, los elementos fijados se mantienen y el resto se rearma alrededor. Si cambia el nº de grupos de una ronda, sus fijados se descartan.',
+        'Todo lo que cambias a mano queda **fijado** (candado): al generar de nuevo, los elementos fijados se mantienen y el resto se rearma alrededor. Si cambia el número de grupos de una ronda, sus fijados se descartan.',
         'Deshacer y Rehacer guardan hasta 50 pasos.',
       ],
     },
