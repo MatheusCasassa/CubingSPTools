@@ -113,6 +113,7 @@ function Chip({
   ref_,
   groupCount,
   issueRefs,
+  onReplace,
 }: {
   roundId: string
   g: GroupPlan
@@ -120,6 +121,7 @@ function Chip({
   ref_: Ref
   groupCount: number
   issueRefs: Map<Ref, 'error' | 'warn' | 'info'>
+  onReplace?: (kind: StaffRole, ref: Ref) => void
 }) {
   const { m } = useI18n()
   const t = m.cubestaff
@@ -209,6 +211,9 @@ function Chip({
               ))}
             </>
           )}
+          {kind !== 'competitor' && kind !== 'reserve' && onReplace && (
+            <MenuItem onClick={() => (onReplace(kind, ref_), close())}>↔ {t.replaceOther}</MenuItem>
+          )}
           <MenuItem onClick={() => (s.commit(toggleLock(plan, roundId, g.number, key)), close())}>
             <IconLock /> {locked ? t.unlock : t.lock}
           </MenuItem>
@@ -239,21 +244,27 @@ function Picker({
   roundId,
   group,
   kind,
+  replace,
   onClose,
 }: {
   roundId: string
   group: number
   kind: Kind
+  /** Trocar esta pessoa (staff) por quem for escolhido. */
+  replace?: Ref
   onClose: () => void
 }) {
   const { m } = useI18n()
   const t = m.cubestaff
-  const { s, wcif, plan, where } = useCs()
+  const { s, wcif, plan, where, person } = useCs()
   const [q, setQ] = useState('')
   const list = useMemo(() => candidates(wcif, plan, roundId, group, kind), [wcif, plan, roundId, group, kind])
   const n = q.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   const shown = list
     .filter((c) => (kind === 'competitor' ? !c.extra && !c.competingHere : true))
+    // Na troca, só quem está apto a fazer staff agora: livre no horário, não
+    // compete neste grupo e (para juiz/embaralhador) não é novato.
+    .filter((c) => !replace || (c.ref !== replace && !c.busy && !c.competingHere && !(c.newcomer && kind !== 'runner')))
     .filter(
       (c) =>
         !n ||
@@ -263,6 +274,11 @@ function Picker({
     .slice(0, 80)
   const pick = (ref: Ref) => {
     const id = Number(ref.slice(1))
+    if (replace && kind !== 'competitor' && kind !== 'reserve') {
+      s.commit(addStaff(removeStaff(plan, roundId, group, kind, replace), roundId, group, kind, ref))
+      onClose()
+      return
+    }
     const next =
       kind === 'competitor'
         ? moveCompetitor(plan, roundId, id, group)
@@ -273,7 +289,14 @@ function Picker({
     onClose()
   }
   return (
-    <Modal title={t.pickerTitle(t.roles[kind], where(roundId, group))} onClose={onClose}>
+    <Modal
+      title={
+        replace
+          ? t.replaceTitle(person(replace).name, where(roundId, group))
+          : t.pickerTitle(t.roles[kind], where(roundId, group))
+      }
+      onClose={onClose}
+    >
       <input
         autoFocus
         className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
@@ -338,6 +361,7 @@ function Section({
   groupCount,
   issueRefs,
   onAdd,
+  onReplace,
   need,
   collapsible = false,
 }: {
@@ -349,14 +373,15 @@ function Section({
   groupCount: number
   issueRefs: Map<Ref, 'error' | 'warn' | 'info'>
   onAdd: () => void
+  onReplace?: (kind: StaffRole, ref: Ref) => void
   need?: number
   collapsible?: boolean
 }) {
   const { m, tag } = useI18n()
   const { person } = useCs()
   const [all, setAll] = useState(false)
-  const sorted =
-    kind === 'competitor' ? refs : [...refs].sort((a, b) => person(a).name.localeCompare(person(b).name, tag))
+  // Sempre em ordem alfabética na tela (a ordem do plano — estações — não muda).
+  const sorted = [...refs].sort((a, b) => person(a).name.localeCompare(person(b).name, tag))
   const limit = collapsible && !all ? 10 : Infinity
   return (
     <div>
@@ -382,7 +407,16 @@ function Section({
       </div>
       <div className="flex flex-wrap gap-1">
         {sorted.slice(0, limit).map((r) => (
-          <Chip key={r} roundId={roundId} g={g} kind={kind} ref_={r} groupCount={groupCount} issueRefs={issueRefs} />
+          <Chip
+            key={r}
+            roundId={roundId}
+            g={g}
+            kind={kind}
+            ref_={r}
+            groupCount={groupCount}
+            issueRefs={issueRefs}
+            onReplace={onReplace}
+          />
         ))}
         {sorted.length > limit && (
           <button
@@ -421,7 +455,7 @@ function RoundBlock({
   const { s, wcif, plan, roundLabel, time } = useCs()
   const rp = plan.rounds[roundId]
   const sched = useMemo(() => slotsByRound(wcif, plan).get(roundId), [wcif, plan, roundId])
-  const [picker, setPicker] = useState<{ group: number; kind: Kind } | null>(null)
+  const [picker, setPicker] = useState<{ group: number; kind: Kind; replace?: Ref } | null>(null)
   const known = roundCompetitors(wcif, roundId, new Set(plan.config.absent))
   const cfg = plan.config
 
@@ -483,7 +517,13 @@ function RoundBlock({
           const ir = issuesByGroup.get(g.number) ?? new Map()
           const stations = slot ? cfg.stationsByRoom[String(slot.roomId)] || cfg.stations : cfg.stations
           const size = g.competitors.length
-          const common = { roundId, g, groupCount: rp.groups.length, issueRefs: ir }
+          const common = {
+            roundId,
+            g,
+            groupCount: rp.groups.length,
+            issueRefs: ir,
+            onReplace: (kind: StaffRole, ref: Ref) => setPicker({ group: g.number, kind, replace: ref }),
+          }
           return (
             <div key={g.number} className="rounded-xl border border-border-subtle bg-surface-2/40 p-3">
               <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
@@ -544,7 +584,15 @@ function RoundBlock({
           )
         })}
       </div>
-      {picker && <Picker roundId={roundId} group={picker.group} kind={picker.kind} onClose={() => setPicker(null)} />}
+      {picker && (
+        <Picker
+          roundId={roundId}
+          group={picker.group}
+          kind={picker.kind}
+          replace={picker.replace}
+          onClose={() => setPicker(null)}
+        />
+      )}
     </section>
   )
 }

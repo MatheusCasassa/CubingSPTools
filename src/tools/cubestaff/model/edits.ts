@@ -252,6 +252,7 @@ export function candidates(
         (c.newcomer && role !== 'competitor' ? 50 : 0) +
         (!c.available || c.otherDay ? 30 : 0) +
         (!c.inList && !c.extra ? 10 : 0) +
+        (c.extra ? 5 : 0) +
         (c.delegate ? 5 : 0)
       const d = score(a) - score(b)
       if (d !== 0) return d

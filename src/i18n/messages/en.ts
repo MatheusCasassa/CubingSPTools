@@ -258,6 +258,8 @@ export const en: Messages = {
     unlockRound: 'Unlock round',
     clearRound: 'Clear round',
     replaceBy: 'Replace with reserve',
+    replaceOther: 'Replace with someone else…',
+    replaceTitle: (name: string, where: string) => `Replace ${name} — ${where}`,
     showAll: (n: number) => `Show all (${n})`,
     showLess: 'Show less',
     pickerTitle: (role: string, where: string) => `${role} — ${where}`,

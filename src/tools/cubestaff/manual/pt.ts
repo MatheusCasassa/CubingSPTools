@@ -143,14 +143,14 @@ export const pt: Manual = {
       blocks: [
         `Cada grupo recebe até ${C.reservesPerGroup} suplentes (ajustável): pessoas da lista que estão **livres naquele horário**, com menos tarefas, sem Delegados quando possível.`,
         'São calculados depois de todo o staff, para nunca sugerir alguém já escalado num grupo simultâneo.',
-        'Se alguém faltar, clique no nome e use **Trocar por suplente**. Suplentes não vão para a WCA (não existe código para isso): ficam no CubeStaff e nas planilhas.',
+        'Se alguém faltar, clique no nome e use **Trocar por suplente** — ou **Trocar por outra pessoa…**, que lista qualquer pessoa apta a fazer staff naquele horário (livre, não compete no grupo e, para juiz/embaralhador, não é novato). Suplentes não vão para a WCA (não existe código para isso): ficam no CubeStaff e nas planilhas.',
       ],
     },
     {
       id: 'manual',
       title: '9. Ajustes manuais e travas',
       blocks: [
-        'Clique em qualquer nome para mover de grupo, trocar por suplente, travar ou remover. O **+** de cada seção adiciona alguém, mostrando quem está ocupado, indisponível, fora da lista ou já com outra função.',
+        'Os nomes de cada grupo aparecem em **ordem alfabética**. Clique em qualquer nome para mover de grupo, trocar por suplente ou por outra pessoa, travar ou remover. O **+** de cada seção adiciona alguém, mostrando quem está ocupado, indisponível, fora da lista ou já com outra função.',
         'Tudo o que você muda à mão fica **travado** (cadeado): ao gerar de novo, os itens travados são mantidos e o resto é refeito ao redor deles. Se o número de grupos de uma rodada mudar, as travas dela são descartadas.',
         'Desfazer e Refazer guardam até 50 passos.',
       ],

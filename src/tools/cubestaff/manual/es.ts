@@ -143,14 +143,14 @@ export const es: Manual = {
       blocks: [
         `Cada grupo recibe hasta ${C.reservesPerGroup} suplentes (ajustable): personas de la lista **libres en ese horario**, con menos tareas, sin Delegados cuando es posible.`,
         'Se calculan después de todo el staff, para nunca sugerir a alguien ya asignado en un grupo simultáneo.',
-        'Si alguien falta, haz clic en su nombre y usa **Cambiar por suplente**. Los suplentes no van a la WCA (no existe código para eso): quedan en CubeStaff y en las planillas.',
+        'Si alguien falta, haz clic en su nombre y usa **Cambiar por suplente** — o **Cambiar por otra persona…**, que lista a cualquier persona apta para hacer staff en ese horario (libre, no compite en el grupo y, para juez/mezclador, no es novato). Los suplentes no van a la WCA (no existe código para eso): quedan en CubeStaff y en las planillas.',
       ],
     },
     {
       id: 'manual',
       title: '9. Ajustes manuales y fijados',
       blocks: [
-        'Haz clic en cualquier nombre para mover de grupo, cambiar por suplente, fijar o quitar. El **+** de cada sección agrega a alguien, mostrando quién está ocupado, no disponible, fuera de la lista o ya con otra función.',
+        'Los nombres de cada grupo aparecen en **orden alfabético**. Haz clic en cualquier nombre para mover de grupo, cambiar por suplente o por otra persona, fijar o quitar. El **+** de cada sección agrega a alguien, mostrando quién está ocupado, no disponible, fuera de la lista o ya con otra función.',
         'Todo lo que cambias a mano queda **fijado** (candado): al generar de nuevo, los elementos fijados se mantienen y el resto se rearma alrededor. Si cambia el número de grupos de una ronda, sus fijados se descartan.',
         'Deshacer y Rehacer guardan hasta 50 pasos.',
       ],

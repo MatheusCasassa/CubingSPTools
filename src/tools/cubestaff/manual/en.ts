@@ -143,14 +143,14 @@ export const en: Manual = {
       blocks: [
         `Each group gets up to ${C.reservesPerGroup} reserves (adjustable): people from the list who are **free at that time**, with fewer tasks, without Delegates when possible.`,
         'They are computed after all staff, so nobody already assigned to a simultaneous group is suggested.',
-        'If someone is missing, click their name and use **Replace with reserve**. Reserves are not sent to the WCA (there is no code for that): they stay in CubeStaff and in the sheets.',
+        'If someone is missing, click their name and use **Replace with reserve** — or **Replace with someone else…**, which lists anyone able to do staff at that time (free, not competing in the group and, for judge/scrambler, not a newcomer). Reserves are not sent to the WCA (there is no code for that): they stay in CubeStaff and in the sheets.',
       ],
     },
     {
       id: 'manual',
       title: '9. Manual changes and locks',
       blocks: [
-        'Click any name to move groups, swap in a reserve, lock or remove. The **+** of each section adds someone, showing who is busy, unavailable, off the list or already in another role.',
+        'Names in each group are shown in **alphabetical order**. Click any name to move groups, swap in a reserve or someone else, lock or remove. The **+** of each section adds someone, showing who is busy, unavailable, off the list or already in another role.',
         'Everything you change by hand is **locked** (padlock): when you generate again, locked items are kept and the rest is rebuilt around them. If the number of groups of a round changes, its locks are dropped.',
         'Undo and Redo keep up to 50 steps.',
       ],

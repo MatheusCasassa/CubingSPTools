@@ -266,6 +266,8 @@ export const pt = {
     unlockRound: 'Destravar rodada',
     clearRound: 'Limpar rodada',
     replaceBy: 'Trocar por suplente',
+    replaceOther: 'Trocar por outra pessoa…',
+    replaceTitle: (name: string, where: string) => `Trocar ${name} — ${where}`,
     showAll: (n: number) => `Mostrar todos (${n})`,
     showLess: 'Mostrar menos',
     pickerTitle: (role: string, where: string) => `${role} — ${where}`,
