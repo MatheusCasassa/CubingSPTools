@@ -47,7 +47,7 @@ export const en: Messages = {
   home: {
     title: 'CSPTools',
     intro:
-      'CubingSP Tools is a toolkit that makes life easier for Delegates, Organizers and competitors with the main tasks of a competition: **Grouping**, **Staff Assignments**, **PDF Scorecards** and time calculations, all from official WCA data.',
+      "CubingSP Tools is a hub of tools built to make the work of delegates, organizers and competitors easier with the main tasks of a competition. You'll find a bit of everything here: the focus is on improving the Staff's resources for a better organized competition.",
     footnote:
       'The Delegate and Organizer tools require signing in with your WCA account. No passwords or data are stored here — everything runs 100% in your browser.',
     categories: {

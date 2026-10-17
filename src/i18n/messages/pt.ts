@@ -49,7 +49,7 @@ export const pt = {
   home: {
     title: 'CSPTools',
     intro:
-      'CubingSP Tools é uma ferramenta feita para facilitar Delegados, Organizadores e competidores com as principais tarefas de uma competição: **Agrupamento**, **Atribuição de Tarefas**, **Geração de Súmulas em PDF** e cálculos de tempo, tudo a partir dos dados oficiais da WCA.',
+      'CubingSP Tools é um hub de ferramentas feito para facilitar o trabalho de delegados, organizadores e competidores com as principais tarefas de uma competição. Aqui você vai encontrar de tudo um pouco: o foco é melhorar os recursos da Staff em prol de uma competição mais organizada.',
     footnote:
       'As ferramentas de Delegados e Organizadores pedem login na sua conta WCA. Nenhuma senha ou armazenamento passam por aqui, roda 100% no seu navegador.',
     categories: {
