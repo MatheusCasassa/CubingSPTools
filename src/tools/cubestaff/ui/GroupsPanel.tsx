@@ -329,16 +329,23 @@ function Picker({
                 {kind !== 'competitor' && c.load > 0 && (
                   <span className="text-[11px] text-fg-faint">{t.tasks(c.load)}</span>
                 )}
+                {kind === 'scrambler' && c.scramble && !c.scramble.registered && (
+                  <Tag tone="warn">{t.notRegisteredTag}</Tag>
+                )}
                 {kind === 'scrambler' && c.scramble && (
                   <span className="text-[11px] text-fg-muted">
-                    {c.scramble.source === 'event'
-                      ? t.rankEvent(Math.max(1, Math.round(c.scramble.pct * 100)))
-                      : c.scramble.source === 'base'
-                        ? t.rankBase(
-                            NXN_LABEL[BASE_EVENT[roundId.split('-')[0]]] ?? '',
-                            Math.max(1, Math.round(c.scramble.pct * 100)),
-                          )
-                        : t.rankSor(Math.max(1, Math.round(c.scramble.pct * 100)))}
+                    {c.scramble.source === 'none'
+                      ? t.rankNone
+                      : c.scramble.source === 'event' && c.scramble.psych
+                        ? t.rankPsych(c.scramble.psych)
+                        : c.scramble.source === 'event'
+                          ? t.rankEvent(Math.max(1, Math.round(c.scramble.pct * 100)))
+                          : c.scramble.source === 'base'
+                            ? t.rankBase(
+                                NXN_LABEL[BASE_EVENT[roundId.split('-')[0]]] ?? '',
+                                Math.max(1, Math.round(c.scramble.pct * 100)),
+                              )
+                            : t.rankSor(Math.max(1, Math.round(c.scramble.pct * 100)))}
                   </span>
                 )}
               </span>

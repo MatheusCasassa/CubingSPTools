@@ -6,6 +6,8 @@
 //     3BLD, 3x3 OH, Multi-BLD, FMC → 3x3 · 4BLD → 4x4 · 5BLD → 5x5.
 //     Quem é muito bom no 3x3 é bom embaralhador de 3BLD mesmo sem nunca ter
 //     feito 3BLD.
+//  0. INSCRITOS no evento vêm SEMPRE antes (a Psych Sheet manda). Quem não
+//     está inscrito só embaralha em último caso, mesmo sendo bom no evento.
 //  3. Evento "novo" (ex.: FTO no começo), onde menos da metade dos inscritos
 //     já tem resultado: o Sum of Ranks entra em pé de igualdade — quem se
 //     destaca em todas ou quase todas as modalidades costuma ser bom
@@ -30,7 +32,7 @@ export const BASE_EVENT: Record<string, string> = {
 /** Evento "raro": menos da metade dos inscritos nele já tem resultado. */
 export const RARE_SHARE = 0.5
 
-export type ScrambleSource = 'event' | 'base' | 'sor'
+export type ScrambleSource = 'event' | 'base' | 'sor' | 'none'
 
 export interface ScrambleRank {
   /** Menor = melhor. Percentil (0–1). */
@@ -38,6 +40,10 @@ export interface ScrambleRank {
   source: ScrambleSource
   /** Percentil que decidiu (0–1). */
   pct: number
+  /** Inscrito (e aprovado) no evento. Inscritos vêm sempre antes. */
+  registered: boolean
+  /** Posição na Psych Sheet do evento (só inscritos com resultado). */
+  psych: number | null
 }
 
 export interface ScrambleRanking {
@@ -93,6 +99,19 @@ export function sumOfRanks(wcif: Wcif): Map<number, number> {
   })
 }
 
+/** Inscrito (aprovado, competindo) no evento. */
+export const registeredIn = (p: WcifPerson, eventId: string) =>
+  isAccepted(p) && !!p.registration?.eventIds?.includes(eventId)
+
+/** Posição de cada inscrito na Psych Sheet do evento (1 = melhor). */
+export function psychSheet(wcif: Wcif, eventId: string): Map<number, number> {
+  return memo(wcif, `psych:${eventId}`, () => {
+    const list = wcif.persons.filter((p) => registeredIn(p, eventId) && hasResultIn(p, eventId))
+    list.sort((a, b) => compareRank(a, b, eventId))
+    return new Map(list.map((p, i) => [p.registrantId!, i + 1]))
+  })
+}
+
 /** O evento é "raro" (poucos inscritos nele já têm resultado)? */
 export function isRareEvent(wcif: Wcif, eventId: string): boolean {
   return memo(wcif, `rare:${eventId}`, () => {
@@ -112,18 +131,25 @@ export function scramblerRanking(wcif: Wcif, eventId: string): ScrambleRanking {
     const ev = eventPercentiles(wcif, eventId)
     const base = baseEventId ? eventPercentiles(wcif, baseEventId) : new Map<number, number>()
     const sor = sumOfRanks(wcif)
+    const psych = psychSheet(wcif, eventId)
     const byId = new Map<number, ScrambleRank>()
     for (const p of wcif.persons) {
       if (!isApproved(p)) continue
       const id = p.registrantId!
+      const registered = registeredIn(p, eventId)
+      const extra = { registered, psych: psych.get(id) ?? null }
       const options: ScrambleRank[] = []
-      if (ev.has(id)) options.push({ score: ev.get(id)!, source: 'event', pct: ev.get(id)! })
-      if (base.has(id)) options.push({ score: base.get(id)!, source: 'base', pct: base.get(id)! })
+      if (ev.has(id)) options.push({ score: ev.get(id)!, source: 'event', pct: ev.get(id)!, ...extra })
+      if (base.has(id)) options.push({ score: base.get(id)!, source: 'base', pct: base.get(id)!, ...extra })
       // Sum of Ranks SÓ em evento novo (menos da metade com resultado).
       if (rare && sor.has(id)) {
         const s = sor.get(id)!
-        options.push({ score: s, source: 'sor', pct: s })
+        options.push({ score: s, source: 'sor', pct: s, ...extra })
       }
+      // Inscrito sem nenhum resultado: fim da Psych Sheet, mas ainda antes de
+      // qualquer não inscrito.
+      if (options.length === 0 && registered && p.wcaId)
+        options.push({ score: 2, source: 'none', pct: 1, ...extra })
       if (options.length === 0) continue
       options.sort((a, b) => a.score - b.score)
       byId.set(id, options[0])
@@ -144,8 +170,14 @@ export function puzzleAllowed(
   return ranking.rare
 }
 
+/** Inscritos no evento primeiro; depois o ranking; depois o nome. */
 export function compareScramblers(a: WcifPerson, b: WcifPerson, ranking: ScrambleRanking): number {
-  const ra = ranking.byId.get(a.registrantId!)?.score ?? Infinity
-  const rb = ranking.byId.get(b.registrantId!)?.score ?? Infinity
-  return ra - rb || a.name.localeCompare(b.name, 'pt-BR')
+  const ra = ranking.byId.get(a.registrantId!)
+  const rb = ranking.byId.get(b.registrantId!)
+  const tier = (r?: ScrambleRank) => (r?.registered ? 0 : 1)
+  return (
+    tier(ra) - tier(rb) ||
+    (ra?.score ?? Infinity) - (rb?.score ?? Infinity) ||
+    a.name.localeCompare(b.name, 'pt-BR')
+  )
 }

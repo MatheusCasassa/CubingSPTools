@@ -477,9 +477,9 @@ function pickStaff(
     ctx.agenda.add(ref, { start: wg.slot.start, end: wg.slot.end, roundId: wg.roundId, group: wg.number, role })
   }
 
-  // --- Embaralhadores: os mais bem ranqueados (evento, modalidade principal
-  // das variantes e Sum of Ranks em evento novo — ver scramblerRank.ts),
-  // revezando a carga.
+  // --- Embaralhadores: os mais bem ranqueados INSCRITOS no evento (Psych
+  // Sheet; variantes também pela modalidade principal; Sum of Ranks em evento
+  // novo — ver scramblerRank.ts), revezando a carga. Não inscritos: último caso.
   {
     const need = needs.scrambler - wg.plan.scramblers.length
     const ranking = scramblerRanking(ctx.wcif, wg.eventId)
@@ -490,22 +490,29 @@ function pickStaff(
       .filter((c) => ranking.byId.has(c.id))
       .sort((a, b) => compareScramblers(a.person, b.person, ranking))
     const window = Math.max(6, need * 3)
+    const registered = (c: (typeof cands)[number]) => !!ranking.byId.get(c.id)?.registered
     for (let n = 0; n < need; n++) {
       const open = cands.filter((c) => !taken.has(pref(c.id)))
-      const ranked = open.slice(0, window)
-      // Delegado só se bem ranqueado (dentro da janela) e sem staff expressivo.
-      const allowed = ranked.filter((c) => !isDelegate(c.person) || !expressive)
-      const best = allowed
-        .map((c, i) => ({
-          c,
-          score:
-            i +
-            4 * ctx.agenda.roleCount(pref(c.id), 'scrambler') +
-            2 * ctx.agenda.staffCount(pref(c.id)) +
-            prefScore(c.entry, 'scrambler') +
-            (isDelegate(c.person) ? 6 : 0),
-        }))
-        .sort((a, b) => a.score - b.score)[0]
+      // Primeiro os INSCRITOS no evento (Psych Sheet); quem não está inscrito
+      // só entra se não sobrar nenhum inscrito possível.
+      let best: { c: (typeof cands)[number]; score: number } | undefined
+      for (const tier of [open.filter(registered), open.filter((c) => !registered(c))]) {
+        const ranked = tier.slice(0, window)
+        // Delegado só se bem ranqueado (dentro da janela) e sem staff expressivo.
+        const allowed = ranked.filter((c) => !isDelegate(c.person) || !expressive)
+        best = allowed
+          .map((c, i) => ({
+            c,
+            score:
+              i +
+              4 * ctx.agenda.roleCount(pref(c.id), 'scrambler') +
+              2 * ctx.agenda.staffCount(pref(c.id)) +
+              prefScore(c.entry, 'scrambler') +
+              (isDelegate(c.person) ? 6 : 0),
+          }))
+          .sort((a, b) => a.score - b.score)[0]
+        if (best) break
+      }
       if (!best) {
         short.scrambler += need - n
         break

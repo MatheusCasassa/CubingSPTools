@@ -93,7 +93,9 @@ export const pt: Manual = {
       title: '5. Embaralhadores',
       blocks: [
         `**Quantidade**: 1 embaralhador a cada ${C.competitorsPerScrambler} competidores do grupo (1–${C.competitorsPerScrambler} → 1, ${C.competitorsPerScrambler + 1}–${C.competitorsPerScrambler * 2} → 2, …). Ajustável no Avançado.`,
-        '**Quem**: os mais bem classificados no ranking de embaralhador, que funciona assim:',
+        '**Quem**: os mais bem classificados **inscritos na modalidade** — como na Psych Sheet. Quem não está inscrito na modalidade só embaralha em **último caso** (quando não sobra nenhum inscrito livre), mesmo que seja muito bom nela. Na escolha manual, essas pessoas aparecem no fim da lista com a etiqueta "não inscrito".',
+        'Como os mais rápidos competem nos últimos grupos, quem embaralha o último grupo vem dos grupos anteriores — por isso ali aparecem posições mais baixas da Psych Sheet (ex.: com 29 inscritos e 2 grupos, o grupo 2 tem os 14 melhores, e os embaralhadores dele saem do 15º em diante).',
+        'Entre os inscritos, a ordem segue o ranking de embaralhador:',
         {
           list: [
             '**Percentil**: para comparar eventos diferentes, cada ranking vira uma posição de 0% (melhor da competição) a 100% (pior), só entre os aprovados da competição.',

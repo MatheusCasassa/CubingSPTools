@@ -37,7 +37,14 @@ import {
   readRows,
 } from '../src/tools/cubestaff/model/staffImport'
 import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
-import { BASE_EVENT, isRareEvent, puzzleAllowed, scramblerRanking } from '../src/tools/cubestaff/model/scramblerRank'
+import {
+  BASE_EVENT,
+  compareScramblers,
+  isRareEvent,
+  psychSheet,
+  puzzleAllowed,
+  scramblerRanking,
+} from '../src/tools/cubestaff/model/scramblerRank'
 import { presentAt } from '../src/tools/cubestaff/model/presence'
 import { decodeStaffRow, encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
 import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
@@ -626,5 +633,46 @@ ok('presença pelos dias das modalidades inscritas')
   assert.equal(checkPlan(w5, gen).filter((i) => i.level === 'error').length, 0)
 }
 ok('Delegados separados em grupos diferentes ao competir')
+
+// 27. Embaralham os melhores INSCRITOS no evento (Psych Sheet). Quem é muito
+// bom mas não está inscrito só entra em último caso.
+{
+  const w6 = structuredClone(wcif)
+  const ev = 'pyram'
+  const ranked = w6.persons
+    .filter(
+      (p) => isAccepted(p) && p.registration?.eventIds.includes(ev) && p.personalBests?.some((b) => b.eventId === ev),
+    )
+    .sort((a, b) => compareRank(a, b, ev))
+  const star = ranked[0]
+  star.registration!.eventIds = star.registration!.eventIds.filter((e) => e !== ev)
+  const rk = scramblerRanking(w6, ev)
+  assert.equal(rk.byId.get(star.registrantId!)?.registered, false)
+  assert.equal(rk.byId.get(star.registrantId!)?.score, 0, 'continua o melhor no ranking puro')
+  assert.ok(compareScramblers(ranked.at(-1)!, star, rk) < 0, 'inscrito pior vem antes de não inscrito melhor')
+  assert.equal(psychSheet(w6, ev).get(ranked[1].registrantId!), 1, 'Psych Sheet só com inscritos')
+  const cfg6: Plan = {
+    ...base,
+    staff: base.staff.some((s) => s.registrantId === star.registrantId)
+      ? base.staff
+      : [
+          ...base.staff,
+          {
+            registrantId: star.registrantId!,
+            roles: [],
+            preferred: [],
+            scrambler: null,
+            scramblePuzzles: [],
+            availability: null,
+          },
+        ],
+  }
+  const gen = generate(w6, cfg6, { roundIds: [`${ev}-r1`] }).plan
+  const scr = gen.rounds[`${ev}-r1`].groups.flatMap((g) => g.scramblers)
+  assert.ok(scr.length > 0)
+  assert.ok(!scr.includes(`p${star.registrantId}`), 'não inscrito não embaralha havendo inscritos livres')
+  for (const r of scr) assert.ok(rk.byId.get(refId(r)!)?.registered, `${r} deveria estar inscrito`)
+}
+ok('embaralhadores: inscritos no evento primeiro, não inscritos só em último caso')
 
 console.log(`\n${n} testes do CubeStaff OK`)

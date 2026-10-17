@@ -93,7 +93,9 @@ export const en: Manual = {
       title: '5. Scramblers',
       blocks: [
         `**How many**: 1 scrambler per ${C.competitorsPerScrambler} competitors in the group (1–${C.competitorsPerScrambler} → 1, ${C.competitorsPerScrambler + 1}–${C.competitorsPerScrambler * 2} → 2, …). Adjustable under Advanced.`,
-        '**Who**: the best placed in the scrambler ranking, which works like this:',
+        '**Who**: the best placed **registered for the event** — like the Psych Sheet. People not registered for the event only scramble as a **last resort** (when no registered person is free), even if they are very good at it. In manual picks they show at the end of the list tagged "not registered".',
+        'Since the fastest compete in the last groups, the scramblers for the last group come from earlier groups — so lower Psych Sheet positions show up there (e.g. with 29 registered and 2 groups, group 2 has the top 14, and its scramblers come from 15th onwards).',
+        'Among registered people, the order follows the scrambler ranking:',
         {
           list: [
             '**Percentile**: to compare different events, each ranking becomes a position from 0% (best in the competition) to 100% (worst), among the approved people of the competition only.',

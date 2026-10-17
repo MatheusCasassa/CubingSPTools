@@ -93,7 +93,9 @@ export const es: Manual = {
       title: '5. Mezcladores',
       blocks: [
         `**Cantidad**: 1 mezclador cada ${C.competitorsPerScrambler} competidores del grupo (1–${C.competitorsPerScrambler} → 1, ${C.competitorsPerScrambler + 1}–${C.competitorsPerScrambler * 2} → 2, …). Ajustable en Avanzado.`,
-        '**Quién**: los mejor ubicados en el ranking de mezclador, que funciona así:',
+        '**Quién**: los mejor ubicados **inscritos en la modalidad** — como en la Psych Sheet. Quien no está inscrito en la modalidad solo mezcla como **último recurso** (cuando no queda ningún inscrito libre), aunque sea muy bueno en ella. En la elección manual aparecen al final de la lista con la etiqueta "no inscrito".',
+        'Como los más rápidos compiten en los últimos grupos, quienes mezclan el último grupo vienen de los grupos anteriores — por eso ahí aparecen posiciones más bajas de la Psych Sheet (ej.: con 29 inscritos y 2 grupos, el grupo 2 tiene a los 14 mejores, y sus mezcladores salen del 15º en adelante).',
+        'Entre los inscritos, el orden sigue el ranking de mezclador:',
         {
           list: [
             '**Percentil**: para comparar eventos distintos, cada ranking se convierte en una posición de 0% (mejor de la competición) a 100% (peor), solo entre los aprobados de la competición.',
