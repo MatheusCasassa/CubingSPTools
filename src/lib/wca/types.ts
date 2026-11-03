@@ -41,6 +41,8 @@ export interface WcifRound {
   cutoff: WcifCutoff | null
   advancementCondition: WcifAdvancementCondition | null
   results?: WcifResult[]
+  /** Número de sets de embaralhamento planejados para a rodada. */
+  scrambleSetCount?: number
   extensions?: WcifExtension[]
 }
 
@@ -79,7 +81,14 @@ export interface WcifPerson {
   registrantId: number | null
   name: string
   wcaId: string | null
+  /** Conta WCA da pessoa (vem no WCIF público e no gerenciável). */
+  wcaUserId?: number
   countryIso2?: string
+  /** "m" | "f" | "o" (vem no WCIF público). */
+  gender?: string
+  /** "AAAA-MM-DD" — só no WCIF gerenciável (Delegados/Organizadores). */
+  birthdate?: string
+  avatar?: { url?: string; thumbUrl?: string } | null
   registration: WcifRegistration | null
   assignments: WcifAssignment[]
   personalBests?: WcifPersonalBest[]

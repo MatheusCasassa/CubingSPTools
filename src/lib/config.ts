@@ -39,6 +39,9 @@ export const config = {
   /** Escopos solicitados. manage_competitions dá acesso ao WCIF gerenciável. */
   scopes: ['public', 'manage_competitions'] as const,
 
+  /** Servidor do CSPTools (/api do Worker). Vazio = mesmo endereço do site. */
+  cspApiBase: (import.meta.env.VITE_CSP_API_BASE || '').replace(/\/$/, ''),
+
   /** Site da CubingSP (link "voltar" no cabeçalho). */
   cubingspUrl: (import.meta.env.VITE_CUBINGSP_URL || 'https://cubingsp.mcasassa.workers.dev').replace(/\/$/, ''),
 }

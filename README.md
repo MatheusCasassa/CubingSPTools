@@ -1,4 +1,4 @@
-# CSPTools (CubingSP Tools) — ScoreComps · Calcumulative · CubeStaff
+# CSPTools (CubingSP Tools)
 
 Hub de ferramentas para Delegados, Organizadores e competidores de
 competições da WCA, no visual da CubingSP (é para onde o menu "Ferramentas"
@@ -19,10 +19,28 @@ Produção: **https://cubingspferramentas.mcasassa.workers.dev/**
 | **ScoreComps** (`/scorecomps`) | Súmulas oficiais em PDF a partir dos grupos do WCIF | WCA | ✅ disponível |
 | **Calcumulative** (`/calcumulative`) | Limite de tempo cumulativo e média de 5 com BPA/WPA e meta | — | ✅ disponível |
 | **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Corredor) gravados na WCA | WCA | ✅ disponível |
+| **EasyPassword** (`/easypassword`) | Senhas dos sets do TNoodle: modalidade → set → senha, para os Delegados | WCA (Delegado) | ✅ disponível |
+| **SchedManager** (`/schedmanager`) | Horários reais e sets de cada modalidade, rascunho do staff, salvo na WCA | WCA (staff) | ✅ disponível |
+| **SmartRanks** (`/smartranks`) | Rankings Novatos, Feminino, Idade e pontuação geral (APS/RASCS) do WCA Live | WCA (staff) | ✅ disponível |
+| **SortCuber** (`/sortcuber`) | Sorteio entre competidores aprovados (presentes, sem Delegados…) | WCA (staff) | ✅ disponível |
 
-Tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem secret) e
-os PDFs são gerados localmente num Web Worker. Nenhum servidor nosso recebe
-token ou dados — o CubeStaff grava direto no WCIF da competição na WCA.
+Quase tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem
+secret), os PDFs são gerados num Web Worker e o CubeStaff grava direto no
+WCIF. A exceção é o **servidor do CSPTools** (`worker/`, `/api/*`), que guarda
+o que não pode ir para a WCA porque as extensões do WCIF são públicas:
+
+- `/api/passcodes/:id` — senhas do EasyPassword. Só Delegados (e trainees)
+  da competição. Apagadas 7 dias depois do último dia.
+- `/api/schedule/:id` — rascunho do SchedManager. Delegados, Organizadores e
+  quem tem função/tarefa de staff no WCIF. Apagado 60 dias depois.
+
+O navegador manda o token da WCA; o Worker confere na própria WCA
+(`/me`, `/competitions/:id`, WCIF público) quem é a pessoa e o vínculo dela
+com a competição. Os dados ficam no KV `CSP_KV` da Cloudflare.
+
+As ferramentas "Durante" listam as competições de 30 dias atrás até 4 meses à
+frente (`src/lib/wca/access.ts`) e têm demonstração com os dados públicos do
+UNESP Rio Preto Open 2026 (`/easypassword/demo` etc.).
 
 ---
 
@@ -67,7 +85,16 @@ documento react-pdf) — o PDF conferido é o mesmo que o usuário baixa.
 
 ## Deploy (Cloudflare)
 
-O projeto já tem `wrangler.jsonc` (Workers com Static Assets, SPA).
+O projeto já tem `wrangler.jsonc` (Workers com Static Assets, SPA, e o Worker
+`worker/index.ts` só para `/api/*`).
+
+- **KV:** o `wrangler deploy` (4.45+) cria o KV `CSP_KV` sozinho no primeiro
+  deploy, porque o binding está sem `id`. Se o deploy reclamar do KV, crie à
+  mão com `npx wrangler kv namespace create CSP_KV` e cole o `id` no
+  `wrangler.jsonc`.
+- **Testar o Worker localmente:** `npm run build` e `npx wrangler dev` (porta
+  8787, com KV local). O Vite em 5173 pode apontar para ele com
+  `VITE_CSP_API_BASE=http://localhost:8787`.
 
 - **Build command:** `npm run build`
 - **Deploy command:** `npx wrangler deploy`
@@ -236,7 +263,7 @@ Testes das regras: `npx tsx scripts/test-cubestaff.ts` (também no `npm test`).
 
 ```
 src/
-├── main.tsx, App.tsx              # rotas: / · /scorecomps(/:id) · /calcumulative · /cubestaff(/:id)
+├── main.tsx, App.tsx              # rotas de todas as ferramentas (PT, /en, /es)
 ├── styles/index.css               # tokens da CubingSP (claro/escuro)
 ├── components/layout/             # Navbar (sticky, blur) e Footer (créditos)
 ├── components/ui/, auth/          # ícones, feedback, botão de login WCA
@@ -244,15 +271,22 @@ src/
 ├── lib/
 │   ├── config.ts, theme.ts
 │   ├── auth/                      # OAuth implícito da WCA
-│   └── wca/                       # API, tipos e leitura do WCIF
+│   ├── csp/server.ts              # cliente do servidor do CSPTools (/api)
+│   └── wca/                       # API, tipos, WCIF, WCA Live (live.ts), acesso (access.ts)
 └── tools/
     ├── scorecomps/
     │   ├── model/                 # regras, plano de rodadas, ordem, saída, demo
     │   ├── pdf/                   # react-pdf: documento, fontes, papel, Worker
     │   └── ui/                    # páginas da ferramenta
-    └── cubestaff/
-        ├── model/                 # motor, regras, cronograma, WCIF ⇄ plano, extensão, CSV
-        └── ui/                    # páginas da ferramenta
+    ├── cubestaff/
+    │   ├── model/                 # motor, regras, cronograma, WCIF ⇄ plano, extensão, CSV
+    │   └── ui/                    # páginas da ferramenta
+    ├── during/                    # moldura comum das ferramentas "Durante"
+    ├── easypassword/              # leitura do .txt do TNoodle + telas
+    ├── schedmanager/              # linhas do cronograma, fusos, aplicar no WCIF
+    ├── smartranks/                # classificação final, categorias, pontuação APS
+    └── sortcuber/                 # elegíveis e sorteio sem viés
+worker/                            # servidor do CSPTools: index.ts (entrada) e api.ts
 docs/cubestaff-extension.md        # formato da extensão WCIF do CubeStaff
 public/fonts/                      # Arimo + Noto SC/KR (gerados por scripts/build-fonts.py)
 scripts/                           # samples, stress, build-fonts

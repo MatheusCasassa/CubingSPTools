@@ -1,0 +1,258 @@
+// SmartRanks: rankings para premiações a partir dos resultados do WCA Live.
+//
+// Classificação final de cada modalidade: quem chegou mais longe vem antes
+// (final, depois quem parou na rodada anterior…), e dentro da mesma rodada
+// vale a posição do WCA Live. Só entra quem tem pelo menos um resultado
+// válido. Cada categoria (Novatos, Feminino, Idade) filtra essa
+// classificação e renumera as posições.
+//
+// Pontuação geral (RASCS, método da APS — Associação Portuguesa de
+// Speedcubing): em cada rodada, Pontos = Competidores da rodada ÷ (Posição + 1).
+// O total é a soma de todas as rodadas.
+
+import type { LiveCompetition, LiveEvent, LiveResult } from '../../../lib/wca/live'
+import type { Wcif } from '../../../lib/wca/types'
+
+export interface PersonInfo {
+  registrantId: number
+  name: string
+  wcaId: string | null
+  gender: string | null
+  birthdate: string | null
+  countryIso2: string | null
+}
+
+export type AgeMode = 'upTo' | 'from' | 'between'
+
+export type Category =
+  | { kind: 'all' }
+  | { kind: 'newcomers' }
+  | { kind: 'female' }
+  | { kind: 'age'; mode: AgeMode; min: number; max: number }
+
+/** Idade completa numa data ("AAAA-MM-DD"). */
+export function ageOn(birthdate: string, date: string): number {
+  const [by, bm, bd] = birthdate.split('-').map(Number)
+  const [y, m, d] = date.split('-').map(Number)
+  return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0)
+}
+
+export function personsInfo(wcif: Wcif): Map<number, PersonInfo> {
+  const out = new Map<number, PersonInfo>()
+  for (const p of wcif.persons)
+    if (p.registrantId != null)
+      out.set(p.registrantId, {
+        registrantId: p.registrantId,
+        name: p.name,
+        wcaId: p.wcaId,
+        gender: p.gender ?? null,
+        birthdate: p.birthdate ?? null,
+        countryIso2: p.countryIso2 ?? null,
+      })
+  return out
+}
+
+/** A categoria usa data de nascimento (só no WCIF de Delegados e Organizadores). */
+export const needsBirthdate = (c: Category) => c.kind === 'age'
+
+export function matches(c: Category, info: PersonInfo | undefined, liveWcaId: string | null, refDate: string): boolean {
+  switch (c.kind) {
+    case 'all':
+      return true
+    case 'newcomers':
+      // Sem WCA ID = primeira competição.
+      return !(info?.wcaId ?? liveWcaId)
+    case 'female':
+      return info?.gender === 'f'
+    case 'age': {
+      if (!info?.birthdate) return false
+      const age = ageOn(info.birthdate, refDate)
+      if (c.mode === 'upTo') return age <= c.max
+      if (c.mode === 'from') return age >= c.min
+      return age >= c.min && age <= c.max
+    }
+  }
+}
+
+// ------------------------------------------------------ por modalidade
+
+export interface Standing {
+  position: number
+  registrantId: number | null
+  name: string
+  wcaId: string | null
+  roundNumber: number
+  roundRanking: number
+  best: number
+  average: number
+  attempts: number[]
+}
+
+const valid = (r: LiveResult) => r.best > 0 && r.ranking != null
+
+/** Classificação final do evento (todos), sem posição. */
+export function finalStandings(ev: LiveEvent): Omit<Standing, 'position'>[] {
+  const seen = new Set<string>()
+  const out: Omit<Standing, 'position'>[] = []
+  const rounds = [...ev.rounds].sort((a, b) => b.number - a.number)
+  for (const rd of rounds) {
+    const res = rd.results.filter(valid).sort((a, b) => a.ranking! - b.ranking!)
+    for (const r of res) {
+      if (seen.has(r.person.id)) continue
+      seen.add(r.person.id)
+      out.push({
+        registrantId: r.person.registrantId,
+        name: r.person.name,
+        wcaId: r.person.wcaId,
+        roundNumber: rd.number,
+        roundRanking: r.ranking!,
+        best: r.best,
+        average: r.average,
+        attempts: r.attempts,
+      })
+    }
+  }
+  return out
+}
+
+/** Classificação de uma categoria num evento, com posições renumeradas (empates mantidos). */
+export function categoryStandings(
+  ev: LiveEvent,
+  cat: Category,
+  info: Map<number, PersonInfo>,
+  refDate: string,
+): Standing[] {
+  const list = finalStandings(ev).filter((s) =>
+    matches(cat, s.registrantId != null ? info.get(s.registrantId) : undefined, s.wcaId, refDate),
+  )
+  const out: Standing[] = []
+  list.forEach((s, i) => {
+    const prev = out[i - 1]
+    const tie = prev && prev.roundNumber === s.roundNumber && prev.roundRanking === s.roundRanking
+    out.push({ ...s, position: tie ? prev.position : i + 1 })
+  })
+  return out
+}
+
+/** O evento terminou (todas as rodadas com resultados estão finalizadas)? */
+export const eventFinished = (ev: LiveEvent) =>
+  ev.rounds.length > 0 && ev.rounds.every((r) => r.finished || r.numResults === 0) && ev.rounds.at(-1)!.finished
+
+// ------------------------------------------------------ pontuação geral
+
+export interface PointsRow {
+  position: number
+  registrantId: number | null
+  name: string
+  wcaId: string | null
+  points: number
+  rounds: number
+  events: number
+  detail: { eventId: string; roundNumber: number; ranking: number; competitors: number; points: number }[]
+}
+
+/** Pontuação APS (RASCS): Pontos = TC ÷ (P + 1) por rodada. */
+export function apsPoints(
+  live: LiveCompetition,
+  cat: Category,
+  info: Map<number, PersonInfo>,
+  refDate: string,
+): PointsRow[] {
+  const by = new Map<string, Omit<PointsRow, 'position'> & { evs: Set<string> }>()
+  for (const ev of live.events)
+    for (const rd of ev.rounds) {
+      const tc = rd.results.length
+      for (const r of rd.results) {
+        if (r.ranking == null) continue
+        const pts = Math.round((tc / (r.ranking + 1)) * 100) / 100
+        let row = by.get(r.person.id)
+        if (!row)
+          by.set(
+            r.person.id,
+            (row = {
+              registrantId: r.person.registrantId,
+              name: r.person.name,
+              wcaId: r.person.wcaId,
+              points: 0,
+              rounds: 0,
+              events: 0,
+              detail: [],
+              evs: new Set(),
+            }),
+          )
+        row.points += pts
+        row.rounds++
+        row.evs.add(ev.eventId)
+        row.detail.push({ eventId: ev.eventId, roundNumber: rd.number, ranking: r.ranking, competitors: tc, points: pts })
+      }
+    }
+  const list = [...by.values()]
+    .filter((r) => matches(cat, r.registrantId != null ? info.get(r.registrantId) : undefined, r.wcaId, refDate))
+    .map(({ evs, ...r }) => ({ ...r, points: Math.round(r.points * 100) / 100, events: evs.size }))
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, 'pt-BR'))
+  const out: PointsRow[] = []
+  list.forEach((r, i) => {
+    const prev = out[i - 1]
+    out.push({ ...r, position: prev && prev.points === r.points ? prev.position : i + 1 })
+  })
+  return out
+}
+
+// ------------------------------------------------------------ formatação
+
+function centis(cs: number): string {
+  const cc = cs % 100
+  const total = Math.floor(cs / 100)
+  const s = total % 60
+  const m = Math.floor(total / 60) % 60
+  const h = Math.floor(total / 3600)
+  const c2 = String(cc).padStart(2, '0')
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${c2}`
+  if (m > 0) return `${m}:${String(s).padStart(2, '0')}.${c2}`
+  return `${s}.${c2}`
+}
+
+/** Resultado no padrão da WCA (tempo, movimentos do FMC ou pontos do Multi-BLD). */
+export function formatResult(value: number, eventId: string, kind: 'single' | 'average'): string {
+  if (value === -1) return 'DNF'
+  if (value === -2) return 'DNS'
+  if (value <= 0) return ''
+  if (eventId === '333fm') return kind === 'average' ? (value / 100).toFixed(2) : String(value)
+  if (eventId === '333mbf') {
+    const missed = value % 100
+    const secs = Math.floor(value / 100) % 100000
+    const points = 99 - Math.floor(value / 10_000_000)
+    const solved = points + missed
+    const attempted = solved + missed
+    const mm = Math.floor(secs / 60)
+    const ss = String(secs % 60).padStart(2, '0')
+    return `${solved}/${attempted} ${secs === 99999 ? '?' : `${mm}:${ss}`}`
+  }
+  return centis(value)
+}
+
+/** Resultado que define a posição (média ou melhor, conforme o formato da rodada). */
+export function headline(s: Pick<Standing, 'best' | 'average'>, sortBy: 'best' | 'average', eventId: string) {
+  if (sortBy === 'average' && s.average > 0) return { kind: 'average' as const, text: formatResult(s.average, eventId, 'average') }
+  return { kind: 'single' as const, text: formatResult(s.best, eventId, 'single') }
+}
+
+/** Formato de ordenação da rodada em que a pessoa terminou. */
+export function sortByOf(ev: LiveEvent, roundNumber: number): 'best' | 'average' {
+  return ev.rounds.find((r) => r.number === roundNumber)?.format.sortBy ?? 'best'
+}
+
+// ------------------------------------------------------------- CSV
+
+export function toCsv(rows: (string | number)[][]): string {
+  return rows
+    .map((r) =>
+      r
+        .map((c) => {
+          const s = String(c)
+          return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+        })
+        .join(','),
+    )
+    .join('\n')
+}

@@ -7,7 +7,15 @@
 // (estrelas) e as listras pretas e brancas (preto no tema claro, branco no
 // escuro — por isso a 4ª cor é a do texto).
 import type { ReactNode } from 'react'
-import { CalcumulativeMark, CubeStaffMark, ScoreCompsMark } from '../components/ui/icons'
+import {
+  CalcumulativeMark,
+  CubeStaffMark,
+  EasyPasswordMark,
+  SchedManagerMark,
+  ScoreCompsMark,
+  SmartRanksMark,
+  SortCuberMark,
+} from '../components/ui/icons'
 import type { Messages } from '../i18n/messages/pt'
 
 export type Category = keyof Messages['home']['categories']
@@ -67,6 +75,42 @@ export const TOOLS: Tool[] = [
     ready: true,
     login: false,
     description: 'calcumulative',
+  },
+  {
+    to: '/easypassword',
+    name: 'EasyPassword',
+    mark: (c) => <EasyPasswordMark className={c} />,
+    category: 'during',
+    ready: true,
+    login: true,
+    description: 'easypassword',
+  },
+  {
+    to: '/schedmanager',
+    name: 'SchedManager',
+    mark: (c) => <SchedManagerMark className={c} />,
+    category: 'during',
+    ready: true,
+    login: true,
+    description: 'schedmanager',
+  },
+  {
+    to: '/smartranks',
+    name: 'SmartRanks',
+    mark: (c) => <SmartRanksMark className={c} />,
+    category: 'during',
+    ready: true,
+    login: true,
+    description: 'smartranks',
+  },
+  {
+    to: '/sortcuber',
+    name: 'SortCuber',
+    mark: (c) => <SortCuberMark className={c} />,
+    category: 'during',
+    ready: true,
+    login: true,
+    description: 'sortcuber',
   },
 ]
 

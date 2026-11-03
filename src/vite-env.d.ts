@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_WCA_ORIGIN?: string
   readonly VITE_CUBINGSP_URL?: string
   readonly VITE_BASE?: string
+  readonly VITE_CSP_API_BASE?: string
 }
 
 interface ImportMeta {

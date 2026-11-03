@@ -1,11 +1,26 @@
 {
   // Deploy na Cloudflare (Workers com Static Assets): serve o build estático
-  // do Vite (dist/) como SPA — sem código de Worker. O fallback de rotas para
-  // index.html faz /scorecomps, /cubestaff etc. funcionarem ao recarregar.
+  // do Vite (dist/) como SPA. O fallback de rotas para index.html faz
+  // /scorecomps, /cubestaff etc. funcionarem ao recarregar.
+  //
+  // /api/* passa pelo Worker (worker/index.ts): senhas do EasyPassword e
+  // rascunho do SchedManager, guardados no KV "CSP_KV" e protegidos pelo
+  // login da WCA. Sem "id": o `wrangler deploy` (4.45+) cria o KV sozinho no
+  // primeiro deploy e reaproveita nos seguintes. Se preferir criar à mão:
+  //   npx wrangler kv namespace create CSP_KV
+  // e colar o "id" que o comando mostrar no bloco abaixo.
   "name": "cubingspferramentas",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-07-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CSP_KV"
+    }
+  ]
 }
