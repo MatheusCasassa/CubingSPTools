@@ -14,6 +14,14 @@ const CalcumulativePage = lazy(() => import('./tools/calcumulative/ui/Calcumulat
 const CubeStaffHome = lazy(() => import('./tools/cubestaff/ui/CubeStaffHome'))
 const CompetitionStaffPage = lazy(() => import('./tools/cubestaff/ui/CompetitionStaffPage'))
 const CubeStaffManual = lazy(() => import('./tools/cubestaff/ui/ManualPage'))
+const EasyPasswordHome = lazy(() => import('./tools/easypassword/ui/EasyPassword').then((x) => ({ default: x.EasyPasswordHome })))
+const EasyPasswordPage = lazy(() => import('./tools/easypassword/ui/EasyPassword'))
+const SchedManagerHome = lazy(() => import('./tools/schedmanager/ui/SchedManager').then((x) => ({ default: x.SchedManagerHome })))
+const SchedManagerPage = lazy(() => import('./tools/schedmanager/ui/SchedManager'))
+const SmartRanksHome = lazy(() => import('./tools/smartranks/ui/SmartRanks').then((x) => ({ default: x.SmartRanksHome })))
+const SmartRanksPage = lazy(() => import('./tools/smartranks/ui/SmartRanks'))
+const SortCuberHome = lazy(() => import('./tools/sortcuber/ui/SortCuber').then((x) => ({ default: x.SortCuberHome })))
+const SortCuberPage = lazy(() => import('./tools/sortcuber/ui/SortCuber'))
 
 const PAGES: { path: string; element: ReactElement }[] = [
   { path: '', element: <Home /> },
@@ -23,6 +31,14 @@ const PAGES: { path: string; element: ReactElement }[] = [
   { path: 'cubestaff', element: <CubeStaffHome /> },
   { path: 'cubestaff/manual', element: <CubeStaffManual /> },
   { path: 'cubestaff/:competitionId', element: <CompetitionStaffPage /> },
+  { path: 'easypassword', element: <EasyPasswordHome /> },
+  { path: 'easypassword/:competitionId', element: <EasyPasswordPage /> },
+  { path: 'schedmanager', element: <SchedManagerHome /> },
+  { path: 'schedmanager/:competitionId', element: <SchedManagerPage /> },
+  { path: 'smartranks', element: <SmartRanksHome /> },
+  { path: 'smartranks/:competitionId', element: <SmartRanksPage /> },
+  { path: 'sortcuber', element: <SortCuberHome /> },
+  { path: 'sortcuber/:competitionId', element: <SortCuberPage /> },
 ]
 
 // Português sem prefixo; inglês em /en/… e espanhol em /es/… (como o site da CubingSP).

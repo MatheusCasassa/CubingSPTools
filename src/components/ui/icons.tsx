@@ -133,6 +133,64 @@ export function CalcumulativeMark({ className = 'h-7 w-7' }: P) {
   )
 }
 
+export function EasyPasswordMark({ className = 'h-7 w-7' }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="8" y="14.5" width="16" height="11" rx="2.2" />
+        <path d="M11.5 14.5v-3.2a4.5 4.5 0 0 1 9 0v3.2" />
+      </g>
+      <g fill="#fff">
+        <circle cx="12.5" cy="20" r="1.2" />
+        <circle cx="16" cy="20" r="1.2" />
+        <circle cx="19.5" cy="20" r="1.2" />
+      </g>
+    </svg>
+  )
+}
+
+export function SchedManagerMark({ className = 'h-7 w-7' }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 9.5h8M7 15h5M7 20.5h4" />
+        <circle cx="20.5" cy="18" r="6.5" />
+        <path d="M20.5 14.5V18l2.4 1.6" />
+      </g>
+    </svg>
+  )
+}
+
+export function SmartRanksMark({ className = 'h-7 w-7' }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinejoin="round">
+        <path d="M12.5 25V13.5h7V25M5.5 25v-7.5h7M19.5 25v-5h7V25M4.5 25h23" />
+      </g>
+      <path d="M16 6.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6L16 12.2l-2.4 1.2.5-2.6-1.9-1.8 2.6-.4z" fill="#fff" />
+    </svg>
+  )
+}
+
+export function SortCuberMark({ className = 'h-7 w-7' }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <rect x="7.5" y="7.5" width="17" height="17" rx="3.5" fill="none" stroke="#fff" strokeWidth="2.2" transform="rotate(-12 16 16)" />
+      <g fill="#fff" transform="rotate(-12 16 16)">
+        <circle cx="12" cy="12" r="1.7" />
+        <circle cx="16" cy="16" r="1.7" />
+        <circle cx="20" cy="20" r="1.7" />
+        <circle cx="20" cy="12" r="1.7" />
+        <circle cx="12" cy="20" r="1.7" />
+      </g>
+    </svg>
+  )
+}
+
 /**
  * Logo do CSPTools: chave de boca (ferramenta/ajuda) + cubo em perspectiva
  * com as cores da CubingSP (branco, vermelho e preto) sobre o azul royal.

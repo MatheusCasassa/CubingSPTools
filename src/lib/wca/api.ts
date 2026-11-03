@@ -63,7 +63,7 @@ export async function patchWcifParts(
   token: string,
   competitionId: string,
   wcif: Wcif,
-  parts: ('persons' | 'schedule' | 'extensions')[],
+  parts: ('persons' | 'schedule' | 'extensions' | 'events')[],
 ): Promise<void> {
   const body: Record<string, unknown> = {}
   if (parts.includes('persons'))
@@ -73,6 +73,15 @@ export async function patchWcifParts(
       return rest
     })
   if (parts.includes('schedule')) body.schedule = wcif.schedule
+  if (parts.includes('events'))
+    body.events = wcif.events.map((e) => ({
+      ...e,
+      rounds: e.rounds.map((r) => {
+        const { results: _r, ...rest } = r
+        void _r
+        return rest
+      }),
+    }))
   if (parts.includes('extensions')) body.extensions = wcif.extensions ?? []
   const res = await fetch(`${config.wcaApiBase}/competitions/${competitionId}/wcif`, {
     method: 'PATCH',

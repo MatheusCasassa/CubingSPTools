@@ -18,7 +18,7 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node"]
   },
-  "include": ["src", "scripts", "vite.config.ts"],
+  "include": ["src", "scripts", "worker", "vite.config.ts"],
   // Arquivos da versão antiga (html2canvas/jsPDF), caso ainda existam na pasta.
   "exclude": [
     "src/scorecards",
