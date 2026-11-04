@@ -1,9 +1,11 @@
-import { lazy, Suspense, type ReactElement } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect, type ReactElement } from 'react'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import { Navbar } from './components/layout/Navbar'
 import { Footer } from './components/layout/Footer'
 import { Spinner } from './components/ui/Feedback'
 import { useI18n } from './i18n/I18nProvider'
+import { stripLocale } from './i18n/locales'
+import { toolOfPath } from './lib/tools'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 
@@ -44,8 +46,22 @@ const PAGES: { path: string; element: ReactElement }[] = [
 // Português sem prefixo; inglês em /en/… e espanhol em /es/… (como o site da CubingSP).
 const PREFIXES = ['', 'en', 'es']
 
+/** Título da aba, como no site da CubingSP: "CSPTools" na home e
+ *  "Ferramenta | CSPTools" nas demais páginas. */
+function usePageTitle() {
+  const { pathname } = useLocation()
+  const { m } = useI18n()
+  useEffect(() => {
+    const path = stripLocale(pathname).replace(/\/+$/, '') || '/'
+    const brand = m.meta.title
+    const page = path === '/' ? null : (toolOfPath(path)?.name ?? m.notFound.title)
+    document.title = page ? `${page} | ${brand}` : brand
+  }, [pathname, m])
+}
+
 export default function App() {
   const { m } = useI18n()
+  usePageTitle()
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />

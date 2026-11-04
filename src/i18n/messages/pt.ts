@@ -4,7 +4,7 @@
 
 export const pt = {
   meta: {
-    title: 'CSPTools — CubingSP Tools',
+    title: 'CSPTools',
     languageName: 'Português',
   },
   common: {

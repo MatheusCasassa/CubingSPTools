@@ -2,7 +2,7 @@ import type { Messages } from './pt'
 
 export const en: Messages = {
   meta: {
-    title: 'CSPTools — CubingSP Tools',
+    title: 'CSPTools',
     languageName: 'English',
   },
   common: {

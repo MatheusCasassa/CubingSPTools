@@ -120,8 +120,12 @@ export function toolsIn(category: Category, tag: string): Tool[] {
   return TOOLS.filter((t) => t.category === category).sort((a, b) => collator.compare(a.name, b.name))
 }
 
+/** Ferramenta da página atual (caminho sem o prefixo de idioma), se houver. */
+export function toolOfPath(path: string): Tool | null {
+  return TOOLS.find((x) => path === x.to || path.startsWith(x.to + '/')) ?? null
+}
+
 /** Categoria da página atual (sem o prefixo de idioma), se for de uma ferramenta. */
 export function categoryOfPath(path: string): Category | null {
-  const t = TOOLS.find((x) => path === x.to || path.startsWith(x.to + '/'))
-  return t ? t.category : null
+  return toolOfPath(path)?.category ?? null
 }

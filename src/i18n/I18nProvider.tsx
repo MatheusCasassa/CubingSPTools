@@ -26,7 +26,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   )
   useEffect(() => {
     document.documentElement.lang = LOCALE_TAG[locale]
-    document.title = ALL[locale].meta.title
     try {
       localStorage.setItem('ferramentas.locale', locale)
     } catch {
