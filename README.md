@@ -20,7 +20,7 @@ Produção: **https://cubingspferramentas.mcasassa.workers.dev/**
 | **Calcumulative** (`/calcumulative`) | Limite de tempo cumulativo e média de 5 com BPA/WPA e meta | — | ✅ disponível |
 | **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Corredor) gravados na WCA | WCA | ✅ disponível |
 | **EasyPassword** (`/easypassword`) | Senhas dos sets do TNoodle: modalidade → set → senha, para os Delegados | WCA (Delegado) | ✅ disponível |
-| **SchedManager** (`/schedmanager`) | Horários reais e sets de cada modalidade, rascunho do staff, salvo na WCA | WCA (staff) | ✅ disponível |
+| **SchedManager** (`/schedmanager`) | Horários reais, sets e classificação (Top N, %, resultado) de cada rodada, rascunho do staff, salvo na WCA | WCA (staff) | ✅ disponível |
 | **SmartRanks** (`/smartranks`) | Rankings Novatos, Feminino, Idade e pontuação geral (APS/RASCS) do WCA Live | WCA (staff) | ✅ disponível |
 | **SortCuber** (`/sortcuber`) | Sorteio entre competidores aprovados (presentes, sem Delegados…) | WCA (staff) | ✅ disponível |
 
@@ -39,8 +39,7 @@ O navegador manda o token da WCA; o Worker confere na própria WCA
 com a competição. Os dados ficam no KV `CSP_KV` da Cloudflare.
 
 As ferramentas "Durante" listam as competições de 30 dias atrás até 4 meses à
-frente (`src/lib/wca/access.ts`) e têm demonstração com os dados públicos do
-UNESP Rio Preto Open 2026 (`/easypassword/demo` etc.).
+frente (`src/lib/wca/access.ts`).
 
 ---
 

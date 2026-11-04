@@ -76,7 +76,7 @@ function Toggle({ checked, onChange, children }: { checked: boolean; onChange: (
 function Raffle({ ctx }: { ctx: DuringCtx }) {
   const { m, tag } = useI18n()
   const t = m.sortcuber
-  const id = ctx.demo ? 'demo' : ctx.wcif.id
+  const id = ctx.wcif.id
   const all = useMemo(() => candidates(ctx.wcif), [ctx.wcif])
   const [saved, setSaved] = useState<Saved>(() => load(id))
   const [present, setPresent] = useState<Set<number> | null>(null)

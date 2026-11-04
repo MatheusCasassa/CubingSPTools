@@ -231,7 +231,13 @@ async function passcodes(env: Env, req: Request, compId: string): Promise<Respon
 
 // --------------------------------------------------- rascunho do cronograma
 
-export type SchedField = 'start' | 'end' | 'sets'
+export type SchedField = 'start' | 'end' | 'sets' | 'advance'
+
+/** Condição de classificação para a próxima rodada (igual ao WCIF). */
+export interface Advance {
+  type: 'ranking' | 'percent' | 'attemptResult'
+  level: number
+}
 
 export interface ScheduleDraft {
   competitionId: string
@@ -239,6 +245,8 @@ export interface ScheduleDraft {
   rows: Record<string, { start?: string; end?: string; by?: string; at?: string }>
   /** Por rodada (ex.: "333-r1"): número de sets/grupos realizados. */
   sets: Record<string, number>
+  /** Por rodada: nova condição de classificação (Top N, N% ou resultado). */
+  advance?: Record<string, Advance>
   rev: number
   updatedAt: string | null
   updatedBy: string | null
@@ -250,6 +258,7 @@ export const emptyDraft = (id: string): ScheduleDraft => ({
   competitionId: id,
   rows: {},
   sets: {},
+  advance: {},
   rev: 0,
   updatedAt: null,
   updatedBy: null,
@@ -260,7 +269,17 @@ export const emptyDraft = (id: string): ScheduleDraft => ({
 export interface SchedChange {
   key: string
   field: SchedField
-  value: string | number | null
+  value: string | number | Advance | null
+}
+
+export function validAdvance(v: unknown): v is Advance {
+  if (!v || typeof v !== 'object') return false
+  const a = v as Record<string, unknown>
+  if (typeof a.level !== 'number' || !Number.isInteger(a.level) || a.level < 1) return false
+  if (a.type === 'ranking') return a.level <= 10000
+  if (a.type === 'percent') return a.level <= 75 // máximo do Regulamento (9p1)
+  if (a.type === 'attemptResult') return a.level <= 2_000_000_000
+  return false
 }
 
 const ROW_KEY = /^[a-z0-9-]{1,40}@\d{4}-\d{2}-\d{2}(#\d{1,3})?$/
@@ -270,7 +289,15 @@ const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
 /** Aplica as mudanças de uma pessoa ao rascunho (campo a campo: quem digita por último vence). */
 export function applyChanges(draft: ScheduleDraft, changes: SchedChange[], who: string, now: string): ScheduleDraft {
   const next: ScheduleDraft = structuredClone(draft)
+  next.advance ??= {}
   for (const c of changes) {
+    if (c.field === 'advance') {
+      if (!ROUND_KEY.test(c.key)) throw new HttpError(400, 'badChange')
+      if (c.value === null) delete next.advance[c.key]
+      else if (validAdvance(c.value)) next.advance[c.key] = { type: c.value.type, level: c.value.level }
+      else throw new HttpError(400, 'badChange')
+      continue
+    }
     if (c.field === 'sets') {
       if (!ROUND_KEY.test(c.key)) throw new HttpError(400, 'badChange')
       if (c.value === null) delete next.sets[c.key]

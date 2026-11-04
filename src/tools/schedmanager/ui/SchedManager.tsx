@@ -15,7 +15,20 @@ import { fetchWcif, patchWcifParts, WcaApiError } from '../../../lib/wca/api'
 import { eventName } from '../../../lib/wca/format'
 import { applyChanges, emptyDraft } from '../../../../worker/api'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
-import { applyDraft, buildRows, days, diffMinutes, normalizeTime, nowIn, type ApplyResult, type SchedRow } from '../model/schedule'
+import {
+  applyDraft,
+  buildRows,
+  days,
+  diffMinutes,
+  formatAdvance,
+  levelText,
+  normalizeTime,
+  nowIn,
+  parseLevel,
+  type ApplyResult,
+  type SchedRow,
+} from '../model/schedule'
+import type { Advance } from '../../../lib/csp/server'
 
 export function useSchedManagerTool(): DuringTool {
   const { m } = useI18n()
@@ -45,7 +58,6 @@ export default function SchedManagerPage() {
   )
 }
 
-const DEMO_KEY = 'csp.schedmanager.demo'
 const QUEUE_KEY = (id: string) => `csp.schedmanager.queue.${id}`
 
 function loadJson<T>(key: string, fallback: T): T {
@@ -78,7 +90,7 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
     return allDays.includes(today) ? today : (allDays[0] ?? '')
   })
   const [draft, setDraft] = useState<ScheduleDraft | null>(null)
-  const [queue, setQueue] = useState<SchedChange[]>(() => (ctx.demo ? [] : loadJson(QUEUE_KEY(competitionId), [])))
+  const [queue, setQueue] = useState<SchedChange[]>(() => loadJson(QUEUE_KEY(competitionId), []))
   const [sync, setSync] = useState<Sync>('idle')
   const [error, setError] = useState<string | null>(null)
   const [review, setReview] = useState<ApplyResult | null>(null)
@@ -87,41 +99,26 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
 
   // Carrega e acompanha o rascunho compartilhado.
   const refresh = useCallback(async () => {
-    if (ctx.demo) {
-      setDraft(loadJson<ScheduleDraft>(DEMO_KEY, emptyDraft('demo')))
-      return
-    }
     try {
       setDraft(await getScheduleDraft(ctx.token!, competitionId))
     } catch (e) {
       if (e instanceof CspApiError && e.status === 0) setSync('offline')
       else setError(e instanceof CspApiError && e.status === 401 ? m.errors.sessionExpired : m.errors.generic)
     }
-  }, [ctx.demo, ctx.token, competitionId])
+  }, [ctx.token, competitionId])
 
   useEffect(() => {
     void refresh()
-    if (ctx.demo) return
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible' && !sending.current) void refresh()
     }, 20_000)
     return () => window.clearInterval(id)
-  }, [refresh, ctx.demo])
+  }, [refresh])
 
   // Envia as alterações (e guarda no aparelho se estiver sem internet).
   const flush = useCallback(
     async (pending: SchedChange[]) => {
       if (pending.length === 0 || sending.current) return
-      if (ctx.demo) {
-        setDraft((d) => {
-          const next = applyChanges(d ?? emptyDraft('demo'), pending, 'Demo', new Date().toISOString())
-          saveJson(DEMO_KEY, next)
-          return next
-        })
-        setQueue([])
-        setSync('saved')
-        return
-      }
       sending.current = true
       setSync('saving')
       try {
@@ -143,7 +140,7 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
         sending.current = false
       }
     },
-    [ctx.demo, ctx.token, competitionId],
+    [ctx.token, competitionId],
   )
 
   useEffect(() => {
@@ -163,7 +160,7 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
     setDraft((d) => applyChanges(d ?? emptyDraft(competitionId), [c], m.schedmanager.you, new Date().toISOString()))
     setQueue((q) => {
       const next = [...q, c]
-      if (!ctx.demo) saveJson(QUEUE_KEY(competitionId), next)
+      saveJson(QUEUE_KEY(competitionId), next)
       return next
     })
   }
@@ -176,7 +173,7 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
   }
 
   const saveToWca = async () => {
-    if (!draft || ctx.demo || !ctx.token) return
+    if (!draft || !ctx.token) return
     setSync('saving')
     try {
       // WCIF mais recente (outra pessoa pode ter mudado algo na WCA).
@@ -193,10 +190,11 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
           { key, field: 'end' as const, value: null },
         ]),
         ...Object.keys(draft.sets).map((key) => ({ key, field: 'sets' as const, value: null })),
+        ...Object.keys(draft.advance ?? {}).map((key) => ({ key, field: 'advance' as const, value: null })),
       ]
       setDraft(await patchScheduleDraft(ctx.token, competitionId, clear, true))
       setReview(null)
-      setSaved(t.savedToWca(res.changes.length, res.sets.length))
+      setSaved(t.savedToWca(res.changes.length, res.sets.length + res.advances.length))
       setSync('saved')
     } catch (e) {
       setSync('error')
@@ -213,7 +211,8 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
   if (!draft) return <Spinner label={t.loading} />
   const dayRows = rows.filter((r) => r.date === day)
   const tz = rows[0]?.tz ?? 'UTC'
-  const edited = Object.keys(draft.rows).length + Object.keys(draft.sets).length
+  const edited =
+    Object.keys(draft.rows).length + Object.keys(draft.sets).length + Object.keys(draft.advance ?? {}).length
   const dayLabel = (d: string) =>
     new Intl.DateTimeFormat(tag, { weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(d + 'T12:00:00'))
 
@@ -262,12 +261,12 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
               ` · ${t.lastSave(draft.savedToWcaBy ?? '', new Intl.DateTimeFormat(tag, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(draft.savedToWcaAt)))}`}
           </p>
         </div>
-        {ctx.manager && !ctx.demo ? (
+        {ctx.manager ? (
           <button type="button" className="btn-primary" disabled={edited === 0 || queue.length > 0} onClick={openReview}>
             {t.saveWca}
           </button>
         ) : (
-          <p className="max-w-xs text-xs text-fg-faint">{ctx.demo ? t.demoNoSave : t.onlyManagersSave}</p>
+          <p className="max-w-xs text-xs text-fg-faint">{t.onlyManagersSave}</p>
         )}
       </div>
 
@@ -304,7 +303,23 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
                   </span>
                 </li>
               ))}
-              {review.changes.length + review.sets.length === 0 && <li className="text-fg-faint">{t.nothingToSave}</li>}
+              {review.advances.map((a) => {
+                const row = rows.find((x) => x.roundId === a.roundId)
+                const ev = a.roundId.split('-')[0]
+                const sortBy = row?.sortBy ?? 'best'
+                return (
+                  <li key={`adv-${a.roundId}`} className="flex justify-between gap-3">
+                    <span className="truncate">{t.advanceOf(a.roundId)}</span>
+                    <span className="shrink-0 font-mono text-xs">
+                      <span className="text-fg-faint line-through">{a.from ? formatAdvance(a.from, ev, sortBy) : '–'}</span> →{' '}
+                      {formatAdvance(a.to, ev, sortBy)}
+                    </span>
+                  </li>
+                )
+              })}
+              {review.changes.length + review.sets.length + review.advances.length === 0 && (
+                <li className="text-fg-faint">{t.nothingToSave}</li>
+              )}
             </ul>
             <p className="mt-4 text-xs text-fg-faint">{t.reviewNote}</p>
             <div className="mt-5 flex justify-end gap-2">
@@ -314,7 +329,7 @@ function Manager({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string
               <button
                 type="button"
                 className="btn-primary"
-                disabled={sync === 'saving' || review.changes.length + review.sets.length === 0}
+                disabled={sync === 'saving' || review.changes.length + review.sets.length + review.advances.length === 0}
                 onClick={saveToWca}
               >
                 {sync === 'saving' ? t.saving : t.confirmSave}
@@ -483,6 +498,104 @@ function Row({ row, draft, onChange }: { row: SchedRow; draft: ScheduleDraft; on
       ) : (
         <span />
       )}
+      {row.advancement && row.attempt !== null && row.attempt > 1 ? null : row.advancement ? (
+        <AdvanceCell row={row} value={draft.advance?.[row.roundId!]} onChange={onChange} />
+      ) : null}
     </li>
+  )
+}
+
+const ADV_TYPES: Advance['type'][] = ['ranking', 'percent', 'attemptResult']
+
+/** Classificação para a próxima rodada: Top N, N% ou resultado (como na WCA). */
+function AdvanceCell({
+  row,
+  value,
+  onChange,
+}: {
+  row: SchedRow
+  value: Advance | undefined
+  onChange: (c: SchedChange) => void
+}) {
+  const { m } = useI18n()
+  const t = m.schedmanager
+  const planned = row.advancement!
+  const ev = row.eventId!
+  const current = value ?? planned
+  const [type, setType] = useState<Advance['type']>(current.type)
+  const [text, setText] = useState(value ? levelText(value, ev, row.sortBy) : '')
+  const [bad, setBad] = useState(false)
+  useEffect(() => {
+    setType((value ?? planned).type)
+    setText(value ? levelText(value, ev, row.sortBy) : '')
+  }, [value?.type, value?.level, planned.type, planned.level])
+  const types = ADV_TYPES.filter((x) => x !== 'attemptResult' || ev !== '333mbf')
+  const commit = (nextType: Advance['type'], raw: string) => {
+    // Mesmo tipo do planejado e campo vazio = volta ao planejado.
+    if (raw.trim() === '' && nextType === planned.type) {
+      setBad(false)
+      if (value) onChange({ key: row.roundId!, field: 'advance', value: null })
+      return
+    }
+    const level = raw.trim() === '' ? null : parseLevel(raw, nextType, ev, row.sortBy)
+    if (level === null) return setBad(raw.trim() !== '')
+    setBad(false)
+    if (planned.type === nextType && planned.level === level) {
+      if (value) onChange({ key: row.roundId!, field: 'advance', value: null })
+      return
+    }
+    if (value?.type !== nextType || value.level !== level)
+      onChange({ key: row.roundId!, field: 'advance', value: { type: nextType, level } })
+  }
+  const placeholder = type === planned.type ? levelText(planned, ev, row.sortBy) : t.advancePlaceholder[type]
+  return (
+    <div className="col-span-3 flex flex-wrap items-center gap-2 border-t border-border-subtle pt-2 text-xs sm:col-span-4">
+      <span className="text-fg-faint">
+        {t.advance}: <span className="font-mono">{formatAdvance(planned, ev, row.sortBy)}</span>
+      </span>
+      <span className="text-fg-faint">→</span>
+      <select
+        aria-label={t.advanceType}
+        value={type}
+        onChange={(e) => {
+          const nt = e.target.value as Advance['type']
+          setType(nt)
+          setText('')
+          setBad(false)
+          if (nt === planned.type && value) onChange({ key: row.roundId!, field: 'advance', value: null })
+        }}
+        className={`rounded-lg border bg-surface px-2 py-1.5 text-xs ${value ? 'border-brand-500/60' : 'border-border-subtle'}`}
+      >
+        {types.map((x) => (
+          <option key={x} value={x}>
+            {t.advanceTypes[x]}
+          </option>
+        ))}
+      </select>
+      <input
+        type="text"
+        inputMode={type === 'attemptResult' ? 'decimal' : 'numeric'}
+        aria-label={t.advanceLevel}
+        placeholder={placeholder}
+        value={text}
+        maxLength={10}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={(e) => commit(type, e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+        className={`w-24 rounded-lg border bg-surface px-2 py-1.5 font-mono text-xs placeholder:text-fg-faint/70 focus:outline-none focus:ring-2 focus:ring-brand-400 ${
+          bad ? 'border-red-500' : value ? 'border-brand-500/60' : 'border-border-subtle'
+        }`}
+      />
+      <span className="text-fg-faint">{t.advanceUnit[type]}</span>
+      {value && (
+        <button
+          type="button"
+          className="text-fg-faint hover:text-fg"
+          onClick={() => onChange({ key: row.roundId!, field: 'advance', value: null })}
+        >
+          {t.advanceReset}
+        </button>
+      )}
+    </div>
   )
 }

@@ -124,8 +124,8 @@ export function CubeStaffMark({ className = 'h-7 w-7' }: P) {
 export function CalcumulativeMark({ className = 'h-7 w-7' }: P) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="7" fill="#c81e3c" />
-      <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+      <rect width="32" height="32" rx="7" style={{ fill: 'rgb(var(--fg))' }} />
+      <g fill="none" style={{ stroke: 'rgb(var(--bg))' }} strokeWidth="2.2" strokeLinecap="round">
         <circle cx="16" cy="18" r="8.2" />
         <path d="M13.5 6.5h5M16 6.5v3.3M16 18l3.6-3.6M23 10.6l1.6-1.6" />
       </g>

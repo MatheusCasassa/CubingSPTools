@@ -3,7 +3,6 @@
 //   npx tsx scripts/test-during.ts
 import assert from 'node:assert/strict'
 import {
-  demoPasscodes,
   eventIdOf,
   groupPasscodes,
   parsePasscodes,
@@ -13,7 +12,9 @@ import {
   applyDraft,
   buildRows,
   diffMinutes,
+  formatAdvance,
   localOf,
+  parseLevel,
   normalizeTime,
   zonedToUtc,
 } from '../src/tools/schedmanager/model/schedule'
@@ -88,9 +89,6 @@ async function main() {
     assert.ok(!sameCompetition('Outra 2026', 'Teste Open 2026'))
     assert.ok(validEntries(p.entries), 'o servidor aceita o que o leitor produz')
     assert.equal(validEntries([{ ...p.entries[0], code: 'senha com espaço' }]), null)
-    const demo = demoPasscodes([{ name: '3x3x3', eventId: '333', rounds: 2, sets: 3 }])
-    assert.equal(demo.length, 5)
-    assert.ok(demo.every((e) => /^[a-z0-9]{8}$/.test(e.code)))
   }
   ok('EasyPassword: leitura do arquivo do TNoodle')
 
@@ -131,7 +129,15 @@ async function main() {
         {
           id: '333',
           rounds: [
-            { id: '333-r1', format: 'a', timeLimit: null, cutoff: null, advancementCondition: null, scrambleSetCount: 2 },
+            {
+              id: '333-r1',
+              format: 'a',
+              timeLimit: null,
+              cutoff: null,
+              advancementCondition: { type: 'ranking', level: 16 },
+              scrambleSetCount: 2,
+            },
+            { id: '333-r2', format: 'a', timeLimit: null, cutoff: null, advancementCondition: null, scrambleSetCount: 1 },
           ],
         },
       ],
@@ -208,8 +214,44 @@ async function main() {
     assert.throws(() => applyChanges(draft, [{ key: '333-r1@2026-10-31', field: 'start', value: '99:00' }], 'x', 'x'))
     assert.throws(() => applyChanges(draft, [{ key: '../hack', field: 'start', value: '10:00' }], 'x', 'x'))
     assert.throws(() => applyChanges(draft, [{ key: '333-r1', field: 'sets', value: 0 }], 'x', 'x'))
+
+    // Classificação (Top N / % / resultado), como na WCA.
+    assert.equal(rows[0].advancement?.level, 16)
+    assert.equal(rows[0].sortBy, 'average')
+    const d2 = applyChanges(
+      emptyDraft('Teste2026'),
+      [
+        { key: '333-r1', field: 'advance', value: { type: 'percent', level: 75 } },
+        { key: '333-r2', field: 'advance', value: { type: 'ranking', level: 8 } }, // última rodada: ignorada
+      ],
+      'x',
+      'x',
+    )
+    const res2 = applyDraft(wcif, rows, d2)
+    assert.deepEqual(res2.advances.map((a) => [a.roundId, a.to.type, a.to.level]), [['333-r1', 'percent', 75]])
+    assert.deepEqual(res2.events?.[0].rounds[0].advancementCondition, { type: 'percent', level: 75 })
+    assert.equal(res2.events?.[0].rounds[1].advancementCondition, null)
+    assert.throws(() => applyChanges(d2, [{ key: '333-r1', field: 'advance', value: { type: 'percent', level: 80 } }], 'x', 'x'), 'máx. 75%')
+    assert.throws(() => applyChanges(d2, [{ key: '333-r1', field: 'advance', value: { type: 'top', level: 3 } as never }], 'x', 'x'))
+    const d3 = applyChanges(d2, [{ key: '333-r1', field: 'advance', value: null }], 'x', 'x')
+    assert.equal(d3.advance?.['333-r1'], undefined)
+    // Rascunho antigo (sem o campo) continua funcionando.
+    const old = { ...emptyDraft('T') } as Partial<ReturnType<typeof emptyDraft>>
+    delete old.advance
+    assert.equal(applyDraft(wcif, rows, old as ReturnType<typeof emptyDraft>).advances.length, 0)
+    assert.equal(parseLevel('16', 'ranking', '333', 'average'), 16)
+    assert.equal(parseLevel('80', 'percent', '333', 'average'), null)
+    assert.equal(parseLevel('1:30', 'attemptResult', '333', 'average'), 9000)
+    assert.equal(parseLevel('45.5', 'attemptResult', '333', 'average'), 4550)
+    assert.equal(parseLevel('1:75', 'attemptResult', '333', 'average'), null)
+    assert.equal(parseLevel('30', 'attemptResult', '333fm', 'average'), 3000, 'FMC média ×100')
+    assert.equal(parseLevel('30', 'attemptResult', '333fm', 'best'), 30)
+    assert.equal(parseLevel('5', 'attemptResult', '333mbf', 'best'), null)
+    assert.equal(formatAdvance({ type: 'ranking', level: 16 }, '333', 'average'), 'Top 16')
+    assert.equal(formatAdvance({ type: 'percent', level: 75 }, '333', 'average'), '75%')
+    assert.equal(formatAdvance({ type: 'attemptResult', level: 9000 }, '333', 'average'), '< 1:30.00')
   }
-  ok('SchedManager: horários locais, linhas por palco, aplicar no cronograma')
+  ok('SchedManager: horários locais, linhas por palco, classificação, aplicar no cronograma')
 
   // ------------------------------------------------------------ SmartRanks
   const person = (id: number, name: string, extra: Partial<WcifPerson> = {}): WcifPerson => ({

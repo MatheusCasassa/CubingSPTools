@@ -54,7 +54,7 @@ export const pt = {
       'As ferramentas de Delegados, Organizadores e staff pedem login na sua conta WCA. Tudo roda no seu navegador; só as senhas do EasyPassword e o rascunho do SchedManager ficam no servidor do CSPTools, protegidos pelo login e apagados depois da competição.',
     categories: {
       before: { title: 'Antes da Competição', short: 'Antes', description: 'Planejamento: grupos, staff e súmulas prontos para o dia.' },
-      during: { title: 'Durante a Competição', short: 'Durante', description: 'Apoio no dia: senhas, horários reais, rankings, sorteios e cálculos rápidos.' },
+      during: { title: 'Durante a Competição', short: 'Durante', description: 'Apoio no dia: senhas, horários reais, rankings e sorteios.' },
       after: { title: 'Depois da Competição', short: 'Depois', description: 'Conferência e envio de resultados.' },
       aux: { title: 'Ferramentas Auxiliares', short: 'Auxiliares', description: 'Utilitários que ajudam em qualquer momento.' },
     },
@@ -69,7 +69,7 @@ export const pt = {
       easypassword:
         'Senhas dos sets do TNoodle para os Delegados: escolha a modalidade e o set e a senha aparece. Um envio serve para todos os Delegados da competição.',
       schedmanager:
-        'Horários reais de início e fim de cada modalidade e quantos sets foram usados, anotados pelo staff e salvos na WCA com um clique.',
+        'Horários reais de início e fim de cada modalidade, sets usados e classificação para a próxima rodada, anotados pelo staff e salvos na WCA com um clique.',
       smartranks:
         'Rankings de Novatos, Feminino, por idade e pontuação geral da competição, direto do WCA Live, para as premiações.',
       sortcuber:
@@ -356,8 +356,6 @@ export const pt = {
     onlyDelegate: 'Só as competições em que você é Delegado.',
     onlyStaff: 'Competições em que você é Delegado, Organizador ou staff.',
     recent: 'Competições recentes',
-    demo: (name: string) => `Ver a demonstração (${name})`,
-    demoNote: 'Demonstração com os dados públicos de uma competição real. Nada é gravado.',
     deniedDelegate: 'Só os Delegados desta competição têm acesso a esta ferramenta.',
     deniedStaff:
       'Esta ferramenta é para o staff da competição: Delegados, Organizadores e quem tem função de staff na WCA.',
@@ -416,7 +414,7 @@ export const pt = {
     features: [
       ['Chega de grupo no WhatsApp', 'Todo o staff anota no mesmo lugar, no celular, e vê na hora o que os outros digitaram.'],
       ['Já vem preenchido', 'Cada caixa mostra, apagado, o horário planejado. Digite só o que mudou, ou toque no relógio para usar a hora atual.'],
-      ['Sets e grupos', 'Informe quantos sets cada rodada realmente usou.'],
+      ['Sets e classificação', 'Informe quantos sets cada rodada usou e ajuste a classificação para a próxima rodada: Top N, porcentagem ou resultado, como na WCA.'],
       ['Salvar na WCA', 'Revise as mudanças e salve: o cronograma e os grupos de cada rodada se ajustam aos horários reais.'],
     ] as [string, string][],
     loading: 'Carregando rascunho…',
@@ -437,13 +435,20 @@ export const pt = {
     lastSave: (name: string, when: string) => `salvo na WCA por ${name} em ${when}`,
     saveWca: 'Salvar na WCA',
     onlyManagersSave: 'Só Delegados e Organizadores podem salvar na WCA. O rascunho fica guardado para eles.',
-    demoNoSave: 'Na demonstração o rascunho fica só neste aparelho e não é salvo na WCA.',
     reviewTitle: 'Salvar na WCA',
     reviewHint: 'Estas mudanças vão para o cronograma oficial da competição:',
     reviewErrors: (names: string) => `Fim antes do início — não serão salvos: ${names}`,
     reviewNote:
       'Os grupos de cada rodada acompanham o novo horário. A WCA só aceita mudanças antes do envio dos resultados.',
     setsOf: (roundId: string) => `Sets de ${roundId}`,
+    advanceOf: (roundId: string) => `Classificação de ${roundId}`,
+    advance: 'Classificam',
+    advanceType: 'Tipo de classificação',
+    advanceLevel: 'Valor da classificação',
+    advanceTypes: { ranking: 'Top (ranking)', percent: 'Porcentagem', attemptResult: 'Resultado' },
+    advanceUnit: { ranking: 'primeiros', percent: '% (máx. 75)', attemptResult: 'ou melhor (estrito)' },
+    advancePlaceholder: { ranking: '16', percent: '75', attemptResult: '1:30.00' },
+    advanceReset: 'voltar ao planejado',
     nothingToSave: 'Nada para salvar.',
     confirmSave: 'Salvar na WCA',
     saving: 'Salvando…',

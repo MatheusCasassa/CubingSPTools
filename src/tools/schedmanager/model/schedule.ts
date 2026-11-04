@@ -5,8 +5,9 @@
 // com o mesmo horário vira uma linha só. Os horários são digitados na hora
 // local do local da competição ("HH:MM") e convertidos para UTC ao salvar.
 
-import type { ScheduleDraft } from '../../../lib/csp/server'
-import type { Wcif, WcifActivity, WcifEvent, WcifSchedule } from '../../../lib/wca/types'
+import type { Advance, ScheduleDraft } from '../../../lib/csp/server'
+import type { Wcif, WcifActivity, WcifAdvancementCondition, WcifEvent, WcifSchedule } from '../../../lib/wca/types'
+import { formatResult } from '../../smartranks/model/ranks'
 
 // ------------------------------------------------------------ fusos horários
 
@@ -105,6 +106,10 @@ export interface SchedRow {
   groups: number
   /** Sets planejados (scrambleSetCount da rodada). */
   plannedSets: number | null
+  /** Classificação para a próxima rodada (null na última rodada). */
+  advancement: WcifAdvancementCondition | null
+  /** Como a rodada é ordenada (para ler/escrever o "resultado" da classificação). */
+  sortBy: 'best' | 'average'
 }
 
 export function parseCode(code: string): { eventId: string | null; round: number | null; attempt: number | null } {
@@ -151,6 +156,8 @@ export function buildRows(wcif: Wcif): SchedRow[] {
           activityIds: [a.id],
           groups: a.childActivities?.length ?? 0,
           plannedSets: round?.scrambleSetCount ?? null,
+          advancement: round?.advancementCondition ?? null,
+          sortBy: round && ['a', 'm'].includes(round.format) ? 'average' : 'best',
           roomOrder,
         })
       }
@@ -195,11 +202,18 @@ export interface SetsChange {
   to: number
 }
 
+export interface AdvanceChange {
+  roundId: string
+  from: WcifAdvancementCondition | null
+  to: Advance
+}
+
 export interface ApplyResult {
   schedule: WcifSchedule
   events: WcifEvent[] | null
   changes: ScheduleChange[]
   sets: SetsChange[]
+  advances: AdvanceChange[]
   errors: { key: string; name: string }[]
 }
 
@@ -262,15 +276,71 @@ export function applyDraft(wcif: Wcif, rows: SchedRow[], draft: ScheduleDraft): 
     if (!round || round.scrambleSetCount === n) continue
     sets.push({ roundId, from: round.scrambleSetCount ?? null, to: n })
   }
-  if (sets.length > 0) {
+  const advances: AdvanceChange[] = []
+  for (const [roundId, a] of Object.entries(draft.advance ?? {})) {
+    const round = findRound(wcif.events, roundId)
+    // Só rodadas que têm próxima rodada (a última não tem classificação).
+    if (!round?.advancementCondition) continue
+    const cur = round.advancementCondition
+    if (cur.type === a.type && cur.level === a.level) continue
+    advances.push({ roundId, from: cur, to: a })
+  }
+  if (sets.length > 0 || advances.length > 0) {
     events = structuredClone(wcif.events)
     for (const e of events)
       for (const r of e.rounds) {
         const s = sets.find((x) => x.roundId === r.id)
         if (s) r.scrambleSetCount = s.to
+        const a = advances.find((x) => x.roundId === r.id)
+        if (a) r.advancementCondition = { type: a.to.type, level: a.to.level }
         // Resultados não são enviados de volta (o WCA Live cuida deles).
         delete (r as { results?: unknown }).results
       }
   }
-  return { schedule, events, changes, sets, errors }
+  return { schedule, events, changes, sets, advances, errors }
+}
+
+// ------------------------------------------------- classificação (advance)
+
+/** Texto da condição: "Top 16", "75%" ou "< 1:30.00". */
+export function formatAdvance(a: { type: string; level: number }, eventId: string, sortBy: 'best' | 'average'): string {
+  if (a.type === 'ranking') return `Top ${a.level}`
+  if (a.type === 'percent') return `${a.level}%`
+  return `< ${formatResult(a.level, eventId, sortBy === 'average' ? 'average' : 'single')}`
+}
+
+/** Valor do campo de nível no formato de digitação (16, 75, 1:30.00…). */
+export function levelText(a: { type: string; level: number }, eventId: string, sortBy: 'best' | 'average'): string {
+  if (a.type !== 'attemptResult') return String(a.level)
+  return formatResult(a.level, eventId, sortBy === 'average' ? 'average' : 'single')
+}
+
+/**
+ * Lê o nível digitado. Top N e porcentagem: inteiro. Resultado: tempo
+ * ("1:30.00", "45.5", "12") em centésimos; no FMC, movimentos (média ×100).
+ * Multi-BLD não aceita resultado. null se inválido.
+ */
+export function parseLevel(raw: string, type: Advance['type'], eventId: string, sortBy: 'best' | 'average'): number | null {
+  const s = raw.trim().replace(',', '.')
+  if (s === '') return null
+  if (type !== 'attemptResult') {
+    if (!/^\d+$/.test(s)) return null
+    const n = Number(s)
+    if (n < 1 || (type === 'percent' && n > 75)) return null
+    return n
+  }
+  if (eventId === '333mbf') return null
+  if (eventId === '333fm') {
+    if (!/^\d+(\.\d{1,2})?$/.test(s)) return null
+    const v = sortBy === 'average' ? Math.round(Number(s) * 100) : Number(s)
+    return Number.isInteger(v) && v > 0 ? v : null
+  }
+  const m = s.match(/^(?:(\d+):)?(\d{1,2}|\d+)(?:\.(\d{1,2}))?$/)
+  if (!m) return null
+  const min = m[1] ? Number(m[1]) : 0
+  const sec = Number(m[2])
+  if (m[1] && sec > 59) return null
+  const cs = m[3] ? Number(m[3].padEnd(2, '0')) : 0
+  const v = (min * 60 + sec) * 100 + cs
+  return v > 0 ? v : null
 }

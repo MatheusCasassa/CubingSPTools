@@ -7,7 +7,7 @@ import { useI18n } from '../../../i18n/I18nProvider'
 import { CspApiError, deletePasscodes, getPasscodes, putPasscodes, type PasscodeEntry, type PasscodeFile } from '../../../lib/csp/server'
 import { eventName } from '../../../lib/wca/format'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
-import { demoPasscodes, groupPasscodes, parsePasscodes, sameCompetition, setKey } from '../model/parse'
+import { groupPasscodes, parsePasscodes, sameCompetition, setKey } from '../model/parse'
 
 export function useEasyPasswordTool(): DuringTool {
   const { m } = useI18n()
@@ -62,7 +62,7 @@ function errorText(e: unknown, m: ReturnType<typeof useI18n>['m']): string {
 function Passwords({ ctx, competitionId }: { ctx: DuringCtx; competitionId: string }) {
   const { m, tag } = useI18n()
   const t = m.easypassword
-  const id = ctx.demo ? 'demo' : competitionId
+  const id = competitionId
   const [file, setFile] = useState<PasscodeFile | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -70,45 +70,19 @@ function Passwords({ ctx, competitionId }: { ctx: DuringCtx; competitionId: stri
 
   useEffect(() => {
     let active = true
-    if (ctx.demo) {
-      const evs = ctx.wcif.events.map((e) => ({
-        name: eventName(e.id),
-        eventId: e.id,
-        rounds: e.rounds.length,
-        sets: Math.max(2, e.rounds[0]?.scrambleSetCount ?? 2),
-      }))
-      setFile({
-        competitionId: 'demo',
-        title: ctx.wcif.name,
-        fileName: 'demo.txt',
-        entries: demoPasscodes(evs),
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: { id: 0, name: 'Demo' },
-      })
-      return
-    }
     getPasscodes(ctx.token!, competitionId)
       .then((f) => active && setFile(f))
       .catch((e) => active && (setError(errorText(e, m)), setFile(null)))
     return () => {
       active = false
     }
-  }, [ctx.demo, ctx.token, ctx.wcif, competitionId])
+  }, [ctx.token, competitionId])
 
   const upload = async (entries: PasscodeEntry[], fileName: string, title: string) => {
     setBusy(true)
     setError(null)
     try {
-      if (ctx.demo)
-        setFile({
-          competitionId: 'demo',
-          title,
-          fileName,
-          entries,
-          uploadedAt: new Date().toISOString(),
-          uploadedBy: { id: 0, name: 'Demo' },
-        })
-      else setFile(await putPasscodes(ctx.token!, competitionId, { entries, fileName, title }))
+      setFile(await putPasscodes(ctx.token!, competitionId, { entries, fileName, title }))
       setReplacing(false)
     } catch (e) {
       setError(errorText(e, m))
@@ -121,7 +95,7 @@ function Passwords({ ctx, competitionId }: { ctx: DuringCtx; competitionId: stri
     if (!window.confirm(t.deleteConfirm)) return
     setBusy(true)
     try {
-      if (!ctx.demo) await deletePasscodes(ctx.token!, competitionId)
+      await deletePasscodes(ctx.token!, competitionId)
       setFile(null)
       try {
         localStorage.removeItem(SEEN_KEY(id))
@@ -155,7 +129,7 @@ function Passwords({ ctx, competitionId }: { ctx: DuringCtx; competitionId: stri
               file.uploadedBy.name,
               new Intl.DateTimeFormat(tag, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(file.uploadedAt)),
             )}
-            {!ctx.demo && ` · ${t.expires}`}
+            {` · ${t.expires}`}
           </span>
           <span className="flex gap-2">
             <button type="button" className="btn-ghost btn-sm" onClick={() => setReplacing(true)} disabled={busy}>

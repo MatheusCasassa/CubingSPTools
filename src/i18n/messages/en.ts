@@ -52,7 +52,7 @@ export const en: Messages = {
       'The Delegate, Organizer and staff tools require signing in with your WCA account. Everything runs in your browser; only EasyPassword passcodes and the SchedManager draft are kept on the CSPTools server, protected by the login and deleted after the competition.',
     categories: {
       before: { title: 'Before the Competition', short: 'Before', description: 'Planning: groups, staff and scorecards ready for the day.' },
-      during: { title: 'During the Competition', short: 'During', description: 'On the day: passcodes, actual times, rankings, raffles and quick calculations.' },
+      during: { title: 'During the Competition', short: 'During', description: 'On the day: passcodes, actual times, rankings and raffles.' },
       after: { title: 'After the Competition', short: 'After', description: 'Checking and submitting results.' },
       aux: { title: 'Auxiliary Tools', short: 'Auxiliary', description: 'Utilities that help at any time.' },
     },
@@ -67,7 +67,7 @@ export const en: Messages = {
       easypassword:
         'TNoodle scramble set passcodes for Delegates: pick the event and the set and the passcode shows up. One upload serves every Delegate of the competition.',
       schedmanager:
-        'Actual start and end times of each event and how many sets were used, recorded by the staff and saved to the WCA with one click.',
+        'Actual start and end times of each event, sets used and advancement to the next round, recorded by the staff and saved to the WCA with one click.',
       smartranks:
         'Newcomer, Female, age and overall rankings of the competition, straight from WCA Live, for the awards.',
       sortcuber:
@@ -344,8 +344,6 @@ export const en: Messages = {
     onlyDelegate: 'Only competitions where you are a Delegate.',
     onlyStaff: 'Competitions where you are a Delegate, Organizer or staff.',
     recent: 'Recent competitions',
-    demo: (name: string) => `See the demo (${name})`,
-    demoNote: 'Demo using the public data of a real competition. Nothing is saved.',
     deniedDelegate: 'Only the Delegates of this competition can use this tool.',
     deniedStaff: 'This tool is for the competition staff: Delegates, Organizers and people with a staff role on the WCA.',
     offline: 'Cannot reach the CSPTools server. Try again in a moment.',
@@ -403,7 +401,7 @@ export const en: Messages = {
     features: [
       ['No more WhatsApp group', 'The whole staff writes in the same place, on the phone, and sees right away what others typed.'],
       ['Already filled in', 'Each box shows the planned time in grey. Type only what changed, or tap the clock to use the current time.'],
-      ['Sets and groups', 'Enter how many sets each round actually used.'],
+      ['Sets and advancement', 'Enter how many sets each round used and adjust the advancement to the next round: Top N, percent or result, like on the WCA.'],
       ['Save to the WCA', 'Review the changes and save: the schedule and the groups of each round follow the actual times.'],
     ] as [string, string][],
     loading: 'Loading draft…',
@@ -424,12 +422,19 @@ export const en: Messages = {
     lastSave: (name: string, when: string) => `saved to the WCA by ${name} on ${when}`,
     saveWca: 'Save to the WCA',
     onlyManagersSave: 'Only Delegates and Organizers can save to the WCA. The draft is kept for them.',
-    demoNoSave: 'In the demo the draft stays on this device only and is not saved to the WCA.',
     reviewTitle: 'Save to the WCA',
     reviewHint: 'These changes go to the official competition schedule:',
     reviewErrors: (names: string) => `End before start — will not be saved: ${names}`,
     reviewNote: 'The groups of each round follow the new times. The WCA only accepts changes before results are submitted.',
     setsOf: (roundId: string) => `Sets of ${roundId}`,
+    advanceOf: (roundId: string) => `Advancement of ${roundId}`,
+    advance: 'Advancing',
+    advanceType: 'Advancement type',
+    advanceLevel: 'Advancement value',
+    advanceTypes: { ranking: 'Top (ranking)', percent: 'Percent', attemptResult: 'Result' },
+    advanceUnit: { ranking: 'best', percent: '% (max 75)', attemptResult: 'or better (strictly)' },
+    advancePlaceholder: { ranking: '16', percent: '75', attemptResult: '1:30.00' },
+    advanceReset: 'back to planned',
     nothingToSave: 'Nothing to save.',
     confirmSave: 'Save to the WCA',
     saving: 'Saving…',

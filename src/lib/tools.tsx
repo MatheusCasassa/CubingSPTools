@@ -71,7 +71,7 @@ export const TOOLS: Tool[] = [
     to: '/calcumulative',
     name: 'Calcumulative',
     mark: (c) => <CalcumulativeMark className={c} />,
-    category: 'during',
+    category: 'aux',
     ready: true,
     login: false,
     description: 'calcumulative',

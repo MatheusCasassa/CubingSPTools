@@ -14,7 +14,7 @@ import { useI18n } from '../../i18n/I18nProvider'
 import { Rich } from '../../i18n/Rich'
 import { splitCompetitions, todayIso } from '../scorecomps/model/competitions'
 import { syncTrustedTime, trustedNow } from '../../lib/trustedTime'
-import { DEMO_COMPETITION, useDuringCompetition } from './useDuringCompetition'
+import { useDuringCompetition } from './useDuringCompetition'
 
 export interface DuringTool {
   slug: string
@@ -132,12 +132,7 @@ function CompetitionList({ tool }: { tool: DuringTool }) {
 
 export function DuringHome({ tool }: { tool: DuringTool }) {
   const { status, error } = useAuth()
-  const { m, lp } = useI18n()
-  const demo = (
-    <Link to={lp(`/${tool.slug}/demo`)} className="btn-ghost">
-      {m.during.demo(DEMO_COMPETITION.name)}
-    </Link>
-  )
+  const { m } = useI18n()
   return (
     <div className="container-page py-12 sm:py-16">
       <div className="mx-auto max-w-3xl">
@@ -156,7 +151,6 @@ export function DuringHome({ tool }: { tool: DuringTool }) {
             )}
             <div className="mt-8 flex flex-wrap gap-3">
               <WcaLoginButton large />
-              {demo}
             </div>
             <div className="mt-12 grid gap-4 sm:grid-cols-2">
               {tool.features.map(([title, text]) => (
@@ -171,7 +165,6 @@ export function DuringHome({ tool }: { tool: DuringTool }) {
         {status === 'authenticated' && (
           <div className="mt-10 animate-fade-up">
             <CompetitionList tool={tool} />
-            <div className="mt-8 flex flex-wrap gap-3 border-t border-border-subtle pt-6">{demo}</div>
           </div>
         )}
       </div>
@@ -197,7 +190,7 @@ export function DuringPage({
   const location = useLocation()
   const ctx = useDuringCompetition(competitionId, tool.access)
   const stateName = (location.state as { name?: string } | null)?.name
-  const name = ctx.wcif?.name ?? (ctx.demo ? DEMO_COMPETITION.name : stateName ?? competitionId ?? '')
+  const name = ctx.wcif?.name ?? stateName ?? competitionId ?? ''
   return (
     <div className="container-page py-10 sm:py-12">
       <div className={`mx-auto ${wide ? 'max-w-5xl' : 'max-w-3xl'}`}>
@@ -207,11 +200,6 @@ export function DuringPage({
         <div className="mt-4">
           <ToolHeader tool={tool} subtitle={name} />
         </div>
-        {ctx.demo && (
-          <div className="mt-6">
-            <Alert tone="info">{m.during.demoNote}</Alert>
-          </div>
-        )}
         <div className="mt-8">
           {ctx.state === 'loading' && <Spinner label={m.during.loadingCompetition} />}
           {ctx.state === 'login' && (

@@ -113,24 +113,3 @@ export function sameCompetition(title: string, name: string): boolean {
       .replace(/[^a-z0-9]/g, '')
   return n(title) === n(name)
 }
-
-/** Senhas fictícias para a demonstração (8 letras/números, como o TNoodle). */
-export function demoPasscodes(events: { name: string; eventId: string; rounds: number; sets: number }[]): PasscodeEntry[] {
-  let seed = 7
-  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
-  const chars = 'abcdefghijkmnpqrstuvwxyz23456789'
-  const code = () => Array.from({ length: 8 }, () => chars[Math.floor(rnd() * chars.length)]).join('')
-  const out: PasscodeEntry[] = []
-  for (const ev of events)
-    for (let r = 1; r <= ev.rounds; r++)
-      for (let s = 0; s < (r === 1 ? ev.sets : Math.max(2, ev.sets - 2)); s++)
-        out.push({
-          event: ev.name,
-          eventId: ev.eventId,
-          round: r,
-          set: String.fromCharCode(65 + s),
-          attempt: ev.eventId === '333fm' || ev.eventId === '333mbf' ? 1 : null,
-          code: code(),
-        })
-  return out
-}

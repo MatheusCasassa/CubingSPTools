@@ -2,9 +2,9 @@
 // Manda o token da WCA; o servidor confere na WCA o vínculo com a competição.
 
 import { config } from '../config'
-import type { PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft } from '../../../worker/api'
+import type { Advance, PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft } from '../../../worker/api'
 
-export type { PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft }
+export type { Advance, PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft }
 
 export class CspApiError extends Error {
   constructor(
