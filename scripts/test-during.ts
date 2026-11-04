@@ -23,6 +23,7 @@ import {
   ageRanking,
   ageYm,
   apsPoints,
+  byAge,
   categoryStandings,
   formatResult,
   headline,
@@ -373,6 +374,13 @@ async function main() {
     assert.equal(old[0].name, 'Bruno')
     assert.ok(young.every((a, i) => i === 0 || a.birthdate <= young[i - 1].birthdate))
     assert.deepEqual(ageYm('2014-03-15', '2026-10-31'), { years: 12, months: 7 })
+    // Por modalidade, reordenado pela idade, com o resultado de cada um.
+    const ys = byAge(categoryStandings(ev333, { kind: 'all' }, info, '2026-10-31'), info, '2026-10-31', 'youngest')
+    assert.deepEqual(ys.map((x) => x.name), young.map((a) => a.name))
+    assert.ok(ys.every((x) => x.best > 0 && x.years >= 0), 'mantém o resultado e traz a idade')
+    const op = byAge(apsPoints(live, { kind: 'all' }, info, '2026-10-31'), info, '2026-10-31', 'oldest')
+    assert.equal(op[0].name, 'Eva', 'na pontuação, a Eva (só DNF) também pontua')
+    assert.ok(op[0].points > 0)
     assert.deepEqual(ageYm('2014-11-01', '2026-10-31'), { years: 11, months: 11 })
   }
   ok('SmartRanks: classificação final, categorias, idade, mais novos/velhos e pontuação APS')

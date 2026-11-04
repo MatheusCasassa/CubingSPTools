@@ -470,7 +470,7 @@ export const en: Messages = {
     ageModes: { upTo: 'Up to', from: 'From', between: 'Between', youngest: 'Youngest', oldest: 'Oldest' },
     ageOrderTitle: { youngest: 'Youngest competitors', oldest: 'Oldest competitors' },
     ageYm: (y: number, mo: number) => `${y} ${y === 1 ? 'year' : 'years'}${mo ? `, ${mo} ${mo === 1 ? 'month' : 'months'}` : ''}`,
-    ageOrderNote: 'Only competitors with at least one valid result. Age on the first day of the competition.',
+    ageOrderNote: 'Each event and the overall points are sorted from youngest to oldest (or the reverse), with the age on the first day of the competition.',
     ageMinLabel: 'From',
     ageMaxLabel: 'To',
     ageUpTo: (n: number) => `Up to ${n} years`,

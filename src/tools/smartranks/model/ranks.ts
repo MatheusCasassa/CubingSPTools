@@ -135,6 +135,33 @@ export function ageRanking(
   return out
 }
 
+/**
+ * Reordena uma classificação (por modalidade ou pontuação geral) pela idade:
+ * mais novos ou mais velhos primeiro, com a idade de cada um. Quem não tem
+ * data de nascimento fica de fora; mesma data = mesma posição.
+ */
+export function byAge<T extends { registrantId: number | null; name: string; position: number }>(
+  list: T[],
+  info: Map<number, PersonInfo>,
+  refDate: string,
+  order: AgeOrder,
+): (T & { years: number; months: number })[] {
+  const withBd = list
+    .map((r) => ({ r, bd: r.registrantId != null ? info.get(r.registrantId)?.birthdate ?? null : null }))
+    .filter((x): x is { r: T; bd: string } => !!x.bd)
+    .sort((a, b) =>
+      (order === 'youngest' ? b.bd.localeCompare(a.bd) : a.bd.localeCompare(b.bd)) ||
+      a.r.position - b.r.position ||
+      a.r.name.localeCompare(b.r.name, 'pt-BR'),
+    )
+  const out: (T & { years: number; months: number; bd: string })[] = []
+  withBd.forEach(({ r, bd }, i) => {
+    const prev = out[i - 1]
+    out.push({ ...r, bd, position: prev && prev.bd === bd ? prev.position : i + 1, ...ageYm(bd, refDate) })
+  })
+  return out.map(({ bd: _bd, ...r }) => r as unknown as T & { years: number; months: number })
+}
+
 // ------------------------------------------------------ por modalidade
 
 export interface Standing {

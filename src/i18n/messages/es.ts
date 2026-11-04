@@ -472,7 +472,7 @@ export const es: Messages = {
     ageModes: { upTo: 'Hasta', from: 'Desde', between: 'Entre', youngest: 'Más jóvenes', oldest: 'Mayores' },
     ageOrderTitle: { youngest: 'Competidores más jóvenes', oldest: 'Competidores mayores' },
     ageYm: (y: number, mo: number) => `${y} ${y === 1 ? 'año' : 'años'}${mo ? ` y ${mo} ${mo === 1 ? 'mes' : 'meses'}` : ''}`,
-    ageOrderNote: 'Solo entran quienes tienen al menos un resultado válido. Edad en el primer día de la competencia.',
+    ageOrderNote: 'Cada modalidad y la puntuación general se ordenan de la persona más joven a la mayor (o al revés), con la edad en el primer día de la competencia.',
     ageMinLabel: 'De',
     ageMaxLabel: 'Hasta',
     ageUpTo: (n: number) => `Hasta ${n} años`,

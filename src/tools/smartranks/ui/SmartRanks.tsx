@@ -8,8 +8,8 @@ import { fetchLiveCompetition, liveUrl, type LiveCompetition } from '../../../li
 import { eventName } from '../../../lib/wca/format'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
 import {
-  ageRanking,
   apsPoints,
+  byAge,
   categoryStandings,
   eventFinished,
   headline,
@@ -121,24 +121,20 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
   if (live === null) return <Alert tone="warn">{t.notOnLive}</Alert>
 
   const blocked = needsBirthdate(cat) && !hasBirthdates
+  // Mais novos / mais velhos: mesma classificação, reordenada pela idade.
+  const withAge = <T extends { registrantId: number | null; name: string; position: number }>(list: T[]) =>
+    ageOrder ? byAge(list, info, refDate, ageOrder) : list.map((x) => ({ ...x, years: -1, months: 0 }))
+  const ageText = (x: { years: number; months: number }) => (x.years >= 0 ? t.ageYm(x.years, x.months) : '')
   const byEvent = live.events
-    .map((ev) => ({ ev, list: categoryStandings(ev, cat, info, refDate) }))
+    .map((ev) => ({ ev, list: withAge(categoryStandings(ev, cat, info, refDate)) }))
     .filter((x) => x.list.length > 0)
-  const points = apsPoints(live, cat, info, refDate)
-  const ages = ageOrder ? ageRanking(live, info, refDate, ageOrder) : []
+  const points = withAge(apsPoints(live, cat, info, refDate))
 
   const exportCsv = () => {
-    if (ageOrder) {
-      const rows: (string | number)[][] = [
-        [t.csv.position, t.csv.name, 'WCA ID', t.csv.age],
-        ...ages.filter((a) => a.position <= top).map((a) => [a.position, a.name, a.wcaId ?? '', t.ageYm(a.years, a.months)]),
-      ]
-      return download(`${ctx.wcif.id}-${ageOrder}.csv`, toCsv(rows))
-    }
     const rows: (string | number)[][] =
       view === 'events'
         ? [
-            [t.csv.event, t.csv.position, t.csv.name, 'WCA ID', t.csv.result, t.csv.round],
+            [t.csv.event, t.csv.position, t.csv.name, 'WCA ID', t.csv.result, t.csv.round, ...(ageOrder ? [t.csv.age] : [])],
             ...byEvent.flatMap(({ ev, list }) =>
               list
                 .filter((s) => s.position <= top)
@@ -149,23 +145,21 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
                   s.wcaId ?? '',
                   headline(s, sortByOf(ev, s.roundNumber), ev.eventId).text,
                   s.roundNumber,
+                  ...(ageOrder ? [ageText(s)] : []),
                 ]),
             ),
           ]
         : [
-            [t.csv.position, t.csv.name, 'WCA ID', t.csv.points, t.csv.events, t.csv.rounds],
-            ...points.map((p) => [p.position, p.name, p.wcaId ?? '', p.points, p.events, p.rounds]),
+            [t.csv.position, t.csv.name, 'WCA ID', t.csv.points, t.csv.events, t.csv.rounds, ...(ageOrder ? [t.csv.age] : [])],
+            ...points.map((p) => [p.position, p.name, p.wcaId ?? '', p.points, p.events, p.rounds, ...(ageOrder ? [ageText(p)] : [])]),
           ]
-    download(`${ctx.wcif.id}-${view === 'events' ? kind : 'aps'}.csv`, toCsv(rows))
+    download(`${ctx.wcif.id}-${view === 'events' ? ageOrder ?? kind : 'aps'}.csv`, toCsv(rows))
   }
 
   const copyText = () => {
-    const lines = ageOrder
-      ? [
-          `${ctx.wcif.name} — ${catTitle}`,
-          ...ages.filter((a) => a.position <= top).map((a) => `${a.position}. ${a.name} — ${t.ageYm(a.years, a.months)}`),
-        ]
-      : view === 'events'
+    const who = (x: { name: string; years: number; months: number }) => (ageOrder ? `${x.name} (${ageText(x)})` : x.name)
+    const lines =
+      view === 'events'
         ? [
             `${ctx.wcif.name} — ${catTitle}`,
             ...byEvent.flatMap(({ ev, list }) => [
@@ -173,12 +167,12 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
               eventName(ev.eventId),
               ...list
                 .filter((s) => s.position <= top)
-                .map((s) => `${s.position}. ${s.name} — ${headline(s, sortByOf(ev, s.roundNumber), ev.eventId).text}`),
+                .map((s) => `${s.position}. ${who(s)} — ${headline(s, sortByOf(ev, s.roundNumber), ev.eventId).text}`),
             ]),
           ]
         : [
             `${ctx.wcif.name} — ${t.points} (${catTitle})`,
-            ...points.slice(0, Math.max(top, 10)).map((p) => `${p.position}. ${p.name} — ${p.points}`),
+            ...points.slice(0, Math.max(top, 10)).map((p) => `${p.position}. ${who(p)} — ${p.points}`),
           ]
     void navigator.clipboard?.writeText(lines.join('\n')).then(() => {
       setCopied(true)
@@ -265,10 +259,10 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
                 />
               </label>
             )}
+            {ageOrder && <p className="w-full text-xs text-fg-faint">{t.ageOrderNote}</p>}
           </div>
         )}
         <div className="flex flex-wrap items-center gap-3">
-          {!ageOrder && (
           <div className="seg [&>button]:whitespace-nowrap">
             <button type="button" aria-pressed={view === 'events'} onClick={() => setView('events')}>
               {t.byEvent}
@@ -277,8 +271,7 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
               {t.points}
             </button>
           </div>
-          )}
-          {(view === 'events' || ageOrder) && (
+          {view === 'events' && (
             <label className="text-xs text-fg-muted">
               {t.topLabel}
               <select
@@ -306,32 +299,6 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
 
       {blocked ? (
         <Alert tone="warn">{t.ageNeedsManager}</Alert>
-      ) : ageOrder ? (
-        <div className="card p-5">
-          <h3 className="font-semibold">{catTitle}</h3>
-          {ages.length === 0 ? (
-            <p className="mt-3 text-sm text-fg-faint">{t.empty}</p>
-          ) : (
-            <ol className="mt-3 space-y-1.5">
-              {ages
-                .filter((a) => a.position <= top)
-                .map((a) => (
-                  <li key={a.registrantId} className="flex items-baseline gap-3 text-sm">
-                    <span
-                      className={`w-6 shrink-0 text-right font-semibold ${
-                        a.position === 1 ? 'text-amber-500' : a.position === 2 ? 'text-slate-400' : a.position === 3 ? 'text-orange-700 dark:text-orange-400' : 'text-fg-faint'
-                      }`}
-                    >
-                      {a.position}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">{a.name}</span>
-                    <span className="shrink-0 text-xs text-fg-muted">{t.ageYm(a.years, a.months)}</span>
-                  </li>
-                ))}
-            </ol>
-          )}
-          <p className="mt-4 text-xs text-fg-faint">{t.ageOrderNote}</p>
-        </div>
       ) : view === 'events' ? (
         byEvent.length === 0 ? (
           <p className="text-sm text-fg-faint">{t.empty}</p>
@@ -358,7 +325,10 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
                           >
                             {s.position}
                           </span>
-                          <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {s.name}
+                            {ageOrder && <span className="ml-1.5 text-xs text-fg-faint">{ageText(s)}</span>}
+                          </span>
                           <span className="shrink-0 font-mono text-xs">
                             {h.text}
                             <span className="ml-1 text-fg-faint">{h.kind === 'average' ? t.avg : t.single}</span>
@@ -387,7 +357,10 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
                 {points.map((p) => (
                   <tr key={`${p.registrantId}-${p.name}`} className="border-t border-border-subtle">
                     <td className="px-4 py-2 text-right font-semibold text-fg-muted">{p.position}</td>
-                    <td className="px-4 py-2">{p.name}</td>
+                    <td className="px-4 py-2">
+                      {p.name}
+                      {ageOrder && <span className="ml-1.5 text-xs text-fg-faint">{ageText(p)}</span>}
+                    </td>
                     <td className="hidden px-4 py-2 text-right text-fg-muted sm:table-cell">{p.events}</td>
                     <td className="px-4 py-2 text-right font-mono">{p.points.toFixed(2)}</td>
                   </tr>

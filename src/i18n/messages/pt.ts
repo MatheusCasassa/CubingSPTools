@@ -484,7 +484,7 @@ export const pt = {
     ageModes: { upTo: 'Até', from: 'A partir de', between: 'Entre', youngest: 'Mais novos', oldest: 'Mais velhos' },
     ageOrderTitle: { youngest: 'Mais novos da competição', oldest: 'Mais velhos da competição' },
     ageYm: (y: number, mo: number) => `${y} ${y === 1 ? 'ano' : 'anos'}${mo ? ` e ${mo} ${mo === 1 ? 'mês' : 'meses'}` : ''}`,
-    ageOrderNote: 'Só entra quem tem pelo menos um resultado válido. Idade na data de início da competição.',
+    ageOrderNote: 'Cada modalidade e a pontuação geral ficam ordenadas da pessoa mais nova para a mais velha (ou o contrário), com a idade na data de início da competição.',
     ageMinLabel: 'De',
     ageMaxLabel: 'Até',
     ageUpTo: (n: number) => `Até ${n} anos`,
