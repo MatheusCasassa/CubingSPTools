@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth/AuthContext'
 import { Alert } from '../components/ui/Feedback'
-import { BrandMark, IconArrowRight } from '../components/ui/icons'
+import { BrandMark, IconArrowRight, Wordmark } from '../components/ui/icons'
 import { useI18n } from '../i18n/I18nProvider'
 import { Rich } from '../i18n/Rich'
 import { CATEGORIES, CATEGORY_ANCHOR, CATEGORY_COLOR, toolsIn, type Category, type Tool } from '../lib/tools'
@@ -54,10 +54,10 @@ export default function Home() {
   return (
     <div className="container-page py-14 sm:py-20">
       <section className="animate-fade-up">
-        <h1 className="flex items-center gap-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          <BrandMark className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
+        <h1 className="flex items-center gap-4 text-4xl sm:text-5xl">
+          <BrandMark className="h-14 w-auto shrink-0 sm:h-16" />
           <span aria-label={m.home.title}>
-            C<span className="text-accent-red">SP</span>Tools
+            <Wordmark />
           </span>
         </h1>
         <p className="mt-4 max-w-3xl text-lg leading-relaxed text-fg-muted">
@@ -78,7 +78,7 @@ export default function Home() {
             <div className="flex items-stretch gap-3">
               <span className="w-1.5 shrink-0 rounded-full" style={{ background: CATEGORY_COLOR[cat] }} aria-hidden />
               <div>
-                <h2 id={`cat-${cat}`} className="text-xl font-semibold tracking-tight">
+                <h2 id={`cat-${cat}`} className="text-xl font-bold">
                   {info.title}
                 </h2>
                 <p className="mt-1 text-sm text-fg-muted">{info.description}</p>

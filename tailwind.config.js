@@ -6,17 +6,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Mesma escala do site da CubingSP (700 = azul exato do P da logo).
         brand: {
-          DEFAULT: '#2b4bdb',
-          300: '#8fa3f5',
-          400: '#5c77ee',
-          500: '#3b5bea',
-          600: '#2b4bdb',
-          700: '#2340b8',
-          800: '#1d3391',
+          DEFAULT: '#1242b6',
+          300: '#a3b8f0',
+          400: '#6b8ce6',
+          500: '#3d6fe6',
+          600: '#1f55d1',
+          700: '#1242b6',
+          800: '#0e3590',
+          900: '#0b2a70',
         },
+        // Cores exatas da logo — só na marca (logo, wordmark).
+        logo: { red: '#e60000', blue: '#1242b6', black: '#0a0908' },
         ink: { 950: '#0b0c10', 900: '#101218', 800: '#161923', 700: '#1f2330', 600: '#2a2f40' },
-        accent: { red: '#c81e3c', yellow: '#f5c518' },
+        // Vermelho do C; o amarelo fica só para avisos (fora da marca).
+        accent: { red: '#e60000', yellow: '#f5c518' },
         // Tokens semânticos (CSS vars em src/styles/index.css)
         bg: 'rgb(var(--bg) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',
@@ -31,6 +36,8 @@ export default {
         navy: '#14235e',
       },
       fontFamily: {
+        // Tomorrow: wordmark e títulos (h1/h2), como no site da CubingSP.
+        display: ['Tomorrow', '"Geist Sans"', 'Geist', 'system-ui', 'sans-serif'],
         sans: ['"Geist Sans"', 'Geist', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },

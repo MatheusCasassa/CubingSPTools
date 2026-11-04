@@ -1,4 +1,3 @@
-import { useId } from 'react'
 // Ícones em SVG inline (sem dependências, sem emoji).
 type P = { className?: string }
 
@@ -109,7 +108,7 @@ export function ScoreCompsMark({ className = 'h-7 w-7' }: P) {
 export function CubeStaffMark({ className = 'h-7 w-7' }: P) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="7" fill="#2b4bdb" />
+      <rect width="32" height="32" rx="7" fill="#1242B6" />
       {[0, 1, 2].map((c) => (
         <g key={c} fill="#fff">
           <circle cx={9 + c * 7} cy={12} r="2.6" />
@@ -136,7 +135,7 @@ export function CalcumulativeMark({ className = 'h-7 w-7' }: P) {
 export function EasyPasswordMark({ className = 'h-7 w-7' }: P) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <rect width="32" height="32" rx="7" fill="#E60000" />
       <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="8" y="14.5" width="16" height="11" rx="2.2" />
         <path d="M11.5 14.5v-3.2a4.5 4.5 0 0 1 9 0v3.2" />
@@ -153,7 +152,7 @@ export function EasyPasswordMark({ className = 'h-7 w-7' }: P) {
 export function SchedManagerMark({ className = 'h-7 w-7' }: P) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <rect width="32" height="32" rx="7" fill="#E60000" />
       <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M7 9.5h8M7 15h5M7 20.5h4" />
         <circle cx="20.5" cy="18" r="6.5" />
@@ -166,7 +165,7 @@ export function SchedManagerMark({ className = 'h-7 w-7' }: P) {
 export function SmartRanksMark({ className = 'h-7 w-7' }: P) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <rect width="32" height="32" rx="7" fill="#E60000" />
       <g fill="none" stroke="#fff" strokeWidth="2.2" strokeLinejoin="round">
         <path d="M12.5 25V13.5h7V25M5.5 25v-7.5h7M19.5 25v-5h7V25M4.5 25h23" />
       </g>
@@ -178,7 +177,7 @@ export function SmartRanksMark({ className = 'h-7 w-7' }: P) {
 export function SortCuberMark({ className = 'h-7 w-7' }: P) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="7" fill="#c81e3c" />
+      <rect width="32" height="32" rx="7" fill="#E60000" />
       <rect x="7.5" y="7.5" width="17" height="17" rx="3.5" fill="none" stroke="#fff" strokeWidth="2.2" transform="rotate(-12 16 16)" />
       <g fill="#fff" transform="rotate(-12 16 16)">
         <circle cx="12" cy="12" r="1.7" />
@@ -192,22 +191,38 @@ export function SortCuberMark({ className = 'h-7 w-7' }: P) {
 }
 
 /**
- * Logo do CSPTools: chave de boca (ferramenta/ajuda) + cubo em perspectiva
- * com as cores da CubingSP (branco, vermelho e preto) sobre o azul royal.
- * Mesmo desenho do public/favicon.svg.
+ * Logo do CSPTools: o cubo "CSP" da CubingSP, intacto (C vermelho, S que
+ * acompanha o tema, P azul), com um selo de chave de boca no canto — as
+ * ferramentas da CubingSP. O anel do selo tem a cor do fundo da página, para
+ * separá-lo do cubo. Favicon: public/favicon.svg (versão fundo azul).
  */
-const BRAND_SVG =
-  '<defs><linearGradient id="__ID__g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b5bea"/><stop offset="1" stop-color="#1d3391"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#__ID__g)"/>' +
-  '<mask id="__ID__j" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><g transform="translate(46 18) rotate(-45.0)"><rect x="0" y="-2.3" width="12.5" height="4.6" fill="#000"/><circle r="2.3" fill="#000"/></g></mask><g mask="url(#__ID__j)" fill="#fff"><circle cx="46" cy="18" r="9.5"/><path d="M46 18L21 43" stroke="#fff" stroke-width="7" stroke-linecap="round"/></g><polygon points="24.50,25.50 37.06,32.75 24.50,40.00 11.94,32.75" fill="#ffffff"/><polygon points="11.94,32.75 24.50,40.00 24.50,54.50 11.94,47.25" fill="#c81e3c"/><polygon points="24.50,40.00 37.06,32.75 37.06,47.25 24.50,54.50" fill="#0b0c10"/><path d="M18.22 29.12L30.78 36.38M30.78 29.12L18.22 36.38M11.94 40.00L24.50 47.25M18.22 36.38L18.22 50.88M24.50 47.25L37.06 40.00M30.78 36.38L30.78 50.88M24.50 40.00L11.94 32.75M24.50 40.00L37.06 32.75M24.50 40.00L24.50 54.50" stroke="#2340b8" stroke-width="1.1" stroke-linecap="round"/><polygon points="24.50,25.50 37.06,32.75 37.06,47.25 24.50,54.50 11.94,47.25 11.94,32.75" fill="none" stroke="#2340b8" stroke-width="1.7600000000000002" stroke-linejoin="round"/>'
-
-export function BrandMark({ className = 'h-8 w-8' }: P) {
-  const id = 'b' + useId().replace(/[^a-zA-Z0-9]/g, '')
+export function BrandMark({ className = 'h-9 w-auto' }: P) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      className={className}
-      aria-hidden
-      dangerouslySetInnerHTML={{ __html: BRAND_SVG.replace(/__ID__/g, id) }}
-    />
+    <svg viewBox="320 275 690 735" className={className} aria-hidden>
+      <polygon
+        points="627.0,285.0 360.0,430.0 637.0,597.0 904.0,452.0 842.6,415.0 642.7,523.6 488.5,430.6 688.4,322.0"
+        fill="#E60000"
+      />
+      <polygon
+        points="332.0,446.0 332.0,652.0 557.0,783.0 560.0,836.0 334.0,704.0 333.0,793.0 625.0,961.0 626.0,746.0 398.0,612.0 396.0,560.0 624.0,692.0 625.0,610.0"
+        className="fill-logo-black dark:fill-white"
+      />
+      <path
+        d="M921.0,463.0 647.0,610.0 646.0,960.0 711.0,921.0 711.0,795.0 921.0,681.0Z M856.0,575.0 857.0,644.0 713.0,722.0 711.0,653.0Z"
+        fillRule="evenodd"
+        fill="#1242B6"
+      />
+      <circle cx="880" cy="880" r="118" fill="#1242B6" className="stroke-bg" strokeWidth="22" />
+      <path d="M897,819 885,811 870,806 853,805 839,809 879,849 849,879 809,839 806,848 805,859 805,868 808,879 812,889 818,896 825,904 833,909 846,915 859,916 872,915 884,911 924,951 933,955 941,954 948,951 953,945 955,938 954,930 950,923 911,884 914,877 916,868 916,859 915,850 913,841 909,833 904,825 897,819Z" fill="#fff" />
+    </svg>
+  )
+}
+
+/** Wordmark "CSP TOOLS" em Tomorrow, como o "CUBING SP": SP no vermelho do C. */
+export function Wordmark({ className = '' }: { className?: string }) {
+  return (
+    <span className={'whitespace-nowrap font-display font-bold uppercase tracking-wide ' + className}>
+      C<span className="text-logo-red">SP</span> Tools
+    </span>
   )
 }

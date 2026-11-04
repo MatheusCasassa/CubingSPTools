@@ -5,8 +5,8 @@ competições da WCA, no visual da CubingSP (é para onde o menu "Ferramentas"
 do site da CubingSP aponta). Desenvolvido por **Matheus Casassa**.
 
 O menu mostra as **4 categorias** (Antes, Durante e Depois da Competição e
-Ferramentas Auxiliares), cada uma com uma cor da bandeira de São Paulo —
-azul, vermelho, amarelo e preto/branco. Cada categoria abre a lista das suas
+Ferramentas Auxiliares), cada uma com uma cor das faces do cubo "CSP" da CubingSP — azul (P),
+vermelho (C), preto/branco (S) e o cinza de apoio. Cada categoria abre a lista das suas
 ferramentas. Para incluir uma ferramenta nova, basta adicioná-la em
 `src/lib/tools.tsx`: ela aparece no menu e na página inicial, em ordem
 alfabética. Logo: chave de boca + cubo (`BrandMark` em

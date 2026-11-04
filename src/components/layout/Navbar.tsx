@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../lib/auth/AuthContext'
 import { config } from '../../lib/config'
 import { applyTheme, getTheme, type Theme } from '../../lib/theme'
-import { BrandMark, IconArrowLeft, IconChevronDown, IconMenu, IconMoon, IconSun } from '../ui/icons'
+import { BrandMark, Wordmark, IconArrowLeft, IconChevronDown, IconMenu, IconMoon, IconSun } from '../ui/icons'
 import { CATEGORIES, CATEGORY_COLOR, categoryOfPath, toolsIn, type Category } from '../../lib/tools'
 import { stripLocale } from '../../i18n/locales'
 import { useI18n } from '../../i18n/I18nProvider'
@@ -142,10 +142,8 @@ export function Navbar() {
     <header className="sticky top-0 z-30 border-b border-border-subtle bg-bg/80 backdrop-blur-md">
       <div className="container-page flex h-16 items-center gap-4">
         <Link to={lp('/')} className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <BrandMark className="h-8 w-8" />
-          <span className="hidden text-[15px] font-bold tracking-tight min-[420px]:inline">
-            C<span className="text-accent-red">SP</span>Tools
-          </span>
+          <BrandMark className="h-9 w-auto" />
+          <Wordmark className="hidden text-[17px] min-[420px]:inline" />
         </Link>
 
         <nav ref={navRef} className="ml-1 hidden items-center gap-0.5 md:flex" aria-label={m.nav.tools}>
@@ -168,8 +166,8 @@ export function Navbar() {
           >
             <IconArrowLeft className="h-3.5 w-3.5" />
             {m.nav.backTo}{' '}
-            <span className="font-semibold text-fg">
-              CUBING<span className="text-accent-red">SP</span>
+            <span className="font-display font-bold uppercase tracking-wide text-fg">
+              Cubing <span className="text-logo-red">SP</span>
             </span>
           </a>
 

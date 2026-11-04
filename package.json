@@ -17,6 +17,7 @@
   "dependencies": {
     "@fontsource/geist-mono": "^5.2.5",
     "@fontsource/geist-sans": "^5.2.5",
+    "@fontsource/tomorrow": "^5.2.6",
     "@react-pdf/renderer": "^4.9.0",
     "@wca/helpers": "^1.1.7",
     "buffer": "^6.0.3",

@@ -2,10 +2,10 @@
 // pelo menu). Para adicionar uma ferramenta, basta incluí-la em TOOLS: ela
 // aparece no menu da categoria e na Home, sempre em ordem alfabética.
 //
-// Cores das categorias = cores da bandeira do Estado de São Paulo, que
-// compõem o tema da CubingSP: azul (mapa), vermelho (retângulo), amarelo
-// (estrelas) e as listras pretas e brancas (preto no tema claro, branco no
-// escuro — por isso a 4ª cor é a do texto).
+// Cores das categorias = faces do cubo "CSP" da logo da CubingSP: azul do P
+// (Antes), vermelho do C (Durante), preto/branco do S (Depois — preto no tema
+// claro, branco no escuro, por isso é a cor do texto) e o cinza de apoio da
+// identidade visual (Auxiliares).
 import type { ReactNode } from 'react'
 import {
   CalcumulativeMark,
@@ -24,10 +24,10 @@ export const CATEGORIES: Category[] = ['before', 'during', 'after', 'aux']
 
 /** Cor de cada categoria (valor CSS). */
 export const CATEGORY_COLOR: Record<Category, string> = {
-  before: '#3b5bea', // azul
-  during: '#c81e3c', // vermelho
-  after: '#f5c518', // amarelo
-  aux: 'rgb(var(--fg))', // listras preto/branco
+  before: 'rgb(var(--cat-before))', // azul do P (#1242B6; mais claro no escuro)
+  during: '#e60000', // vermelho do C
+  after: 'rgb(var(--fg))', // S: preto/branco
+  aux: 'rgb(var(--fg-muted))', // cinza de apoio
 }
 
 /** Âncora da categoria na Home (/#antes etc.). */
