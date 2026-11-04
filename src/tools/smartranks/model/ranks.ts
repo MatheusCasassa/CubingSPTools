@@ -23,6 +23,8 @@ export interface PersonInfo {
 }
 
 export type AgeMode = 'upTo' | 'from' | 'between'
+/** Mais novos / mais velhos da competição, independente da idade. */
+export type AgeOrder = 'youngest' | 'oldest'
 
 export type Category =
   | { kind: 'all' }
@@ -72,6 +74,65 @@ export function matches(c: Category, info: PersonInfo | undefined, liveWcaId: st
       return age >= c.min && age <= c.max
     }
   }
+}
+
+/** Idade completa em anos e meses numa data ("AAAA-MM-DD"). */
+export function ageYm(birthdate: string, date: string): { years: number; months: number } {
+  const [by, bm, bd] = birthdate.split('-').map(Number)
+  const [y, m, d] = date.split('-').map(Number)
+  let months = (y - by) * 12 + (m - bm) - (d < bd ? 1 : 0)
+  if (months < 0) months = 0
+  return { years: Math.floor(months / 12), months: months % 12 }
+}
+
+// ------------------------------------------------- mais novos / mais velhos
+
+export interface AgeRow {
+  position: number
+  registrantId: number
+  name: string
+  wcaId: string | null
+  birthdate: string
+  years: number
+  months: number
+}
+
+/**
+ * Competidores ordenados pela data de nascimento (mais novos ou mais velhos
+ * primeiro). Só entra quem tem pelo menos um resultado válido no WCA Live
+ * (competiu de fato). Mesma data de nascimento = mesma posição.
+ */
+export function ageRanking(
+  live: LiveCompetition,
+  info: Map<number, PersonInfo>,
+  refDate: string,
+  order: AgeOrder,
+): AgeRow[] {
+  const ids = new Set<number>()
+  for (const ev of live.events)
+    for (const rd of ev.rounds)
+      for (const r of rd.results) if (valid(r) && r.person.registrantId != null) ids.add(r.person.registrantId)
+  const list = [...ids]
+    .map((id) => info.get(id))
+    .filter((p): p is PersonInfo & { birthdate: string } => !!p?.birthdate)
+    .sort((a, b) =>
+      order === 'youngest'
+        ? b.birthdate.localeCompare(a.birthdate) || a.name.localeCompare(b.name, 'pt-BR')
+        : a.birthdate.localeCompare(b.birthdate) || a.name.localeCompare(b.name, 'pt-BR'),
+    )
+  const out: AgeRow[] = []
+  list.forEach((p, i) => {
+    const prev = out[i - 1]
+    out.push({
+      position: prev && prev.birthdate === p.birthdate ? prev.position : i + 1,
+      registrantId: p.registrantId,
+      name: p.name,
+      wcaId: p.wcaId,
+      birthdate: p.birthdate,
+      ...ageYm(p.birthdate, refDate),
+    })
+  })
+  return out
 }
 
 // ------------------------------------------------------ por modalidade

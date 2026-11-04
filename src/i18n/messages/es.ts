@@ -469,7 +469,10 @@ export const es: Messages = {
     updating: 'Actualizando…',
     category: 'Ranking',
     categories: { newcomers: 'Novatos', female: 'Femenino', age: 'Edad', all: 'General' },
-    ageModes: { upTo: 'Hasta', from: 'Desde', between: 'Entre' },
+    ageModes: { upTo: 'Hasta', from: 'Desde', between: 'Entre', youngest: 'Más jóvenes', oldest: 'Mayores' },
+    ageOrderTitle: { youngest: 'Competidores más jóvenes', oldest: 'Competidores mayores' },
+    ageYm: (y: number, mo: number) => `${y} ${y === 1 ? 'año' : 'años'}${mo ? ` y ${mo} ${mo === 1 ? 'mes' : 'meses'}` : ''}`,
+    ageOrderNote: 'Solo entran quienes tienen al menos un resultado válido. Edad en el primer día de la competencia.',
     ageMinLabel: 'De',
     ageMaxLabel: 'Hasta',
     ageUpTo: (n: number) => `Hasta ${n} años`,
@@ -491,7 +494,7 @@ export const es: Messages = {
     formula:
       'Método de la APS (Asociación Portuguesa de Speedcubing), el mismo de RASCS: en cada ronda, Puntos = Competidores de la ronda ÷ (Posición + 1). El total suma todas las rondas de todas las modalidades.',
     customSoon: 'Próximamente: criterios personalizables (peso por modalidad, solo la clasificación final, etc.).',
-    csv: { event: 'Modalidad', position: 'Posición', name: 'Nombre', result: 'Resultado', round: 'Ronda', points: 'Puntos', events: 'Modalidades', rounds: 'Rondas' },
+    csv: { event: 'Modalidad', position: 'Posición', name: 'Nombre', result: 'Resultado', round: 'Ronda', points: 'Puntos', events: 'Modalidades', rounds: 'Rondas', age: 'Edad' },
   },
   sortcuber: {
     subtitle: 'Sorteo entre los competidores de la competición',

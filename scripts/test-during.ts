@@ -20,6 +20,8 @@ import {
 } from '../src/tools/schedmanager/model/schedule'
 import {
   ageOn,
+  ageRanking,
+  ageYm,
   apsPoints,
   categoryStandings,
   formatResult,
@@ -363,8 +365,17 @@ async function main() {
     assert.equal(formatResult(28, '333fm', 'single'), '28')
     assert.equal(formatResult(980359901, '333mbf', 'single'), '2/3 59:59', 'Multi-BLD: 1 ponto, 1 erro')
     assert.equal(formatResult(-1, '333', 'single'), 'DNF')
+    // Mais novos / mais velhos: Eva (só DNF) fica de fora.
+    const young = ageRanking(live, info, '2026-10-31', 'youngest')
+    const old = ageRanking(live, info, '2026-10-31', 'oldest')
+    assert.ok(!young.some((a) => a.name === 'Eva'), 'só quem tem resultado válido')
+    assert.deepEqual(old.map((a) => a.name), [...young].reverse().map((a) => a.name))
+    assert.equal(old[0].name, 'Bruno')
+    assert.ok(young.every((a, i) => i === 0 || a.birthdate <= young[i - 1].birthdate))
+    assert.deepEqual(ageYm('2014-03-15', '2026-10-31'), { years: 12, months: 7 })
+    assert.deepEqual(ageYm('2014-11-01', '2026-10-31'), { years: 11, months: 11 })
   }
-  ok('SmartRanks: classificação final, categorias, idade e pontuação APS')
+  ok('SmartRanks: classificação final, categorias, idade, mais novos/velhos e pontuação APS')
 
   // ------------------------------------------------------------ SortCuber
   {

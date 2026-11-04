@@ -467,7 +467,10 @@ export const en: Messages = {
     updating: 'Refreshing…',
     category: 'Ranking',
     categories: { newcomers: 'Newcomers', female: 'Female', age: 'Age', all: 'Overall' },
-    ageModes: { upTo: 'Up to', from: 'From', between: 'Between' },
+    ageModes: { upTo: 'Up to', from: 'From', between: 'Between', youngest: 'Youngest', oldest: 'Oldest' },
+    ageOrderTitle: { youngest: 'Youngest competitors', oldest: 'Oldest competitors' },
+    ageYm: (y: number, mo: number) => `${y} ${y === 1 ? 'year' : 'years'}${mo ? `, ${mo} ${mo === 1 ? 'month' : 'months'}` : ''}`,
+    ageOrderNote: 'Only competitors with at least one valid result. Age on the first day of the competition.',
     ageMinLabel: 'From',
     ageMaxLabel: 'To',
     ageUpTo: (n: number) => `Up to ${n} years`,
@@ -489,7 +492,7 @@ export const en: Messages = {
     formula:
       'APS method (Portuguese Speedcubing Association), the same as RASCS: in each round, Points = Competitors in the round ÷ (Position + 1). The total adds up every round of every event.',
     customSoon: 'Coming soon: customizable criteria (weight per event, final standings only, etc.).',
-    csv: { event: 'Event', position: 'Position', name: 'Name', result: 'Result', round: 'Round', points: 'Points', events: 'Events', rounds: 'Rounds' },
+    csv: { event: 'Event', position: 'Position', name: 'Name', result: 'Result', round: 'Round', points: 'Points', events: 'Events', rounds: 'Rounds', age: 'Age' },
   },
   sortcuber: {
     subtitle: 'Raffle among the competitors of the competition',

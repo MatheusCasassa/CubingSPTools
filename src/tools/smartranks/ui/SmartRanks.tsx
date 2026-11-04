@@ -8,6 +8,7 @@ import { fetchLiveCompetition, liveUrl, type LiveCompetition } from '../../../li
 import { eventName } from '../../../lib/wca/format'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
 import {
+  ageRanking,
   apsPoints,
   categoryStandings,
   eventFinished,
@@ -17,6 +18,7 @@ import {
   sortByOf,
   toCsv,
   type AgeMode,
+  type AgeOrder,
   type Category,
 } from '../model/ranks'
 
@@ -50,6 +52,8 @@ export default function SmartRanksPage() {
 
 type CatKind = Category['kind']
 type View = 'events' | 'points'
+type AgeChoice = AgeMode | AgeOrder
+const isOrder = (a: AgeChoice): a is AgeOrder => a === 'youngest' || a === 'oldest'
 
 function download(name: string, text: string) {
   const url = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv;charset=utf-8' }))
@@ -67,7 +71,7 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [kind, setKind] = useState<CatKind>('newcomers')
-  const [ageMode, setAgeMode] = useState<AgeMode>('upTo')
+  const [ageMode, setAgeMode] = useState<AgeChoice>('upTo')
   const [ageMin, setAgeMin] = useState(40)
   const [ageMax, setAgeMax] = useState(12)
   const [view, setView] = useState<View>('events')
@@ -92,13 +96,19 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
   const info = useMemo(() => personsInfo(ctx.wcif), [ctx.wcif])
   const hasBirthdates = useMemo(() => [...info.values()].some((p) => p.birthdate), [info])
   const refDate = ctx.wcif.schedule.startDate ?? new Date().toISOString().slice(0, 10)
+  // Mais novos / mais velhos: lista única por data de nascimento.
+  const ageOrder: AgeOrder | null = kind === 'age' && isOrder(ageMode) ? ageMode : null
   const cat: Category =
     kind === 'age'
-      ? { kind: 'age', mode: ageMode, min: ageMode === 'upTo' ? 0 : ageMin, max: ageMode === 'from' ? 999 : ageMax }
+      ? isOrder(ageMode)
+        ? { kind: 'age', mode: 'from', min: 0, max: 999 }
+        : { kind: 'age', mode: ageMode, min: ageMode === 'upTo' ? 0 : ageMin, max: ageMode === 'from' ? 999 : ageMax }
       : { kind }
 
   const catTitle =
-    kind === 'age'
+    ageOrder
+      ? t.ageOrderTitle[ageOrder]
+      : kind === 'age'
       ? ageMode === 'upTo'
         ? t.ageUpTo(ageMax)
         : ageMode === 'from'
@@ -115,8 +125,16 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
     .map((ev) => ({ ev, list: categoryStandings(ev, cat, info, refDate) }))
     .filter((x) => x.list.length > 0)
   const points = apsPoints(live, cat, info, refDate)
+  const ages = ageOrder ? ageRanking(live, info, refDate, ageOrder) : []
 
   const exportCsv = () => {
+    if (ageOrder) {
+      const rows: (string | number)[][] = [
+        [t.csv.position, t.csv.name, 'WCA ID', t.csv.age],
+        ...ages.filter((a) => a.position <= top).map((a) => [a.position, a.name, a.wcaId ?? '', t.ageYm(a.years, a.months)]),
+      ]
+      return download(`${ctx.wcif.id}-${ageOrder}.csv`, toCsv(rows))
+    }
     const rows: (string | number)[][] =
       view === 'events'
         ? [
@@ -142,8 +160,12 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
   }
 
   const copyText = () => {
-    const lines =
-      view === 'events'
+    const lines = ageOrder
+      ? [
+          `${ctx.wcif.name} — ${catTitle}`,
+          ...ages.filter((a) => a.position <= top).map((a) => `${a.position}. ${a.name} — ${t.ageYm(a.years, a.months)}`),
+        ]
+      : view === 'events'
         ? [
             `${ctx.wcif.name} — ${catTitle}`,
             ...byEvent.flatMap(({ ev, list }) => [
@@ -200,8 +222,8 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
         </div>
         {kind === 'age' && (
           <div className="flex flex-wrap items-end gap-3">
-            <div className="seg">
-              {(['upTo', 'from', 'between'] as AgeMode[]).map((md) => (
+            <div className="seg flex-wrap [&>button]:whitespace-nowrap">
+              {(['upTo', 'from', 'between', 'youngest', 'oldest'] as AgeChoice[]).map((md) => (
                 <button
                   key={md}
                   type="button"
@@ -217,7 +239,7 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
                 </button>
               ))}
             </div>
-            {ageMode !== 'upTo' && (
+            {ageMode !== 'upTo' && !ageOrder && (
               <label className="text-xs text-fg-muted">
                 {t.ageMinLabel}
                 <input
@@ -230,7 +252,7 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
                 />
               </label>
             )}
-            {ageMode !== 'from' && (
+            {ageMode !== 'from' && !ageOrder && (
               <label className="text-xs text-fg-muted">
                 {t.ageMaxLabel}
                 <input
@@ -246,6 +268,7 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
           </div>
         )}
         <div className="flex flex-wrap items-center gap-3">
+          {!ageOrder && (
           <div className="seg [&>button]:whitespace-nowrap">
             <button type="button" aria-pressed={view === 'events'} onClick={() => setView('events')}>
               {t.byEvent}
@@ -254,7 +277,8 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
               {t.points}
             </button>
           </div>
-          {view === 'events' && (
+          )}
+          {(view === 'events' || ageOrder) && (
             <label className="text-xs text-fg-muted">
               {t.topLabel}
               <select
@@ -282,6 +306,32 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
 
       {blocked ? (
         <Alert tone="warn">{t.ageNeedsManager}</Alert>
+      ) : ageOrder ? (
+        <div className="card p-5">
+          <h3 className="font-semibold">{catTitle}</h3>
+          {ages.length === 0 ? (
+            <p className="mt-3 text-sm text-fg-faint">{t.empty}</p>
+          ) : (
+            <ol className="mt-3 space-y-1.5">
+              {ages
+                .filter((a) => a.position <= top)
+                .map((a) => (
+                  <li key={a.registrantId} className="flex items-baseline gap-3 text-sm">
+                    <span
+                      className={`w-6 shrink-0 text-right font-semibold ${
+                        a.position === 1 ? 'text-amber-500' : a.position === 2 ? 'text-slate-400' : a.position === 3 ? 'text-orange-700 dark:text-orange-400' : 'text-fg-faint'
+                      }`}
+                    >
+                      {a.position}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                    <span className="shrink-0 text-xs text-fg-muted">{t.ageYm(a.years, a.months)}</span>
+                  </li>
+                ))}
+            </ol>
+          )}
+          <p className="mt-4 text-xs text-fg-faint">{t.ageOrderNote}</p>
+        </div>
       ) : view === 'events' ? (
         byEvent.length === 0 ? (
           <p className="text-sm text-fg-faint">{t.empty}</p>
