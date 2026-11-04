@@ -1,7 +1,8 @@
 // Súmulas em branco: as linhas seguem o formato da rodada (nunca o evento).
 import assert from 'node:assert/strict'
 import { demoWcif } from '../src/tools/scorecomps/model/demo'
-import { planRounds, buildRoundScorecards, buildGenericScorecards, ADVANCERS_KEY } from '../src/tools/scorecomps/model/build'
+import { planRounds, buildRoundScorecards, buildGenericScorecards, blankTypesFor, ADVANCERS_KEY } from '../src/tools/scorecomps/model/build'
+import { arrange } from '../src/tools/scorecomps/model/output'
 import { advancingFromPrevious } from '../src/tools/cubestaff/model/people'
 import { attemptsFor, buildRoundLayout } from '../src/tools/scorecomps/model/logic'
 
@@ -87,4 +88,28 @@ console.log('✓ súmulas em branco seguem o formato da rodada (Ao5/Bo5, Mo3/Bo3
   assert.ok(!plans.some((p) => p.info.eventId === '333fm'))
   assert.ok(plans.some((p) => p.info.eventId === '333mbf'), 'Multi-BLD continua')
   console.log('✓ FMC fora do ScoreComps (o TNoodle gera as folhas)')
+}
+
+// Folha incompleta: completa com súmulas em branco da mesma rodada.
+{
+  const w = demoWcif()
+  const plan = planRounds(w).find((p) => p.groups.length > 0)!
+  const cards = buildRoundScorecards(w, plan, { roundId: plan.info.roundId, groupKeys: [plan.groups[0].key], blank: 0 }, 'name', 'pt')
+  const n = cards.length
+  const out = arrange(cards, 4, 'stack')
+  assert.equal(out.length % 4, 0)
+  assert.ok(out.every((c) => c !== null), 'nenhum espaço vazio')
+  const extra = out.filter((c) => c!.competitorName === '')
+  assert.equal(extra.length, (4 - (n % 4)) % 4)
+  assert.ok(extra.every((c) => c!.roundId === plan.info.roundId && c!.group === '' && c!.wcaId === null))
+  console.log('✓ folhas incompletas completadas com súmulas em branco')
+}
+
+// Súmulas em branco: tipos detectados pelos formatos da competição (sem FMC).
+{
+  const types = blankTypesFor(demoWcif())
+  assert.ok(types.length > 0)
+  assert.deepEqual([...types].sort((a, b) => b - a), types, 'ordem 5, 3, 2, 1')
+  assert.ok(types.every((t) => [5, 3, 2, 1].includes(t)))
+  console.log(`✓ tipos de súmula em branco: ${types.join(', ')}`)
 }

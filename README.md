@@ -114,7 +114,7 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 2. Lê o WCIF da competição. Os grupos vêm das atividades `evento-rN-gK` e dos
    assignments `competitor` — o contrato gravado pelo CubeStaff, Groupifier
    ou Delegate Dashboard. O ScoreComps **só lê**, nunca altera o WCIF.
-3. Escolha rodadas/grupos (+ súmulas em branco), folha, ordem e arquivos.
+3. Escolha rodadas/grupos, folha, ordem e arquivos (ou "Gerar Súmulas em Branco").
 4. O Worker gera o(s) PDF(s); vários arquivos saem num `.zip`.
 
 ### Regras da súmula (Modelo_Aprovado)
@@ -131,7 +131,7 @@ página onde o login começou. O `name` do `wrangler.jsonc`
   (quando o WCA Live já abriu a rodada) ou o cálculo pelos resultados da
   rodada anterior + condição de classificação (máx. 75%, empates juntos). O
   botão "Atualizar da WCA" busca de novo depois de sincronizar. Sem
-  resultados ainda: súmulas em branco (quantidade sugerida pela condição).
+  resultados ainda: use o botão "Gerar Súmulas em Branco".
 
 ### Layout e fidelidade
 
@@ -156,7 +156,7 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 | Ordenar | Nome · ID |
 | Extras | Linhas de corte tracejadas, logo da competição |
 | Logo | Colorida ou preto e branco · ao lado do nome e/ou marca d'água (grande, atrás da súmula, transparência ajustável de 50% a 95% — padrão 75%) |
-| Em branco | Painel "Súmulas em branco" (genéricas, como no Groupifier): não dependem de modalidade — só nome e logo da competição; modalidade, rodada, limite de tempo e tempo de corte para preencher à mão. Quantidade por nº de tentativas: 5 (Ao5/Bo5, corte após a 2ª), 3 (Mo3/Bo3, corte após a 1ª), 2 ou 1 — sempre + 2 extras. Cada rodada também tem o campo "Em branco" (com a modalidade impressa) |
+| Em branco | Um botão "Gerar Súmulas em Branco" (genéricas, como no Groupifier): não dependem de modalidade — só nome e logo da competição. Detecta os tipos pelos formatos da competição — 5 (Ao5/Bo5), 3 (Mo3/Bo3), 2 ou 1 tentativa(s), sempre + 2 extras — e gera uma folha cheia de cada num só PDF. Folhas incompletas de uma rodada são completadas com súmulas em branco daquela rodada (como no AGE) |
 
 A logo **preto e branco** é gravada como PNG em tons de cinza de verdade
 (cinza + alfa), então o PDF a embute como *DeviceGray*: a impressora usa só a

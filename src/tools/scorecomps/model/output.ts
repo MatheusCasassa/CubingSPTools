@@ -30,9 +30,19 @@ function slug(s: string): string {
     .replace(/^-|-$/g, '')
 }
 
-/** Cada seção começa numa folha nova e é ordenada de forma independente. */
-function arrange(models: ScorecardModel[], perPage: number, order: OrderMode): (ScorecardModel | null)[] {
-  const padded = padToPage(models, perPage)
+/** Súmula em branco da mesma rodada (modalidade, limite e corte impressos; sem nome). */
+export function blankLike(m: ScorecardModel): ScorecardModel {
+  return { ...m, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank' }
+}
+
+/**
+ * Cada seção começa numa folha nova e é ordenada de forma independente. As
+ * posições que sobrariam vazias na última folha recebem súmulas em branco da
+ * mesma rodada (como no AGE), em vez de espaço vazio.
+ */
+export function arrange(models: ScorecardModel[], perPage: number, order: OrderMode): (ScorecardModel | null)[] {
+  const last = models[models.length - 1]
+  const padded = padToPage(models, perPage).map((m) => m ?? (last ? blankLike(last) : null))
   return order === 'stack' && perPage > 1 ? cutAndStack(padded, perPage) : padded
 }
 

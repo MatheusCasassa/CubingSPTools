@@ -14,7 +14,14 @@ import {
   type RoundInfo,
   type Competitor,
 } from '../../../lib/wca/wcif'
-import { buildRoundLayout, buildGenericLayout, type GenericAttempts, type ScorecardModel } from './logic'
+import {
+  attemptsFor,
+  buildRoundLayout,
+  buildGenericLayout,
+  GENERIC_ATTEMPTS,
+  type GenericAttempts,
+  type ScorecardModel,
+} from './logic'
 import { personsById, roundCompetitors } from '../../cubestaff/model/people'
 import { SCORECARD_STRINGS } from './strings'
 import type { Locale } from '../../../i18n/locales'
@@ -186,6 +193,20 @@ export function buildRoundScorecards(
 }
 
 // ------------------------------------------------------------- em branco genéricas
+
+/**
+ * Tipos de súmula em branco que a competição usa (pelo número de tentativas
+ * das rodadas: 5, 3, 2 ou 1). Sem rodadas reconhecidas, todos os tipos.
+ */
+export function blankTypesFor(wcif: Wcif): GenericAttempts[] {
+  const used = new Set<number>()
+  for (const info of listRounds(wcif)) {
+    if (NO_SCORECARD_EVENTS.has(info.eventId)) continue
+    used.add(attemptsFor(info.round.format))
+  }
+  const types = GENERIC_ATTEMPTS.filter((a) => used.has(a))
+  return types.length ? types : [...GENERIC_ATTEMPTS]
+}
 /** Rodada "virtual" das súmulas em branco genéricas (uma por nº de tentativas). */
 export const genericRoundId = (attempts: GenericAttempts) => `em-branco-${attempts}-tentativas`
 

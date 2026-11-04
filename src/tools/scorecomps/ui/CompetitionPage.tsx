@@ -7,14 +7,22 @@ import { WcaLoginButton } from '../../../components/auth/WcaLoginButton'
 import { Alert, Spinner } from '../../../components/ui/Feedback'
 import { IconArrowLeft, IconDownload, IconEye, IconSpinner } from '../../../components/ui/icons'
 import { demoWcif } from '../model/demo'
-import { planRounds, buildRoundScorecards, buildGenericScorecards, genericRoundId, ADVANCERS_KEY, type RoundPlan, type SortBy } from '../model/build'
-import { GENERIC_ATTEMPTS } from '../model/logic'
+import {
+  planRounds,
+  buildRoundScorecards,
+  buildGenericScorecards,
+  blankTypesFor,
+  genericRoundId,
+  ADVANCERS_KEY,
+  type RoundPlan,
+  type SortBy,
+} from '../model/build'
 import { planOutput, type OrderMode, type SplitMode, type RoundBatch } from '../model/output'
 import { layoutFor, PAPERS, PAPER_IDS, type PaperId } from '../pdf/paper'
 import type { RenderProgress } from '../pdf/core'
 import { generateFiles, deliver, openInNewTab } from '../pdf/generate'
 import { LogoPicker, loadLogo, saveLogo, toGrayscale } from './LogoPicker'
-import { BlankPanel, NO_GENERIC_BLANK, type GenericBlank } from './BlankPanel'
+import { BlankPanel } from './BlankPanel'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import type { Logo } from '../pdf/ScorecardDocument'
 import { WATERMARK_TRANSPARENCY, watermarkOpacity } from '../model/watermark'
@@ -70,14 +78,13 @@ function loadPrefs(): Prefs {
 // ----------------------------------------------------------------- seleção
 interface RoundSel {
   groups: string[]
-  blank: number
 }
 type Selection = Record<string, RoundSel>
 
-const isOn = (s?: RoundSel) => !!s && (s.groups.length > 0 || s.blank > 0)
+const isOn = (s?: RoundSel) => !!s && s.groups.length > 0
 
 function fullSel(p: RoundPlan): RoundSel {
-  return { groups: p.groups.map((g) => g.key), blank: p.groups.length === 0 ? p.suggestedBlank : 0 }
+  return { groups: p.groups.map((g) => g.key) }
 }
 
 // ----------------------------------------------------------------- componentes
@@ -118,12 +125,12 @@ function RoundCard({
   onChange: (s: RoundSel) => void
 }) {
   const { m, locale } = useI18n()
-  const cur = sel ?? { groups: [], blank: 0 }
+  const cur = sel ?? { groups: [] }
   const on = isOn(sel)
-  const count = plan.groups.filter((g) => cur.groups.includes(g.key)).reduce((n, g) => n + g.competitors.length, 0) + cur.blank
+  const count = plan.groups.filter((g) => cur.groups.includes(g.key)).reduce((n, g) => n + g.competitors.length, 0)
   const { info } = plan
 
-  const toggleRound = () => onChange(on ? { groups: [], blank: 0 } : fullSel(plan))
+  const toggleRound = () => onChange(on ? { groups: [] } : fullSel(plan))
   const toggleGroup = (key: string) =>
     onChange({
       ...cur,
@@ -134,7 +141,13 @@ function RoundCard({
     <div className={'card p-4 transition-colors ' + (on ? 'border-brand-500/50' : '')}>
       <div className="flex items-center justify-between gap-3">
         <label className="flex cursor-pointer items-center gap-3">
-          <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={on} onChange={toggleRound} />
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-brand-600"
+            checked={on}
+            onChange={toggleRound}
+            disabled={plan.groups.length === 0}
+          />
           <span className="font-medium">
             {roundName(info, locale)}
             <span className="ml-2 text-xs font-normal text-fg-faint">{m.scorecomps.formats[info.round.format] ?? ''}</span>
@@ -168,21 +181,9 @@ function RoundCard({
             </button>
           )
         })}
-        <label className="chip border-dashed border-border-strong text-fg-muted">
-          {m.scorecomps.blank}
-          <input
-            type="number"
-            min={0}
-            max={500}
-            value={cur.blank}
-            onChange={(e) => onChange({ ...cur, blank: Math.max(0, Math.min(500, Number(e.target.value) || 0)) })}
-            className="w-12 bg-transparent text-right font-mono text-fg outline-none"
-            aria-label={m.scorecomps.blankAria(`${info.eventName} ${roundName(info, locale)}`)}
-          />
-        </label>
       </div>
       {!plan.fromGroups && plan.groups.length === 0 && (
-        <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.nextRoundHint(plan.suggestedBlank)}</p>
+        <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.nextRoundHint}</p>
       )}
       {!plan.fromGroups && plan.groups.length > 0 && !plan.advancers && (
         <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.noGroupsHint}</p>
@@ -269,7 +270,7 @@ export default function CompetitionPage() {
   const [busy, setBusy] = useState<null | 'download' | 'preview'>(null)
   const [progress, setProgress] = useState<RenderProgress | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
-  const [generic, setGeneric] = useState<GenericBlank>(NO_GENERIC_BLANK)
+  const [blankBusy, setBlankBusy] = useState(false)
   // Recarregar o WCIF (ex.: depois de sincronizar o WCA Live) sem perder a seleção.
   const [reloadKey, setReloadKey] = useState(0)
   const [reloading, setReloading] = useState(false)
@@ -341,19 +342,17 @@ export default function CompetitionPage() {
         models: buildRoundScorecards(
           wcif,
           p,
-          { roundId: p.info.roundId, groupKeys: sel[p.info.roundId].groups, blank: sel[p.info.roundId].blank },
+          { roundId: p.info.roundId, groupKeys: sel[p.info.roundId].groups, blank: 0 },
           prefs.sortBy,
           pdfLocale,
         ),
       }))
-      .concat(
-        // Em branco genéricas (sem modalidade) vão por último.
-        GENERIC_ATTEMPTS.filter((a) => generic[a] > 0).map((a) => ({
-          roundId: genericRoundId(a),
-          models: buildGenericScorecards(wcif.name, a, generic[a], pdfLocale),
-        })),
-      )
-  }, [wcif, plans, sel, prefs.sortBy, pdfLocale, generic])
+  }, [wcif, plans, sel, prefs.sortBy, pdfLocale])
+
+  // Súmulas em branco: uma folha cheia de cada tipo usado na competição
+  // (nas folhas de 1 súmula, 4 de cada).
+  const blankTypes = useMemo(() => (wcif ? blankTypesFor(wcif) : []), [wcif])
+  const blankPerType = Math.max(perPage, 4)
 
   const files = useMemo(
     () =>
@@ -406,13 +405,35 @@ export default function CompetitionPage() {
     }
   }
 
+  const generateBlanks = async () => {
+    if (!wcif || blankTypes.length === 0) return
+    setBlankBusy(true)
+    setGenError(null)
+    try {
+      const blankFiles = planOutput(
+        blankTypes.map((a) => ({
+          roundId: genericRoundId(a),
+          models: buildGenericScorecards(wcif.name, a, blankPerType, pdfLocale),
+        })),
+        { competitionId: wcif.id, paperId: prefs.paperId, order: 'natural', split: 'single' },
+      ).map((f) => ({ ...f, name: `sumulas-em-branco-${wcif.id.replace(/[^\w-]/g, '')}-${prefs.paperId}.pdf` }))
+      const out = await generateFiles(await request(blankFiles), setProgress)
+      deliver(out, `sumulas-em-branco-${wcif.id}.zip`)
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBlankBusy(false)
+      setProgress(null)
+    }
+  }
+
   const toggleEvent = (eventId: string) => {
     const ev = events.find((e) => e.eventId === eventId)
     if (!ev) return
     const clear = eventState(ev.rounds, sel) !== 'none'
     setSel((prev) => {
       const next = { ...prev }
-      for (const p of ev.rounds) next[p.info.roundId] = clear ? { groups: [], blank: 0 } : fullSel(p)
+      for (const p of ev.rounds) next[p.info.roundId] = clear ? { groups: [] } : fullSel(p)
       return next
     })
   }
@@ -494,7 +515,13 @@ export default function CompetitionPage() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* ------------------------------------------------ rodadas */}
           <div className="space-y-6">
-            <BlankPanel value={generic} onChange={setGeneric} />
+            <BlankPanel
+              types={blankTypes}
+              perType={blankPerType}
+              busy={blankBusy}
+              disabled={!!busy}
+              onGenerate={generateBlanks}
+            />
             <EventStrip events={events} sel={sel} onToggle={toggleEvent} />
             {events.map((ev) => (
               <section key={ev.eventId} id={`evento-${ev.eventId}`} className="scroll-mt-24">

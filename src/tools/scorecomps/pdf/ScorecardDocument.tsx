@@ -273,7 +273,7 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
             <T size={13} weight={BOLD} lh={1.05} style={{ textAlign: 'center' }}>
               {model.competitionName}
             </T>
-            <T size={12.5} weight={REG} color={EVENT} style={{ textAlign: 'center', marginTop: s(1) }}>
+            <T size={16} weight={REG} color={EVENT} lh={1.1} style={{ textAlign: 'center', marginTop: s(1) }}>
               {model.eventName}
             </T>
           </View>

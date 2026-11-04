@@ -569,17 +569,15 @@ export const es: Messages = {
     unselectEvent: (name: string) => `Desmarcar ${name}`,
     group: (n: string) => `Grupo ${n}`,
     noGroupsChip: 'Sin grupos (todos los inscritos)',
-    blank: 'En blanco',
-    blankAria: (what: string) => `Hojas en blanco — ${what}`,
     blankTitle: 'Hojas de tiempo en blanco',
     blankIntro:
-      'No dependen de la modalidad: solo llevan el nombre y el logo de la competición. Modalidad, ronda, tiempo límite y tiempo de corte quedan con espacio para completar a mano, junto con ID, nombre y grupo. Siempre con los 2 extras.',
+      'No dependen de la modalidad: solo llevan el nombre y el logo de la competición. Modalidad, ronda, tiempo límite y tiempo de corte quedan con espacio para completar a mano, junto con ID, nombre y grupo. Siempre con los 2 extras. Los tipos salen de los formatos usados en la competición, una hoja completa de cada uno, en un solo PDF.',
+    blankButton: 'Generar Hojas en Blanco',
+    blankPerType: (n: number) => `${n} de cada tipo · las hojas incompletas de cada modalidad también se completan con hojas en blanco de la misma ronda.`,
     blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
-    blankAriaN: (n: number) => `Cantidad de hojas en blanco con ${n} ${n === 1 ? 'intento' : 'intentos'}`,
-    blankReset: 'Poner a cero',
     attemptsN: (n: number) => (n === 1 ? '1 intento' : `${n} intentos`),
-    nextRoundHint: (n: number) =>
-      `Quién avanza todavía no está en la WCA. Después de cargar la ronda anterior en WCA Live, haz clic en Sincronizar allí y en "Actualizar desde la WCA" aquí para imprimir con nombres. Mientras tanto, sugerencia: ${n} en blanco.`,
+    nextRoundHint:
+      'Quién avanza todavía no está en la WCA. Después de cargar la ronda anterior en WCA Live, haz clic en Sincronizar allí y en "Actualizar desde la WCA" aquí para imprimir con nombres. Mientras tanto, usa las hojas en blanco.',
     advancersChip: 'Clasificados',
     advancersFromLive: 'Clasificados leídos de WCA Live (ronda ya abierta y sincronizada con la WCA). El campo Grupo queda en blanco.',
     advancersComputed:

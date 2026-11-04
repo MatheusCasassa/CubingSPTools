@@ -567,17 +567,15 @@ export const en: Messages = {
     unselectEvent: (name: string) => `Unselect ${name}`,
     group: (n: string) => `Group ${n}`,
     noGroupsChip: 'No groups (all registrants)',
-    blank: 'Blank',
-    blankAria: (what: string) => `Blank scorecards — ${what}`,
     blankTitle: 'Blank scorecards',
     blankIntro:
-      'Not tied to any event: they only show the competition name and logo. Event, round, time limit and cutoff have space to be filled in by hand, along with ID, name and group. Always with the 2 extras.',
+      'Not tied to any event: they only show the competition name and logo. Event, round, time limit and cutoff have space to be filled in by hand, along with ID, name and group. Always with the 2 extras. The types come from the formats used in the competition, one full sheet of each, in a single PDF.',
+    blankButton: 'Generate Blank Scorecards',
+    blankPerType: (n: number) => `${n} of each type · incomplete sheets of each event are also filled with blank scorecards of the same round.`,
     blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
-    blankAriaN: (n: number) => `Number of blank scorecards with ${n} ${n === 1 ? 'attempt' : 'attempts'}`,
-    blankReset: 'Reset',
     attemptsN: (n: number) => (n === 1 ? '1 attempt' : `${n} attempts`),
-    nextRoundHint: (n: number) =>
-      `Who advances is not on the WCA website yet. After entering the previous round in WCA Live, click Synchronize there and "Refresh from WCA" here to print with names. Meanwhile, suggestion: ${n} blank.`,
+    nextRoundHint:
+      'Who advances is not on the WCA website yet. After entering the previous round in WCA Live, click Synchronize there and "Refresh from WCA" here to print with names. Meanwhile, use the blank scorecards.',
     advancersChip: 'Advancing',
     advancersFromLive: 'Advancing competitors read from WCA Live (round already open and synchronized with the WCA). The Group field is left blank.',
     advancersComputed:

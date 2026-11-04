@@ -582,17 +582,15 @@ export const pt = {
     unselectEvent: (name: string) => `Desmarcar ${name}`,
     group: (n: string) => `Grupo ${n}`,
     noGroupsChip: 'Sem grupos (todos os inscritos)',
-    blank: 'Em branco',
-    blankAria: (what: string) => `Súmulas em branco — ${what}`,
     blankTitle: 'Súmulas em branco',
     blankIntro:
-      'Não dependem de modalidade: saem só com o nome e a logo da competição. Modalidade, rodada, limite de tempo e tempo de corte ficam com espaço para preencher à mão, junto com ID, nome e grupo. Sempre com os 2 extras.',
+      'Não dependem de modalidade: saem só com o nome e a logo da competição. Modalidade, rodada, limite de tempo e tempo de corte ficam com espaço para preencher à mão, junto com ID, nome e grupo. Sempre com os 2 extras. Os tipos vêm dos formatos usados na competição, e sai uma folha cheia de cada um, num só PDF.',
+    blankButton: 'Gerar Súmulas em Branco',
+    blankPerType: (n: number) => `${n} de cada tipo · as folhas incompletas das modalidades também são completadas com súmulas em branco da mesma rodada.`,
     blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
-    blankAriaN: (n: number) => `Quantidade de súmulas em branco com ${n} ${n === 1 ? 'tentativa' : 'tentativas'}`,
-    blankReset: 'Zerar',
     attemptsN: (n: number) => (n === 1 ? '1 tentativa' : `${n} tentativas`),
-    nextRoundHint: (n: number) =>
-      `Quem avança ainda não está na WCA. Depois de lançar a rodada anterior no WCA Live, clique em Sincronizar lá e em "Atualizar da WCA" aqui para gerar com os nomes. Enquanto isso, sugestão: ${n} em branco.`,
+    nextRoundHint:
+      'Quem avança ainda não está na WCA. Depois de lançar a rodada anterior no WCA Live, clique em Sincronizar lá e em "Atualizar da WCA" aqui para gerar com os nomes. Enquanto isso, use as súmulas em branco.',
     advancersChip: 'Classificados',
     advancersFromLive: 'Classificados lidos do WCA Live (rodada já aberta e sincronizada com a WCA). O campo Grupo sai em branco.',
     advancersComputed:
