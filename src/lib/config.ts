@@ -43,7 +43,7 @@ export const config = {
   cspApiBase: (import.meta.env.VITE_CSP_API_BASE || '').replace(/\/$/, ''),
 
   /** Site da CubingSP (link "voltar" no cabeçalho). */
-  cubingspUrl: (import.meta.env.VITE_CUBINGSP_URL || 'https://cubingsp.mcasassa.workers.dev').replace(/\/$/, ''),
+  cubingspUrl: (import.meta.env.VITE_CUBINGSP_URL || 'https://cubingsp.com.br').replace(/\/$/, ''),
 }
 
 export const APP_VERSION = 'v0.5'

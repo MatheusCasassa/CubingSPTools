@@ -12,7 +12,7 @@ ferramentas. Para incluir uma ferramenta nova, basta adicioná-la em
 alfabética. Logo: chave de boca + cubo (`BrandMark` em
 `src/components/ui/icons.tsx`, igual ao `public/favicon.svg`).
 
-Produção: **https://cubingspferramentas.mcasassa.workers.dev/**
+Produção: **https://csptools.cubingsp.com.br/**
 
 | Ferramenta | O que faz | Login | Status |
 |---|---|---|---|
@@ -102,7 +102,7 @@ O projeto já tem `wrangler.jsonc` (Workers com Static Assets, SPA, e o Worker
 - **Não** crie regra `/* /index.html 200` em `public/_redirects` (erro 100324).
 
 Na WCA, a Redirect URI de produção é a **raiz** do site com barra final:
-`https://cubingspferramentas.mcasassa.workers.dev/`. O app volta sozinho para a
+`https://csptools.cubingsp.com.br/`. O app volta sozinho para a
 página onde o login começou. O `name` do `wrangler.jsonc`
 (`cubingspferramentas`) precisa ser igual ao nome do Worker na Cloudflare.
 
