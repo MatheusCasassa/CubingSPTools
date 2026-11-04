@@ -71,7 +71,9 @@ function allActivities(wcif: Wcif): WcifActivity[] {
  * no fallback de "grupo único" por inscrição).
  */
 export function listGroups(wcif: Wcif, roundId: string): GroupInfo[] {
-  const groupRegex = new RegExp(`^${escapeRegex(roundId)}-g(\\d+)$`)
+  // "333-r1-g2" ou, em eventos com tentativas agendadas (Multi-BLD),
+  // "333mbf-r1-g2-a1" dentro da tentativa.
+  const groupRegex = new RegExp(`^${escapeRegex(roundId)}-g(\\d+)(?:-a\\d+)?$`)
   const byNumber = new Map<number, number[]>()
 
   for (const act of allActivities(wcif)) {

@@ -41,6 +41,8 @@ interface Prefs {
   logoWatermark: boolean
   /** Transparência da marca d'água, em % (50–95). */
   watermarkTransparency: number
+  /** Centro da marca d'água: cartão inteiro ou só os desenhos. */
+  watermarkCenter: 'card' | 'content'
 }
 const DEFAULT_PREFS: Prefs = {
   paperId: 'a4',
@@ -53,6 +55,7 @@ const DEFAULT_PREFS: Prefs = {
   logoHeader: true,
   logoWatermark: false,
   watermarkTransparency: WATERMARK_TRANSPARENCY.default,
+  watermarkCenter: 'card',
 }
 const PREFS_KEY = 'scorecomps.prefs'
 
@@ -375,6 +378,7 @@ export default function CompetitionPage() {
       logo: prefs.logoHeader ? printLogo : null,
       watermark: prefs.logoWatermark ? printLogo : null,
       watermarkTransparency: prefs.watermarkTransparency,
+      watermarkCenter: prefs.watermarkCenter,
       title: m.scorecomps.pdfTitle(name),
     }
   }
@@ -676,6 +680,22 @@ export default function CompetitionPage() {
                           <div className="mt-1 flex justify-between text-[11px] text-fg-faint">
                             <span>{m.scorecomps.watermarkStronger}</span>
                             <span>{m.scorecomps.watermarkLighter}</span>
+                          </div>
+                          <div className="mt-3">
+                            <span className="text-sm">{m.scorecomps.watermarkCenter}</span>
+                            <div className="seg mt-1.5">
+                              {(['card', 'content'] as const).map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  aria-pressed={prefs.watermarkCenter === c}
+                                  onClick={() => setPrefs({ ...prefs, watermarkCenter: c })}
+                                >
+                                  {m.scorecomps.watermarkCenterOptions[c]}
+                                </button>
+                              ))}
+                            </div>
+                            <p className="mt-1 text-xs text-fg-faint">{m.scorecomps.watermarkCenterHint}</p>
                           </div>
                         </div>
                       )}

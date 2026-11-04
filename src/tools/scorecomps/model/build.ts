@@ -60,9 +60,13 @@ function advancingFrom(prev: RoundPlan | undefined): number {
   return prevCount
 }
 
+/** Modalidades sem súmula no ScoreComps: o FMC usa as folhas do próprio TNoodle. */
+export const NO_SCORECARD_EVENTS = new Set(['333fm'])
+
 export function planRounds(wcif: Wcif): RoundPlan[] {
   const plans: RoundPlan[] = []
   for (const info of listRounds(wcif)) {
+    if (NO_SCORECARD_EVENTS.has(info.eventId)) continue
     const prev = plans.find(
       (p) => p.info.eventId === info.eventId && p.info.roundNumber === info.roundNumber - 1,
     )

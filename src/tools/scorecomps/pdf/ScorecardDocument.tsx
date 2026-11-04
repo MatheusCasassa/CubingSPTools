@@ -79,9 +79,14 @@ export interface CardProps {
   watermark?: Logo | null
   /** Transparência da marca d'água, em % (50–95). */
   watermarkTransparency?: number
+  /** Centro da marca d'água: o cartão inteiro ou só os desenhos (cabeçalho, caixas). */
+  watermarkCenter?: WatermarkCenter
 }
 
-export function Card({ model, rect, fonts, logo, watermark, watermarkTransparency }: CardProps): ReactElement {
+/** 'card' = centro do cartão; 'content' = centro do que está desenhado. */
+export type WatermarkCenter = 'card' | 'content'
+
+export function Card({ model, rect, fonts, logo, watermark, watermarkTransparency, watermarkCenter = 'card' }: CardProps): ReactElement {
   // pt por px de projeto. Normalmente a largura manda; em folhas "largas"
   // (Carta) a altura mínima garante espaço para o pior caso (corte + nome em
   // 2 linhas + logo) sem estourar o cartão.
@@ -212,7 +217,15 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
         flexDirection: 'column',
       }}
     >
-      {watermark ? <Watermark logo={watermark} rect={rect} opacity={watermarkOpacity(watermarkTransparency)} /> : null}
+      {watermark && watermarkCenter === 'card' ? (
+        <Watermark logo={watermark} rect={rect} opacity={watermarkOpacity(watermarkTransparency)} />
+      ) : null}
+      {/* Tudo o que é desenhado fica neste bloco: com a marca d'água
+          "no conteúdo", ela é centralizada nele (e não no cartão inteiro). */}
+      <View style={{ position: 'relative' }}>
+      {watermark && watermarkCenter === 'content' ? (
+        <ContentWatermark logo={watermark} rect={rect} opacity={watermarkOpacity(watermarkTransparency)} />
+      ) : null}
       {/* Cabeçalho: ID | Competição/Evento | Grupo */}
       <View
         style={{
@@ -260,7 +273,7 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
             <T size={13} weight={BOLD} lh={1.05} style={{ textAlign: 'center' }}>
               {model.competitionName}
             </T>
-            <T size={10.5} weight={REG} color={EVENT} style={{ textAlign: 'center', marginTop: s(1) }}>
+            <T size={12.5} weight={REG} color={EVENT} style={{ textAlign: 'center', marginTop: s(1) }}>
               {model.eventName}
             </T>
           </View>
@@ -334,6 +347,7 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
       ) : null}
       {centerLine(L.extrasText, { size: 12, weight: BOLD }, [2, 4, 4, 4])}
       {L.extras.map((r) => solveRow(r, r.label))}
+      </View>
     </View>
   )
 }
@@ -359,6 +373,23 @@ function Watermark({ logo, rect, opacity }: { logo: Logo; rect: Rect; opacity: n
         opacity,
       }}
     />
+  )
+}
+
+/**
+ * Marca d'água centralizada no bloco desenhado (cabeçalho, nome e caixas), que
+ * costuma não ocupar a altura toda do cartão. Mesmo tamanho máximo da versão
+ * "cartão", limitado à altura do bloco.
+ */
+function ContentWatermark({ logo, rect, opacity }: { logo: Logo; rect: Rect; opacity: number }): ReactElement {
+  const w = Math.min(rect.w * WATERMARK_MAX_W, rect.h * WATERMARK_MAX_H * logo.aspect)
+  const h = w / logo.aspect
+  return (
+    <View
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}
+    >
+      <Image src={logo.src} style={{ width: w, height: h, maxHeight: '92%', objectFit: 'contain', opacity }} />
+    </View>
   )
 }
 
@@ -390,6 +421,7 @@ export interface DocumentOptions {
   logo?: Logo | null
   watermark?: Logo | null
   watermarkTransparency?: number
+  watermarkCenter?: WatermarkCenter
   title?: string
 }
 
@@ -419,7 +451,7 @@ export function ScorecardDocument({
           {page.map((m, si) =>
             m ? (
               <View key={si}>
-                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} watermarkTransparency={options.watermarkTransparency} />
+                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} watermarkTransparency={options.watermarkTransparency} watermarkCenter={options.watermarkCenter} />
                 <CardBorder rect={toPt(layout.cards[si])} />
               </View>
             ) : null,

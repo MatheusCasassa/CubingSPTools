@@ -28,6 +28,8 @@ const logo =
 
 // --watermark: a logo também vai como marca d'água; --no-header-logo: só marca d'água
 const watermark = process.argv.includes('--watermark') ? logo : null
+// --center-content: marca d'água centralizada nos desenhos (não no cartão inteiro)
+const watermarkCenter = process.argv.includes('--center-content') ? ('content' as const) : ('card' as const)
 const headerLogo = process.argv.includes('--no-header-logo') ? null : logo
 // --transparency N: transparência da marca d'água em % (padrão 75)
 const trArg = process.argv.indexOf('--transparency')
@@ -64,7 +66,7 @@ for (const v of variants) {
   const files = planOutput(batches, { competitionId: wcif.id, paperId: v.paper, order: v.order, split: v.split })
   const t0 = Date.now()
   const rendered = await renderCore(
-    { files, paperId: v.paper, cutLines: true, logo: headerLogo, watermark, watermarkTransparency, title: wcif.name },
+    { files, paperId: v.paper, cutLines: true, logo: headerLogo, watermark, watermarkTransparency, watermarkCenter, title: wcif.name },
     {
       resolve: (rel) => join(pub, rel),
       load: async (rel) => new Uint8Array(await readFile(join(pub, rel))),

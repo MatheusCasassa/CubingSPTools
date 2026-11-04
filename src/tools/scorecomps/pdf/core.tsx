@@ -7,7 +7,7 @@ import { ScorecardDocument } from './ScorecardDocument'
 import { prepareFonts, type FontAccess } from './fonts'
 import { textsOf, type OutputFile } from '../model/output'
 import type { PaperId } from './paper'
-import type { Logo } from './ScorecardDocument'
+import type { Logo, WatermarkCenter } from './ScorecardDocument'
 
 export interface RenderRequest {
   files: OutputFile[]
@@ -19,6 +19,8 @@ export interface RenderRequest {
   watermark?: Logo | null
   /** Transparência da marca d'água, em % (50–95; padrão 75). */
   watermarkTransparency?: number
+  /** Centro da marca d'água: cartão inteiro ('card', padrão) ou desenhos ('content'). */
+  watermarkCenter?: WatermarkCenter
   title: string
 }
 
@@ -48,7 +50,7 @@ export async function renderCore(
     const doc = (
       <ScorecardDocument
         slots={f.slots}
-        options={{ paperId: req.paperId, cutLines: req.cutLines, fonts, logo: req.logo, watermark: req.watermark, watermarkTransparency: req.watermarkTransparency, title: req.title }}
+        options={{ paperId: req.paperId, cutLines: req.cutLines, fonts, logo: req.logo, watermark: req.watermark, watermarkTransparency: req.watermarkTransparency, watermarkCenter: req.watermarkCenter, title: req.title }}
       />
     )
     out.push({ name: f.name, data: await toBytes(doc) })

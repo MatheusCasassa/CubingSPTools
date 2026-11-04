@@ -169,10 +169,12 @@ export function agendaFor(wcif: Wcif, plan: Plan, skipRounds: Set<string> = new 
     if (skipRounds.has(roundId)) continue
     const sched = scheds.get(roundId)
     for (const g of rp.groups) {
+      const slot = sched?.slots.find((x) => x.number === g.number)
       const blocks =
         sched?.kind === 'attempts'
           ? sched.attempts.map((a) => ({ start: a.start, end: a.end }))
-          : [slotOf(sched, g.number)]
+          : // Multi-BLD com várias tentativas: o grupo também ocupa as seguintes.
+            [slotOf(sched, g.number), ...(slot?.copies ?? []).map((c) => ({ start: c.start, end: c.end }))]
       for (const blk of blocks) {
         const base = { ...blk, roundId, group: g.number }
         g.competitors.forEach((id) => agenda.add(pref(id), { ...base, role: 'competitor' }))

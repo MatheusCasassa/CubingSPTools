@@ -16,11 +16,21 @@ export interface Slot {
   existingActivityId: number | null
   start: number | null
   end: number | null
+  /** Código da atividade do grupo ("333-r1-g2"; Multi-BLD: "333mbf-r1-g2-a1"). */
+  code: string
+  /**
+   * Multi-BLD com mais de uma tentativa agendada: o mesmo grupo se repete
+   * dentro das tentativas seguintes ("…-g2-a2"), com as mesmas pessoas.
+   */
+  copies: { parentActivityId: number; existingActivityId: number | null; start: number | null; end: number | null; code: string }[]
 }
 
 export interface RoundSchedule {
   roundId: string
-  /** "groups" = fatias de tempo; "attempts" = FMC/MBLD com -a1, -a2… */
+  /**
+   * "groups" = fatias de tempo da rodada (no Multi-BLD, dentro das tentativas);
+   * "attempts" = FMC com -a1, -a2… (todos fazem todas as tentativas juntos).
+   */
   kind: 'groups' | 'attempts' | 'none'
   slots: Slot[]
   /** Para "attempts": as atividades de tentativa (todos competem em todas). */
@@ -66,28 +76,40 @@ export function roundSchedule(wcif: Wcif, roundId: string, groupCount: number): 
   const eventId = roundId.split('-')[0]
   const all = topActivities(wcif)
   const timezone = competitionTimezone(wcif)
-  const parents = all.filter((l) => l.activity.activityCode === roundId)
 
   // FMC / MBLD: tentativas agendadas ("333fm-r1-a1"), no topo ou como filhas.
+  let parents = all.filter((l) => l.activity.activityCode === roundId)
+  let laterAttempts: (Located & { attempt: number })[] = []
+  let codeOf = (n: number) => `${roundId}-g${n}`
   if (ATTEMPT_EVENTS.has(eventId)) {
-    const attemptRe = new RegExp(`^${roundId}-a\\d+$`)
-    const attempts: RoundSchedule['attempts'] = []
+    const attemptRe = new RegExp(`^${roundId}-a(\\d+)$`)
+    const found: (Located & { attempt: number })[] = []
     for (const l of all) {
       const visit = (a: WcifActivity) => {
-        if (attemptRe.test(a.activityCode))
-          attempts.push({
-            activityId: a.id,
-            roomId: l.room.id,
-            start: parseTime(a.startTime),
-            end: parseTime(a.endTime),
-          })
+        const m = a.activityCode.match(attemptRe)
+        if (m) found.push({ room: l.room, activity: a, timezone: l.timezone, attempt: Number(m[1]) })
         a.childActivities?.forEach(visit)
       }
       visit(l.activity)
     }
-    if (attempts.length > 0) {
-      attempts.sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
+    if (found.length > 0 && eventId !== '333mbf') {
+      const attempts: RoundSchedule['attempts'] = found
+        .map((f) => ({
+          activityId: f.activity.id,
+          roomId: f.room.id,
+          start: parseTime(f.activity.startTime),
+          end: parseTime(f.activity.endTime),
+        }))
+        .sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
       return { roundId, kind: 'attempts', slots: [], attempts, timezone }
+    }
+    if (found.length > 0) {
+      // Multi-BLD: os grupos ficam dentro da 1ª tentativa e se repetem nas
+      // seguintes (mesmas pessoas), como "333mbf-r1-g1-a1", "333mbf-r1-g1-a2".
+      const first = Math.min(...found.map((f) => f.attempt))
+      parents = found.filter((f) => f.attempt === first)
+      laterAttempts = found.filter((f) => f.attempt !== first)
+      codeOf = (n: number) => `${roundId}-g${n}-a${first}`
     }
   }
 
@@ -104,6 +126,8 @@ export function roundSchedule(wcif: Wcif, roundId: string, groupCount: number): 
         existingActivityId: null,
         start: null,
         end: null,
+        code: `${roundId}-g${i + 1}`,
+        copies: [],
       })),
       attempts: [],
       timezone,
@@ -115,7 +139,7 @@ export function roundSchedule(wcif: Wcif, roundId: string, groupCount: number): 
     (a, b) => (parseTime(a.activity.startTime) ?? 0) - (parseTime(b.activity.startTime) ?? 0) || a.room.id - b.room.id,
   )
   const perRoom = splitEven(groupCount, parents.length)
-  type Temp = Omit<Slot, 'number' | 'existingActivityId'> & { order: number }
+  type Temp = Omit<Slot, 'number' | 'existingActivityId' | 'code' | 'copies'> & { order: number }
   const temps: Temp[] = []
   parents.forEach((p, idx) => {
     const n = perRoom[idx]
@@ -139,17 +163,41 @@ export function roundSchedule(wcif: Wcif, roundId: string, groupCount: number): 
   const slots: Slot[] = temps.map((t, i) => {
     const number = i + 1
     const parent = parents.find((p) => p.activity.id === t.parentActivityId)!
-    const existing = parent.activity.childActivities?.find((c) => c.activityCode === `${roundId}-g${number}`)
+    const code = codeOf(number)
+    const existing = parent.activity.childActivities?.find((c) => c.activityCode === code)
     const { order: _o, ...rest } = t
     void _o
-    return { ...rest, number, existingActivityId: existing?.id ?? null }
+    // Mesmo grupo nas tentativas seguintes: mesma fração do tempo, na tentativa
+    // da mesma sala (ou na primeira, se a sala não tiver essa tentativa).
+    const copies: Slot['copies'] = []
+    const ps = parseTime(parent.activity.startTime)
+    const pe = parseTime(parent.activity.endTime)
+    for (const attempt of [...new Set(laterAttempts.map((l) => l.attempt))].sort((a, b) => a - b)) {
+      const options = laterAttempts.filter((l) => l.attempt === attempt)
+      const target = options.find((l) => l.room.id === parent.room.id) ?? options[0]
+      const ts = parseTime(target.activity.startTime)
+      const te = parseTime(target.activity.endTime)
+      const map = (x: number | null) =>
+        x == null || ps == null || pe == null || ts == null || te == null
+          ? null
+          : Math.round(ts + ((x - ps) / Math.max(1, pe - ps)) * (te - ts))
+      const copyCode = `${roundId}-g${number}-a${attempt}`
+      copies.push({
+        parentActivityId: target.activity.id,
+        existingActivityId: target.activity.childActivities?.find((c) => c.activityCode === copyCode)?.id ?? null,
+        start: map(rest.start),
+        end: map(rest.end),
+        code: copyCode,
+      })
+    }
+    return { ...rest, number, code, copies, existingActivityId: existing?.id ?? null }
   })
   return { roundId, kind: 'groups', slots, attempts: [], timezone }
 }
 
 /** Grupos que já existem no WCIF para a rodada (vindos de outra ferramenta). */
 export function existingGroupActivities(wcif: Wcif, roundId: string): { number: number; activityId: number }[] {
-  const re = new RegExp(`^${roundId}-g(\\d+)$`)
+  const re = new RegExp(`^${roundId}-g(\\d+)(?:-a\\d+)?$`)
   const out: { number: number; activityId: number }[] = []
   for (const l of topActivities(wcif)) {
     const visit = (a: WcifActivity) => {

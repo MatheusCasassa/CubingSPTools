@@ -77,3 +77,14 @@ console.log('✓ súmulas em branco seguem o formato da rodada (Ao5/Bo5, Mo3/Bo3
   assert.equal(advancingFromPrevious(ten)!.length, 7)
   console.log('✓ rodadas seguintes com os nomes dos classificados')
 }
+
+// FMC não tem súmula no ScoreComps: o TNoodle já gera as folhas do FMC.
+{
+  const w = demoWcif()
+  assert.ok(w.events.some((e) => e.id === '333fm'), 'a demonstração tem FMC')
+  const plans = planRounds(w)
+  assert.ok(plans.length > 0)
+  assert.ok(!plans.some((p) => p.info.eventId === '333fm'))
+  assert.ok(plans.some((p) => p.info.eventId === '333mbf'), 'Multi-BLD continua')
+  console.log('✓ FMC fora do ScoreComps (o TNoodle gera as folhas)')
+}

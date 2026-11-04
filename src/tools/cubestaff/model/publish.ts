@@ -205,28 +205,36 @@ export function buildWcif(source: Wcif, plan: Plan, roundIds?: string[], withExt
         sched.attempts.map((a) => a.activityId),
       )
     } else {
-      const codeRe = new RegExp(`^${roundId}-g\\d+$`)
+      // Grupos: "333-r1-g2" na rodada; no Multi-BLD, "333mbf-r1-g2-a1" dentro
+      // de cada tentativa.
+      const codeRe = new RegExp(`^${roundId}-g\\d+(?:-a\\d+)?$`)
+      const parentRe = new RegExp(`^${roundId}(?:-a\\d+)?$`)
       // Remove grupos antigos da rodada (em todas as salas), guardando os ids.
       walk(wcif, (a) => {
-        if (a.activityCode === roundId && a.childActivities?.length) {
+        if (parentRe.test(a.activityCode) && a.childActivities?.length) {
           for (const c of a.childActivities) if (codeRe.test(c.activityCode)) managed.add(c.id)
           a.childActivities = a.childActivities.filter((c) => !codeRe.test(c.activityCode))
         }
       })
       const parents = new Map<number, WcifActivity>()
       walk(wcif, (a) => {
-        if (a.activityCode === roundId) parents.set(a.id, a)
+        if (parentRe.test(a.activityCode)) parents.set(a.id, a)
       })
-      for (const slot of sched.slots) {
-        const parent = parents.get(slot.parentActivityId)
-        if (!parent) continue
-        const id = slot.existingActivityId ?? nextId++
+      const title = roundTitle(roundId, wcif)
+      const addChild = (
+        number: number,
+        target: { parentActivityId: number; existingActivityId: number | null; start: number | null; end: number | null; code: string },
+      ) => {
+        const parent = parents.get(target.parentActivityId)
+        if (!parent) return
+        const id = target.existingActivityId ?? nextId++
+        const attempt = target.code.match(/-a(\d+)$/)
         const child: WcifActivity = {
           id,
-          name: `${roundTitle(roundId, wcif)}, Group ${slot.number}`,
-          activityCode: `${roundId}-g${slot.number}`,
-          startTime: slot.start != null ? new Date(slot.start).toISOString() : parent.startTime,
-          endTime: slot.end != null ? new Date(slot.end).toISOString() : parent.endTime,
+          name: `${title}, Group ${number}${attempt ? `, Attempt ${attempt[1]}` : ''}`,
+          activityCode: target.code,
+          startTime: target.start != null ? new Date(target.start).toISOString() : parent.startTime,
+          endTime: target.end != null ? new Date(target.end).toISOString() : parent.endTime,
           childActivities: [],
           extensions: [],
         }
@@ -234,7 +242,11 @@ export function buildWcif(source: Wcif, plan: Plan, roundIds?: string[], withExt
           (a, b) => Date.parse(a.startTime ?? '') - Date.parse(b.startTime ?? '') || a.id - b.id,
         )
         managed.add(id)
-        groupActivity.set(slot.number, [...(groupActivity.get(slot.number) ?? []), id])
+        groupActivity.set(number, [...(groupActivity.get(number) ?? []), id])
+      }
+      for (const slot of sched.slots) {
+        addChild(slot.number, slot)
+        for (const copy of slot.copies) addChild(slot.number, copy)
       }
     }
 
@@ -289,7 +301,7 @@ export function buildWcif(source: Wcif, plan: Plan, roundIds?: string[], withExt
 export function clearWcif(source: Wcif, plan: Plan): Wcif {
   const wcif: Wcif = structuredClone(source)
   const removed = new Set<number>()
-  const groupRe = /^.+-r\d+-g\d+$/
+  const groupRe = /^.+-r\d+-g\d+(?:-a\d+)?$/
   const drop = (as: WcifActivity[]): WcifActivity[] =>
     as
       .filter((a) => {

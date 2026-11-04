@@ -124,7 +124,7 @@ página onde o login começou. O `name` do `wrangler.jsonc`
 - Blocos só se houver **tempo de corte**: `Tempo de corte se > X`.
 - `DNF se > X` (limite simples) ou `Tempo cumulativo de X` (+ `(múltiplas rodadas)`).
 - `Exemplo de Penalidade: 14.67 + 2 = 16.67` (não aparece em FMC/Multi).
-- FMC: `Menor nº de movimentos`.
+- FMC: **sem súmula** no ScoreComps (o TNoodle já gera as folhas do FMC).
 - Extras E1/E2 com coluna **D** (Delegado).
 - Rodadas seguintes sem grupos: os **classificados com nome** vêm dos
   resultados que o WCA Live sincroniza com a WCA — a lista da própria rodada

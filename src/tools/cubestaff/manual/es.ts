@@ -67,7 +67,7 @@ export const es: Manual = {
           ],
         },
         '**Conflicto de horario**: si alguien compite en otra cosa al mismo tiempo (ej.: otro escenario), el programa lo intercambia con alguien de un grupo vecino (nivel parecido). Si no hay intercambio posible, aparece un aviso.',
-        'FMC y Multi-BLD con intentos en el cronograma (-a1, -a2…) no tienen grupos: todos se asignan a los intentos.',
+        'El **FMC** con intentos en el cronograma (-a1, -a2…) no tiene grupos: todos se asignan a los intentos. El **Multi-BLD** se divide en grupos como el 4BLD y el 5BLD: los grupos van dentro del intento ("333mbf-r1-g1-a1") y, si hay más de un intento, cada persona queda en el mismo grupo en todos.',
       ],
     },
     {

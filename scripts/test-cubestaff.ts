@@ -711,4 +711,65 @@ ok('embaralhadores: inscritos no evento primeiro, não inscritos só em último 
 }
 ok('melhores embaralhadores equilibrados entre os grupos')
 
+// 29. Multi-BLD em grupos, como 4BLD/5BLD: os grupos ficam DENTRO das
+// tentativas agendadas ("333mbf-r1-g1-a1") e se repetem na 2ª tentativa
+// (Bo2) com as mesmas pessoas. O FMC continua sem grupos (todos juntos).
+{
+  type A = { id: number; activityCode: string; childActivities?: A[] }
+  const visitAll = (as: A[], f: (a: A) => void): void => as.forEach((a) => (f(a), visitAll(a.childActivities ?? [], f)))
+  const w7 = structuredClone(wcif)
+  w7.events.push({
+    id: '333mbf',
+    rounds: [{ id: '333mbf-r1', format: '2', timeLimit: null, cutoff: null, advancementCondition: null }],
+  })
+  const mbfPeople = w7.persons.filter((p) => isAccepted(p) && p.wcaId).slice(0, 10)
+  mbfPeople.forEach((p) => p.registration!.eventIds.push('333mbf'))
+  let nextAct = Math.max(...w7.schedule.venues.flatMap((v) => v.rooms.flatMap((r) => r.activities.map((x) => x.id)))) + 100
+  const room = w7.schedule.venues[0].rooms[1]
+  const mk = (code: string, start: string, end: string) => ({
+    id: nextAct++,
+    name: code,
+    activityCode: code,
+    startTime: start,
+    endTime: end,
+    childActivities: [],
+  })
+  room.activities.push(mk('333mbf-r1-a1', '2026-11-14T16:00:00Z', '2026-11-14T17:00:00Z'))
+  room.activities.push(mk('333mbf-r1-a2', '2026-11-15T16:00:00Z', '2026-11-15T17:00:00Z'))
+  const cfg7: Plan = { ...base, config: { ...base.config, groupsByRound: { ...base.config.groupsByRound, '333mbf-r1': 2 } } }
+  const gen = generate(w7, cfg7, { roundIds: ['333mbf-r1', '333fm-r1'] }).plan
+  assert.equal(gen.rounds['333mbf-r1'].groups.length, 2, 'Multi-BLD dividido em 2 grupos')
+  assert.equal(gen.rounds['333fm-r1'].groups.length, 1, 'FMC continua com todos juntos')
+  const sched = slotsByRound(w7, gen).get('333mbf-r1')!
+  assert.equal(sched.kind, 'groups')
+  assert.deepEqual(sched.slots.map((x) => x.code), ['333mbf-r1-g1-a1', '333mbf-r1-g2-a1'])
+  assert.deepEqual(sched.slots[0].copies.map((c) => c.code), ['333mbf-r1-g1-a2'])
+  assert.equal(new Date(sched.slots[1].copies[0].start!).toISOString(), '2026-11-15T16:30:00.000Z', 'mesma fração na 2ª tentativa')
+  const { wcif: pub } = buildWcif(w7, gen, ['333mbf-r1'])
+  const codes: string[] = []
+  visitAll(pub.schedule.venues[0].rooms[1].activities as never, (x) => codes.push(x.activityCode))
+  for (const c of ['333mbf-r1-g1-a1', '333mbf-r1-g2-a1', '333mbf-r1-g1-a2', '333mbf-r1-g2-a2']) assert.ok(codes.includes(c), c)
+  // Cada competidor está no mesmo grupo nas duas tentativas.
+  const g1 = gen.rounds['333mbf-r1'].groups[0].competitors[0]
+  const person = pub.persons.find((p) => p.registrantId === g1)!
+  const actIds = new Map<number, string>()
+  visitAll(pub.schedule.venues[0].rooms[1].activities as never, (x) => actIds.set(x.id, x.activityCode))
+  const mine = person.assignments.filter((a) => a.assignmentCode === 'competitor').map((a) => actIds.get(a.activityId))
+  assert.deepEqual(mine.filter((c) => c?.startsWith('333mbf')).sort(), ['333mbf-r1-g1-a1', '333mbf-r1-g1-a2'])
+  // ScoreComps e importação leem os grupos dentro das tentativas.
+  assert.deepEqual(listGroups(pub, '333mbf-r1').map((g) => [g.number, g.activityIds.length]), [[1, 2], [2, 2]])
+  assert.equal(planFromWcif(pub).plan.rounds['333mbf-r1']?.groups.length, 2)
+  // Republicar não duplica os grupos.
+  const again = buildWcif(pub, gen, ['333mbf-r1']).wcif
+  const codes2: string[] = []
+  visitAll(again.schedule.venues[0].rooms[1].activities as never, (x) => codes2.push(x.activityCode))
+  assert.equal(codes2.filter((c) => c.startsWith('333mbf-r1-g')).length, 4)
+  // "Limpar tudo" remove também esses grupos.
+  const cleared = clearWcif(again, gen)
+  const codes3: string[] = []
+  visitAll(cleared.schedule.venues[0].rooms[1].activities as never, (x) => codes3.push(x.activityCode))
+  assert.equal(codes3.filter((c) => c.startsWith('333mbf-r1-g')).length, 0)
+}
+ok('Multi-BLD em grupos dentro das tentativas (repetidos na 2ª), FMC todos juntos')
+
 console.log(`\n${n} testes do CubeStaff OK`)

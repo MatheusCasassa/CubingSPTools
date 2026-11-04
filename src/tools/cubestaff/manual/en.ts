@@ -67,7 +67,7 @@ export const en: Manual = {
           ],
         },
         '**Schedule conflict**: if someone competes in something else at the same time (e.g. another stage), the program swaps them with someone from a nearby group (similar level). If no swap is possible, a warning shows.',
-        'FMC and Multi-BLD with scheduled attempts (-a1, -a2…) have no groups: everyone is assigned to the attempts.',
+        '**FMC** with scheduled attempts (-a1, -a2…) has no groups: everyone is assigned to the attempts. **Multi-BLD** is split into groups like 4BLD and 5BLD: the groups go inside the attempt ("333mbf-r1-g1-a1") and, with more than one attempt, each person keeps the same group in all of them.',
       ],
     },
     {

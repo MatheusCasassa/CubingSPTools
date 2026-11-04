@@ -643,6 +643,9 @@ export const pt = {
     watermarkTransparency: 'Transparência',
     watermarkStronger: 'Mais forte',
     watermarkLighter: 'Mais apagada',
+    watermarkCenter: 'Centralizar a marca d\'água',
+    watermarkCenterOptions: { card: 'No cartão inteiro', content: 'Nos desenhos' },
+    watermarkCenterHint: '"Nos desenhos" usa o centro do cabeçalho, do nome e das caixas, sem contar o espaço vazio embaixo.',
     logoError: 'Não foi possível ler esta imagem.',
     // ação
     cards: (n: number): string => (n === 1 ? 'súmula' : 'súmulas'),
