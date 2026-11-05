@@ -582,8 +582,10 @@ export const es: Messages = {
     blankPerType: (n: number) => `${n} de cada tipo · las hojas incompletas de cada modalidad también se completan con hojas en blanco de la misma ronda.`,
     blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
     attemptsN: (n: number) => (n === 1 ? '1 intento' : `${n} intentos`),
-    nextRoundHint:
-      'Quién avanza todavía no está en la WCA. Después de cargar la ronda anterior en WCA Live, haz clic en Sincronizar allí y en "Actualizar desde la WCA" aquí para imprimir con nombres. Mientras tanto, usa las hojas en blanco.',
+    nextRoundHint: (n: number) =>
+      `Quién avanza todavía no está en la WCA: salen ${n} hojas de esta ronda con el nombre en blanco (ajusta al lado). Para imprimir con nombres, carga la ronda anterior en WCA Live, haz clic en Sincronizar allí y en "Actualizar desde la WCA" aquí.`,
+    blank: 'En blanco',
+    blankAria: (r: string) => `Hojas en blanco de ${r}`,
     advancersChip: 'Clasificados',
     advancersFromLive: 'Clasificados leídos de WCA Live (ronda ya abierta y sincronizada con la WCA). El campo Grupo queda en blanco.',
     advancersComputed:

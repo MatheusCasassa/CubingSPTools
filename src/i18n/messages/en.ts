@@ -580,8 +580,10 @@ export const en: Messages = {
     blankPerType: (n: number) => `${n} of each type · incomplete sheets of each event are also filled with blank scorecards of the same round.`,
     blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
     attemptsN: (n: number) => (n === 1 ? '1 attempt' : `${n} attempts`),
-    nextRoundHint:
-      'Who advances is not on the WCA website yet. After entering the previous round in WCA Live, click Synchronize there and "Refresh from WCA" here to print with names. Meanwhile, use the blank scorecards.',
+    nextRoundHint: (n: number) =>
+      `Who advances is not on the WCA website yet: ${n} scorecards of this round are printed with blank names (adjust beside). To print with names, enter the previous round in WCA Live, click Synchronize there and "Refresh from WCA" here.`,
+    blank: 'Blank',
+    blankAria: (r: string) => `Blank scorecards for ${r}`,
     advancersChip: 'Advancing',
     advancersFromLive: 'Advancing competitors read from WCA Live (round already open and synchronized with the WCA). The Group field is left blank.',
     advancersComputed:

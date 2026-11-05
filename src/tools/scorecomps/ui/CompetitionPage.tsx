@@ -78,13 +78,15 @@ function loadPrefs(): Prefs {
 // ----------------------------------------------------------------- seleção
 interface RoundSel {
   groups: string[]
+  /** Súmulas em branco DA RODADA (só quando ainda não se sabe quem avança). */
+  blank: number
 }
 type Selection = Record<string, RoundSel>
 
-const isOn = (s?: RoundSel) => !!s && s.groups.length > 0
+const isOn = (s?: RoundSel) => !!s && (s.groups.length > 0 || s.blank > 0)
 
 function fullSel(p: RoundPlan): RoundSel {
-  return { groups: p.groups.map((g) => g.key) }
+  return { groups: p.groups.map((g) => g.key), blank: p.groups.length === 0 ? p.suggestedBlank : 0 }
 }
 
 // ----------------------------------------------------------------- componentes
@@ -125,12 +127,13 @@ function RoundCard({
   onChange: (s: RoundSel) => void
 }) {
   const { m, locale } = useI18n()
-  const cur = sel ?? { groups: [] }
+  const cur = sel ?? { groups: [], blank: 0 }
   const on = isOn(sel)
-  const count = plan.groups.filter((g) => cur.groups.includes(g.key)).reduce((n, g) => n + g.competitors.length, 0)
+  const count =
+    plan.groups.filter((g) => cur.groups.includes(g.key)).reduce((n, g) => n + g.competitors.length, 0) + cur.blank
   const { info } = plan
 
-  const toggleRound = () => onChange(on ? { groups: [] } : fullSel(plan))
+  const toggleRound = () => onChange(on ? { groups: [], blank: 0 } : fullSel(plan))
   const toggleGroup = (key: string) =>
     onChange({
       ...cur,
@@ -146,7 +149,6 @@ function RoundCard({
             className="h-4 w-4 accent-brand-600"
             checked={on}
             onChange={toggleRound}
-            disabled={plan.groups.length === 0}
           />
           <span className="font-medium">
             {roundName(info, locale)}
@@ -181,9 +183,23 @@ function RoundCard({
             </button>
           )
         })}
+        {plan.groups.length === 0 && (
+          <label className="chip border-dashed border-border-strong text-fg-muted">
+            {m.scorecomps.blank}
+            <input
+              type="number"
+              min={0}
+              max={500}
+              value={cur.blank}
+              onChange={(e) => onChange({ ...cur, blank: Math.max(0, Math.min(500, Number(e.target.value) || 0)) })}
+              className="w-12 bg-transparent text-right font-mono text-fg outline-none"
+              aria-label={m.scorecomps.blankAria(`${info.eventName} ${roundName(info, locale)}`)}
+            />
+          </label>
+        )}
       </div>
       {!plan.fromGroups && plan.groups.length === 0 && (
-        <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.nextRoundHint}</p>
+        <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.nextRoundHint(plan.suggestedBlank)}</p>
       )}
       {!plan.fromGroups && plan.groups.length > 0 && !plan.advancers && (
         <p className="mt-2 pl-7 text-xs text-fg-faint">{m.scorecomps.noGroupsHint}</p>
@@ -342,7 +358,7 @@ export default function CompetitionPage() {
         models: buildRoundScorecards(
           wcif,
           p,
-          { roundId: p.info.roundId, groupKeys: sel[p.info.roundId].groups, blank: 0 },
+          { roundId: p.info.roundId, groupKeys: sel[p.info.roundId].groups, blank: sel[p.info.roundId].blank },
           prefs.sortBy,
           pdfLocale,
         ),
@@ -433,7 +449,7 @@ export default function CompetitionPage() {
     const clear = eventState(ev.rounds, sel) !== 'none'
     setSel((prev) => {
       const next = { ...prev }
-      for (const p of ev.rounds) next[p.info.roundId] = clear ? { groups: [] } : fullSel(p)
+      for (const p of ev.rounds) next[p.info.roundId] = clear ? { groups: [], blank: 0 } : fullSel(p)
       return next
     })
   }

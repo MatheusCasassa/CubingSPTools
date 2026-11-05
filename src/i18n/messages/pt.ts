@@ -595,8 +595,10 @@ export const pt = {
     blankPerType: (n: number) => `${n} de cada tipo · as folhas incompletas das modalidades também são completadas com súmulas em branco da mesma rodada.`,
     blankFormats: { 5: 'Ao5 / Bo5', 3: 'Mo3 / Bo3', 2: 'Bo2', 1: 'Bo1' } as Record<number, string>,
     attemptsN: (n: number) => (n === 1 ? '1 tentativa' : `${n} tentativas`),
-    nextRoundHint:
-      'Quem avança ainda não está na WCA. Depois de lançar a rodada anterior no WCA Live, clique em Sincronizar lá e em "Atualizar da WCA" aqui para gerar com os nomes. Enquanto isso, use as súmulas em branco.',
+    nextRoundHint: (n: number) =>
+      `Quem avança ainda não está na WCA: saem ${n} súmulas desta rodada com o nome em branco (ajuste ao lado). Para gerar com os nomes, lance a rodada anterior no WCA Live, clique em Sincronizar lá e em "Atualizar da WCA" aqui.`,
+    blank: 'Em branco',
+    blankAria: (r: string) => `Súmulas em branco de ${r}`,
     advancersChip: 'Classificados',
     advancersFromLive: 'Classificados lidos do WCA Live (rodada já aberta e sincronizada com a WCA). O campo Grupo sai em branco.',
     advancersComputed:
