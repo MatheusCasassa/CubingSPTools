@@ -6,6 +6,7 @@ import { SmartRanksMark } from '../../../components/ui/icons'
 import { useI18n } from '../../../i18n/I18nProvider'
 import { liveUrl } from '../../../lib/wca/live'
 import { fetchLiveResults, ilrUrl, type LiveResults } from '../../../lib/wca/liveResults'
+import { fetchFirstTimers } from '../model/newcomers'
 import { eventName } from '../../../lib/wca/format'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
 import {
@@ -78,12 +79,15 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
   const [view, setView] = useState<View>('events')
   const [top, setTop] = useState(3)
   const [copied, setCopied] = useState(false)
+  const [firstTimers, setFirstTimers] = useState<Set<number>>(new Set())
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      setLive(await fetchLiveResults(ctx.wcif))
+      const [res, first] = await Promise.all([fetchLiveResults(ctx.wcif), fetchFirstTimers(ctx.wcif)])
+      setFirstTimers(first)
+      setLive(res)
     } catch (e) {
       setError(`${t.liveError} ${e instanceof Error ? e.message : ''}`)
     } finally {
@@ -94,7 +98,14 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
     void load()
   }, [load])
 
-  const info = useMemo(() => personsInfo(ctx.wcif), [ctx.wcif])
+  const info = useMemo(() => {
+    const m = personsInfo(ctx.wcif)
+    for (const id of firstTimers) {
+      const p = m.get(id)
+      if (p) p.firstCompetition = true
+    }
+    return m
+  }, [ctx.wcif, firstTimers])
   const hasBirthdates = useMemo(() => [...info.values()].some((p) => p.birthdate), [info])
   const refDate = ctx.wcif.schedule.startDate ?? new Date().toISOString().slice(0, 10)
   // Mais novos / mais velhos: lista única por data de nascimento.

@@ -20,6 +20,8 @@ export interface PersonInfo {
   gender: string | null
   birthdate: string | null
   countryIso2: string | null
+  /** Esta foi a primeira competição da pessoa (confirmado na WCA depois do envio dos resultados). */
+  firstCompetition?: boolean
 }
 
 export type AgeMode = 'upTo' | 'from' | 'between'
@@ -62,8 +64,9 @@ export function matches(c: Category, info: PersonInfo | undefined, liveWcaId: st
     case 'all':
       return true
     case 'newcomers':
-      // Sem WCA ID = primeira competição.
-      return !(info?.wcaId ?? liveWcaId)
+      // Primeira competição: sem WCA ID ou, depois do envio dos resultados,
+      // com WCA ID ganho nesta competição.
+      return !!info?.firstCompetition || !(info?.wcaId ?? liveWcaId)
     case 'female':
       return info?.gender === 'f'
     case 'age': {

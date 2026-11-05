@@ -27,6 +27,7 @@ import {
   categoryStandings,
   formatResult,
   headline,
+  matches,
   personsInfo,
 } from '../src/tools/smartranks/model/ranks'
 import { candidates, DEFAULT_OPTIONS, draw, eligible, randomInt } from '../src/tools/sortcuber/model/draw'
@@ -41,6 +42,7 @@ import {
 } from '../worker/api'
 import type { LiveCompetition, LiveEvent } from '../src/lib/wca/live'
 import { ilrToResults, mergeSources } from '../src/lib/wca/liveResults'
+import { isFirstCompetition, newcomerCandidates } from '../src/tools/smartranks/model/newcomers'
 import type { Wcif, WcifPerson } from '../src/lib/wca/types'
 
 let n = 0
@@ -427,6 +429,32 @@ async function main() {
     assert.equal(mergeSources(w2, null, new Map()), null)
   }
   ok('Resultados ao vivo: WCA Live e Integrated Live Results juntos, rodada a rodada')
+
+  // Novatos depois do envio dos resultados: WCA ID ganho nesta competição.
+  {
+    const wN = {
+      id: 'Comp2026',
+      name: 'Comp 2026',
+      schedule: { startDate: '2026-12-31', numberOfDays: 2, venues: [] },
+      events: [],
+      persons: [
+        { registrantId: 1, name: 'A', wcaId: '2026AAAA01' },
+        { registrantId: 2, name: 'B', wcaId: '2027BBBB01' },
+        { registrantId: 3, name: 'C', wcaId: '2015CCCC01' },
+        { registrantId: 4, name: 'D', wcaId: null },
+      ],
+    } as unknown as Wcif
+    assert.deepEqual(newcomerCandidates(wN).map((c) => c.registrantId), [1, 2], 'ano do WCA ID = ano da competição (inclui virada do ano)')
+    assert.ok(isFirstCompetition([{ id: 'Comp2026', start_date: '2026-12-31' }], 'Comp2026'))
+    assert.ok(!isFirstCompetition([{ id: 'Comp2026', start_date: '2026-12-31' }, { id: 'Antes', start_date: '2026-03-01' }], 'Comp2026'))
+    assert.ok(!isFirstCompetition([], 'Comp2026'))
+    const infoN = personsInfo(wN)
+    infoN.get(1)!.firstCompetition = true
+    assert.ok(matches({ kind: 'newcomers' }, infoN.get(1), '2026AAAA01', '2026-12-31'), 'estreante com WCA ID continua novato')
+    assert.ok(!matches({ kind: 'newcomers' }, infoN.get(3), '2015CCCC01', '2026-12-31'))
+    assert.ok(matches({ kind: 'newcomers' }, infoN.get(4), null, '2026-12-31'), 'sem WCA ID = novato')
+  }
+  ok('SmartRanks: novatos continuam novatos depois do envio dos resultados')
 
   // ------------------------------------------------------------ SortCuber
   {
