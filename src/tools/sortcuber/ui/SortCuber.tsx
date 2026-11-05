@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Alert } from '../../../components/ui/Feedback'
 import { SortCuberMark } from '../../../components/ui/icons'
 import { useI18n } from '../../../i18n/I18nProvider'
-import { fetchLiveCompetition } from '../../../lib/wca/live'
+import { fetchLiveResults } from '../../../lib/wca/liveResults'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
 import {
   candidates,
@@ -102,7 +102,7 @@ function Raffle({ ctx }: { ctx: DuringCtx }) {
   // Presença: quem tem pelo menos uma tentativa feita no WCA Live.
   useEffect(() => {
     let active = true
-    fetchLiveCompetition(ctx.wcif.id, ctx.wcif.name)
+    fetchLiveResults(ctx.wcif)
       .then((live) => {
         if (!active) return
         if (!live) return setLiveState('none')
@@ -118,7 +118,7 @@ function Raffle({ ctx }: { ctx: DuringCtx }) {
     return () => {
       active = false
     }
-  }, [ctx.wcif.id, ctx.wcif.name])
+  }, [ctx.wcif])
   useEffect(() => () => window.clearInterval(timer.current), [])
 
   const winners = saved.history.flatMap((h) => h.winners.map((w) => w.registrantId))

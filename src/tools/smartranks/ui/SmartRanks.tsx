@@ -4,7 +4,8 @@ import { Alert, Spinner } from '../../../components/ui/Feedback'
 import { EventIcon } from '../../../components/ui/EventIcon'
 import { SmartRanksMark } from '../../../components/ui/icons'
 import { useI18n } from '../../../i18n/I18nProvider'
-import { fetchLiveCompetition, liveUrl, type LiveCompetition } from '../../../lib/wca/live'
+import { liveUrl } from '../../../lib/wca/live'
+import { fetchLiveResults, ilrUrl, type LiveResults } from '../../../lib/wca/liveResults'
 import { eventName } from '../../../lib/wca/format'
 import { DuringHome, DuringPage, type DuringCtx, type DuringTool } from '../../during/DuringShell'
 import {
@@ -67,7 +68,7 @@ function download(name: string, text: string) {
 function Ranks({ ctx }: { ctx: DuringCtx }) {
   const { m, tag } = useI18n()
   const t = m.smartranks
-  const [live, setLive] = useState<LiveCompetition | null | undefined>(undefined)
+  const [live, setLive] = useState<LiveResults | null | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [kind, setKind] = useState<CatKind>('newcomers')
@@ -82,13 +83,13 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
     setLoading(true)
     setError(null)
     try {
-      setLive(await fetchLiveCompetition(ctx.wcif.id, ctx.wcif.name))
+      setLive(await fetchLiveResults(ctx.wcif))
     } catch (e) {
       setError(`${t.liveError} ${e instanceof Error ? e.message : ''}`)
     } finally {
       setLoading(false)
     }
-  }, [ctx.wcif.id, ctx.wcif.name])
+  }, [ctx.wcif])
   useEffect(() => {
     void load()
   }, [load])
@@ -185,9 +186,17 @@ function Ranks({ ctx }: { ctx: DuringCtx }) {
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-fg-faint">
         <span>
           {t.fromLive(new Intl.DateTimeFormat(tag, { timeStyle: 'short' }).format(new Date(live.fetchedAt)))} ·{' '}
-          <a className="underline hover:text-fg" href={liveUrl(live.liveId)} target="_blank" rel="noreferrer">
-            WCA Live
-          </a>
+          {live.sources.wcaLive && live.liveId && (
+            <a className="underline hover:text-fg" href={liveUrl(live.liveId)} target="_blank" rel="noreferrer">
+              WCA Live
+            </a>
+          )}
+          {live.sources.wcaLive && live.liveId && live.sources.ilr && ' · '}
+          {live.sources.ilr && (
+            <a className="underline hover:text-fg" href={ilrUrl(ctx.wcif.id)} target="_blank" rel="noreferrer">
+              WCA (Integrated Live Results)
+            </a>
+          )}
         </span>
         <button type="button" className="btn-ghost btn-sm" onClick={load} disabled={loading}>
           {loading ? t.updating : t.update}

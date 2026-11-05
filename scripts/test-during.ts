@@ -40,6 +40,7 @@ import {
   type KV,
 } from '../worker/api'
 import type { LiveCompetition, LiveEvent } from '../src/lib/wca/live'
+import { ilrToResults, mergeSources } from '../src/lib/wca/liveResults'
 import type { Wcif, WcifPerson } from '../src/lib/wca/types'
 
 let n = 0
@@ -384,6 +385,48 @@ async function main() {
     assert.deepEqual(ageYm('2014-11-01', '2026-10-31'), { years: 11, months: 11 })
   }
   ok('SmartRanks: classificação final, categorias, idade, mais novos/velhos e pontuação APS')
+
+  // Duas fontes: WCA Live e Integrated Live Results (dual rounds), rodada a rodada.
+  {
+    const ilr333r2 = ilrToResults({
+      id: '333-r2',
+      format: 'a',
+      competitors: [
+        { id: 900, registrant_id: 1, name: 'Ana', wca_id: '2020ANAA01', country_iso2: 'BR' },
+        { id: 901, registrant_id: 2, name: 'Bruno', wca_id: null, country_iso2: 'BR' },
+      ],
+      results: [
+        { registration_id: 901, local_pos: 2, global_pos: 3, best: 1200, average: 1300, attempts: [{ attempt_number: 2, value: 1250 }, { attempt_number: 1, value: 1200 }] },
+        { registration_id: 900, local_pos: 1, global_pos: 1, best: 900, average: 1000, attempts: [] },
+        { registration_id: 902, local_pos: null, global_pos: null, best: 0, average: 0, attempts: [] },
+      ],
+    })
+    assert.equal(ilr333r2[0].person.name, 'Bruno')
+    assert.deepEqual(ilr333r2[0].attempts, [1200, 1250], 'tentativas em ordem')
+    assert.equal(ilr333r2[1].ranking, 1, 'posição dentro da rodada')
+    assert.equal(ilr333r2[2].ranking, null, 'sem resultado = sem posição')
+    const w2: Wcif = {
+      id: 'T',
+      name: 'T',
+      persons: [],
+      events: [{ id: '333', rounds: [{ id: '333-r1', format: 'a' }, { id: '333-r2', format: 'a' }] }],
+      schedule: { venues: [] },
+    } as unknown as Wcif
+    // r1 no WCA Live; r2 (rodada ligada) só no ILR.
+    const liveOnlyR1: LiveCompetition = { ...live, events: [{ ...ev333, rounds: ev333.rounds.filter((r) => r.number === 1) }] }
+    const merged = mergeSources(w2, liveOnlyR1, new Map([['333-r1', null], ['333-r2', ilr333r2]]))!
+    assert.deepEqual(merged.sources, { wcaLive: true, ilr: true })
+    assert.equal(merged.events[0].rounds[0].results, liveOnlyR1.events[0].rounds[0].results)
+    assert.equal(merged.events[0].rounds[1].results.length, 3)
+    assert.equal(merged.events[0].rounds[1].format.sortBy, 'average')
+    // Só ILR (competição fora do WCA Live).
+    const only = mergeSources(w2, null, new Map([['333-r1', null], ['333-r2', ilr333r2]]))!
+    assert.deepEqual(only.sources, { wcaLive: false, ilr: true })
+    assert.equal(only.events[0].rounds[1].name, 'Final')
+    // Nenhuma fonte.
+    assert.equal(mergeSources(w2, null, new Map()), null)
+  }
+  ok('Resultados ao vivo: WCA Live e Integrated Live Results juntos, rodada a rodada')
 
   // ------------------------------------------------------------ SortCuber
   {
