@@ -101,15 +101,6 @@ export function ConfigPanel() {
                 onChange={(v) => set('competitorsPerScrambler', v)}
               />
             </Field>
-            <Field label={t.delegateThreshold} hint={t.delegateThresholdHint(cfg.delegateThreshold)}>
-              <NumberInput
-                value={cfg.delegateThreshold}
-                min={1}
-                max={5}
-                step={0.1}
-                onChange={(v) => set('delegateThreshold', v)}
-              />
-            </Field>
             <Field label={t.maxConsecutive} hint={t.maxConsecutiveHint}>
               <NumberInput value={cfg.maxConsecutive} min={0} max={20} onChange={(v) => set('maxConsecutive', v)} />
             </Field>

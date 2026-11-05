@@ -17,6 +17,7 @@ import {
   type Plan,
   type Ref,
   type RoundPlan,
+  type StaffArea,
   type StaffEntry,
   type StaffRole,
 } from './types'
@@ -27,6 +28,23 @@ export const EXTENSION_MAX_BYTES = 60_000
 
 const ROLE_LETTER: Record<StaffRole, string> = { judge: 'j', scrambler: 's', runner: 'r' }
 const LETTER_ROLE: Record<string, StaffRole> = { j: 'judge', s: 'scrambler', r: 'runner' }
+
+const AREA_LETTER: Record<StaffArea, string> = { staff: 's', data: 'd', helpdesk: 'h' }
+const LETTER_AREA: Record<string, StaffArea> = { s: 'staff', d: 'data', h: 'helpdesk' }
+
+/** Proporção { judge: 70, scrambler: 30 } ↔ "j70s30". */
+function encShare(share: StaffEntry['share']): string {
+  if (!share) return ''
+  return (Object.entries(share) as [StaffRole, number][])
+    .filter(([, v]) => v > 0)
+    .map(([r, v]) => `${ROLE_LETTER[r]}${Math.round(v)}`)
+    .join('')
+}
+function decShare(s: string): StaffEntry['share'] | undefined {
+  const out: Partial<Record<StaffRole, number>> = {}
+  for (const m of s.matchAll(/([jsr])(\d+)/g)) out[LETTER_ROLE[m[1]]] = Number(m[2])
+  return Object.keys(out).length ? out : undefined
+}
 
 const LOCK_LETTER: Record<string, string> = { competitor: 'c', judge: 'j', scrambler: 's', runner: 'r', reserve: 'v' }
 const LOCK_KIND: Record<string, string> = { c: 'competitor', j: 'judge', s: 'scrambler', r: 'runner', v: 'reserve' }
@@ -157,7 +175,8 @@ export function encodePlan(plan: Plan, wcif: Wcif): EncodedPlan {
     v: 2,
     cfg,
     ...(absent.length ? { ab: encIds(absent) } : {}),
-    // Cada candidato é um texto "id|funções|preferida|embaralha|puzzles|disponibilidade".
+    // Cada candidato é um texto "id|funções|preferida|embaralha|puzzles|disponibilidade|proporção|áreas"
+    // (proporção "j70s30"; áreas "sdh" = staff, dados, helpdesk — os dois últimos são opcionais).
     // Nada de null: a WCA remove valores null de listas ao salvar a extensão,
     // o que deslocava as posições (bug que zerava os embaralhadores).
     st: plan.staff.map((e) =>
@@ -168,6 +187,7 @@ export function encodePlan(plan: Plan, wcif: Wcif): EncodedPlan {
         e.scrambler == null ? '' : e.scrambler ? '1' : '0',
         e.scramblePuzzles.join(','),
         encAvail(e.availability, days) ?? '',
+        ...(e.share || e.areas?.length ? [encShare(e.share), (e.areas ?? []).map((a) => AREA_LETTER[a]).join('')] : []),
       ].join('|'),
     ),
     ex: plan.extras,
@@ -196,7 +216,12 @@ const letters = (s: string) =>
  */
 export function decodeStaffRow(row: string | (string | number | null)[], days: string[]): StaffEntry {
   if (typeof row === 'string') {
-    const [id, roles = '', pref = '', scr = '', puzzles = '', avail = ''] = row.split('|')
+    const [id, roles = '', pref = '', scr = '', puzzles = '', avail = '', share = '', areas = ''] = row.split('|')
+    const sh = decShare(share)
+    const ar = areas
+      .split('')
+      .map((l) => LETTER_AREA[l])
+      .filter(Boolean)
     return {
       registrantId: fromB36(id),
       roles: letters(roles),
@@ -204,6 +229,8 @@ export function decodeStaffRow(row: string | (string | number | null)[], days: s
       scrambler: scr === '' ? null : scr === '1',
       scramblePuzzles: puzzles.split(',').filter(Boolean),
       availability: avail === '' ? null : decAvail(avail, days),
+      ...(sh ? { share: sh } : {}),
+      ...(ar.length ? { areas: ar } : {}),
     }
   }
   const rest = row.slice(3).filter((x) => x != null)

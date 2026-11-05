@@ -16,7 +16,7 @@ import {
 } from './engine'
 import { competitionTimezone, overlaps } from './schedule'
 import { presentAt } from './presence'
-import { isAccepted, isApproved, isDelegate, isNewcomer, personsById } from './people'
+import { isAccepted, isApproved, isDelegate, isNewcomer, normalizeName, personsById } from './people'
 
 export type IssueCode =
   | 'conflict'
@@ -32,6 +32,7 @@ export type IssueCode =
   | 'tooManyTasks'
   | 'emptyGroup'
   | 'noSchedule'
+  | 'similarNames'
 
 export interface Issue {
   level: 'error' | 'warn' | 'info'
@@ -39,6 +40,8 @@ export interface Issue {
   roundId: string
   group: number
   ref?: Ref
+  /** Segunda pessoa (nomes parecidos). */
+  ref2?: Ref
   role?: 'competitor' | StaffRole | 'reserve'
   count?: number
   needed?: number
@@ -61,6 +64,10 @@ export function checkPlan(wcif: Wcif, plan: Plan): Issue[] {
       const blocks = sched?.kind === 'attempts' ? sched.attempts : [slot]
       const roomId = sched?.slots.find((s) => s.number === g.number)?.roomId ?? 0
       if (g.competitors.length === 0) issues.push({ level: 'info', code: 'emptyGroup', roundId, group: g.number })
+      // Nomes parecidos no mesmo grupo: recomendação de separar (súmulas e
+      // chamadas se confundem).
+      for (const [a, b] of similarPairs(g.competitors.map((id) => [id, byId.get(id)?.name ?? ''] as const)))
+        issues.push({ level: 'info', code: 'similarNames', roundId, group: g.number, ref: `p${a}`, ref2: `p${b}` })
 
       // Conflitos: a mesma pessoa em duas coisas ao mesmo tempo.
       const roles: ['competitor' | StaffRole, Ref[]][] = [
@@ -163,6 +170,44 @@ export function checkPlan(wcif: Wcif, plan: Plan): Issue[] {
         }
   }
   return issues
+}
+
+function lev(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 2) return 3
+  const prev = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    let diag = prev[0]
+    prev[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = prev[j]
+      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1))
+      diag = tmp
+    }
+  }
+  return prev[b.length]
+}
+
+/**
+ * Nomes que se confundem: mesmo primeiro e último nome ("João Silva" e
+ * "João Pedro Silva") ou quase iguais (até 2 letras de diferença).
+ */
+export function similarNames(a: string, b: string): boolean {
+  const x = normalizeName(a)
+  const y = normalizeName(b)
+  if (!x || !y) return false
+  if (x === y) return true
+  const tx = x.split(' ')
+  const ty = y.split(' ')
+  if (tx.length > 1 && ty.length > 1 && tx[0] === ty[0] && tx.at(-1) === ty.at(-1)) return true
+  return Math.min(x.length, y.length) >= 6 && lev(x, y) <= 2
+}
+
+export function similarPairs(people: (readonly [number, string])[]): [number, number][] {
+  const out: [number, number][] = []
+  for (let i = 0; i < people.length; i++)
+    for (let j = i + 1; j < people.length; j++)
+      if (similarNames(people[i][1], people[j][1])) out.push([people[i][0], people[j][0]])
+  return out
 }
 
 /** Carga de staff por pessoa (para a visão "Pessoas"). */

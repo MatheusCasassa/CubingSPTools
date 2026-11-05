@@ -514,6 +514,7 @@ function eligible(
   for (const [id, entry] of ctx.entries) {
     const person = ctx.byId.get(id)
     if (!person || !isApproved(person) || isNewcomer(person) || ctx.absent.has(id) || inGroup.has(id)) continue
+    if (!wantsStaff(entry)) continue
     const ref = pref(id)
     if (taken.has(ref)) continue
     if (!isAvailable(entry, wg.slot, ctx.tz)) continue
@@ -526,6 +527,24 @@ function eligible(
   }
   return out
 }
+
+/**
+ * Proporção desejada (ex.: 70% juiz, 30% embaralhador): favorece a função que
+ * está abaixo da meta da pessoa e penaliza a que já passou. 0 sem proporção.
+ */
+function shareScore(ctx: StaffContext, entry: StaffEntry, ref: Ref, role: StaffRole): number {
+  if (!entry.share) return 0
+  const target = (entry.share[role] ?? 0) / 100
+  const total = ctx.agenda.staffCount(ref)
+  const current = total > 0 ? ctx.agenda.roleCount(ref, role) / total : 0
+  return Math.round(8 * (current - target))
+}
+
+/** Quem marcou só dados/helpdesk no formulário não entra na escala automática. */
+export const wantsStaff = (entry: StaffEntry) => !entry.areas?.length || entry.areas.includes('staff')
+
+/** Desempate contra Delegados no embaralhamento (posições na Psych Sheet). */
+const DELEGATE_SCRAMBLE_PENALTY = 2
 
 function prefScore(entry: StaffEntry, role: StaffRole): number {
   const idx = entry.preferred.indexOf(role)
@@ -544,10 +563,11 @@ function pickStaff(
   const short: Record<StaffRole, number> = { judge: 0, scrambler: 0, runner: 0 }
   let delegatesUsed = 0
 
+  // Delegados não são poupados (decisão de 04/11/2026): podem receber
+  // tarefas, mas outras pessoas vêm antes. No embaralhamento vale o mérito —
+  // um Delegado rápido embaralha — com um leve desempate a favor dos demais.
+  // Conflitos com salas paralelas já ficam de fora pela agenda (eligible).
   const pool = eligible(ctx, wg, taken)
-  const nonDelegates = pool.filter((c) => !isDelegate(c.person))
-  const totalNeeds = needs.judge + needs.scrambler + needs.runner
-  const expressive = nonDelegates.length >= ctx.config.delegateThreshold * Math.max(1, totalNeeds)
 
   // Quem competiu no grupo anterior desta rodada (julga o seguinte).
   const idx = allGroupsOfRound.indexOf(wg)
@@ -584,16 +604,15 @@ function pickStaff(
       let best: { c: (typeof cands)[number]; score: number } | undefined
       for (const tier of [open.filter(registered), open.filter((c) => !registered(c))]) {
         const ranked = tier.slice(0, window)
-        // Delegado só se bem ranqueado (dentro da janela) e sem staff expressivo.
-        const allowed = ranked.filter((c) => !isDelegate(c.person) || !expressive)
-        best = allowed
+        best = ranked
           .map((c, i) => ({
             c,
             score:
               i +
               2 * ctx.agenda.roleCount(pref(c.id), 'scrambler') +
               prefScore(c.entry, 'scrambler') +
-              (isDelegate(c.person) ? 6 : 0),
+              shareScore(ctx, c.entry, pref(c.id), 'scrambler') +
+              (isDelegate(c.person) ? DELEGATE_SCRAMBLE_PENALTY : 0),
           }))
           .sort((a, b) => a.score - b.score)[0]
         if (best) break
@@ -612,7 +631,7 @@ function pickStaff(
     for (let n = 0; n < need; n++) {
       const open = pool.filter((c) => !taken.has(pref(c.id)) && canDo(c.entry, role))
       const nonDel = open.filter((c) => !isDelegate(c.person))
-      const list = nonDel.length > 0 || expressive ? nonDel : open // Delegado: último recurso
+      const list = nonDel.length > 0 ? nonDel : open // Delegado: último recurso
       const best = list
         .map((c) => ({
           c,
@@ -620,7 +639,8 @@ function pickStaff(
             10 * ctx.agenda.staffCount(pref(c.id)) +
             3 * ctx.agenda.consecutiveBefore(pref(c.id), wg.slot.start) +
             (neighbors.has(c.id) ? -12 : 0) +
-            prefScore(c.entry, role),
+            prefScore(c.entry, role) +
+            shareScore(ctx, c.entry, pref(c.id), role),
         }))
         .sort((a, b) => a.score - b.score || a.c.person.name.localeCompare(b.c.person.name, 'pt-BR'))[0]
       if (!best) {

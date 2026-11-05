@@ -40,9 +40,8 @@ export interface CubeStaffConfig {
   /** Competidores por embaralhador: 1 a cada 8 (1–8 → 1, 9–16 → 2, …). */
   competitorsPerScrambler: number
   /**
-   * "Número expressivo" de staff: se o staff elegível (sem Delegados) livre no
-   * horário for ≥ este fator × vagas do grupo, Delegados ficam totalmente fora
-   * de juiz/embaralhador.
+   * Sem uso desde 04/11/2026 (Delegados não são mais poupados; só vêm depois
+   * dos demais). Mantido para ler planos antigos.
    */
   delegateThreshold: number
   /** Máximo de tarefas de staff seguidas (grupos consecutivos) — 0 = sem limite. */
@@ -82,6 +81,9 @@ export const DEFAULT_CONFIG: CubeStaffConfig = {
 /** Disponibilidade: dia da competição (AAAA-MM-DD) → períodos presentes. */
 export type Availability = Record<string, { morning: boolean; afternoon: boolean }>
 
+/** Áreas em que a pessoa quer ajudar (formulário): staff, equipe de dados, helpdesk. */
+export type StaffArea = 'staff' | 'data' | 'helpdesk'
+
 /** Candidato APROVADO para staff (a lista é a única fonte de staff automático). */
 export interface StaffEntry {
   /** Pessoa do WCIF a quem esta entrada pertence. */
@@ -96,6 +98,16 @@ export interface StaffEntry {
   scramblePuzzles: string[]
   /** null = disponível o tempo todo. */
   availability: Availability | null
+  /**
+   * Proporção desejada entre as funções, em % (ex.: { judge: 70, scrambler: 30 }).
+   * Ausente = sem proporção. A escala tenta seguir, sem garantir.
+   */
+  share?: Partial<Record<StaffRole, number>>
+  /**
+   * Áreas em que quer ajudar. Ausente/vazio = staff. Quem marcou só dados ou
+   * helpdesk não entra na escala automática de juiz/embaralhador/corredor.
+   */
+  areas?: StaffArea[]
 }
 
 /** Ajudante extra fora da lista (pais, visitantes, quem se ofereceu no dia). */

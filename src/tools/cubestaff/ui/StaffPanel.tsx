@@ -205,7 +205,15 @@ export function StaffPanel() {
                             {(!p.person || !isApproved(p.person)) && <Tag tone="danger">{t.tags.notApproved}</Tag>}
                             {p.delegate && <Tag tone="brand">{t.tags.delegate}</Tag>}
                             {p.newcomer && <Tag tone="danger">{t.tags.newcomer}</Tag>}
+                            {e.areas
+                              ?.filter((a) => a !== 'staff')
+                              .map((a) => (
+                                <Tag key={a}>{t.areas[a]}</Tag>
+                              ))}
                           </div>
+                          {e.areas?.length && !e.areas.includes('staff') ? (
+                            <div className="mt-0.5 text-[11px] text-amber-600 dark:text-amber-300">{t.onlyOtherAreas}</div>
+                          ) : null}
                           {pi && (pi.email || pi.phone || pi.notes?.length) ? (
                             <details className="mt-1 text-xs text-fg-muted">
                               <summary className="cursor-pointer">{t.answers}</summary>
@@ -266,6 +274,13 @@ export function StaffPanel() {
                               </option>
                             ))}
                           </select>
+                          {e.share && (
+                            <div className="mt-1 text-[11px] text-fg-muted">
+                              {(Object.entries(e.share) as [StaffRole, number][])
+                                .map(([r, v]) => `${v}% ${t.roles[r].toLowerCase()}`)
+                                .join(' · ')}
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2.5">
                           {e.scrambler === false ? (

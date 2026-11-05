@@ -59,6 +59,8 @@ export function IssuesBox({ issues, onJump }: { issues: Issue[]; onJump?: (round
         return t.issue.emptyGroup(w)
       case 'noSchedule':
         return t.issue.noSchedule(roundLabel(i.roundId))
+      case 'similarNames':
+        return t.issue.similarNames(who, i.ref2 ? person(i.ref2).name : '', w)
     }
   }
   return (

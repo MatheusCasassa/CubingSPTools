@@ -10,7 +10,7 @@ import {
   slotsByRound,
   slotOf,
 } from '../src/tools/cubestaff/model/engine'
-import { checkPlan } from '../src/tools/cubestaff/model/report'
+import { checkPlan, similarNames } from '../src/tools/cubestaff/model/report'
 import {
   buildWcif,
   changedOutside,
@@ -33,7 +33,9 @@ import {
   detectColumns,
   matchPerson,
   parseAvailability,
+  parseAreas,
   parseEvents,
+  parseShare,
   readRows,
 } from '../src/tools/cubestaff/model/staffImport'
 import { lockKey, refId, type Plan } from '../src/tools/cubestaff/model/types'
@@ -45,6 +47,7 @@ import {
   puzzleAllowed,
   scramblerRanking,
 } from '../src/tools/cubestaff/model/scramblerRank'
+import { competitionDays } from '../src/tools/cubestaff/model/schedule'
 import { presentAt } from '../src/tools/cubestaff/model/presence'
 import { decodeStaffRow, encodePlan, encodedSize, EXTENSION_MAX_BYTES } from '../src/tools/cubestaff/model/codec'
 import { listGroups, competitorsInGroup } from '../src/lib/wca/wcif'
@@ -168,14 +171,25 @@ const n1 = g1.competitors.filter((id) => isNewcomer(byId.get(id)!)).length
 assert.ok(n1 <= Math.ceil(g1.competitors.length / 2))
 ok('grupos com 50% de novatos')
 
-// 10. Delegados: fora do staff quando há staff expressivo.
+// 10. Delegados: não são poupados, mas vêm depois dos demais.
 const lots = structuredClone(base)
 lots.config.stations = 4
 const lotsPlan = generate(wcif, lots, { roundIds: ['222-r1'] }).plan
 for (const g of lotsPlan.rounds['222-r1'].groups)
-  for (const r of [...g.judges, ...g.scramblers])
-    assert.ok(!isDelegate(byId.get(refId(r)!)!), 'Delegado escalado com staff de sobra')
-ok('Delegados fora de juiz/embaralhador com staff expressivo')
+  for (const r of g.judges) assert.ok(!isDelegate(byId.get(refId(r)!)!), 'Delegado como juiz com staff de sobra')
+{
+  // Só Delegados podem embaralhar: eles assumem, em vez de faltar embaralhador.
+  const onlyDel = structuredClone(base)
+  for (const e of onlyDel.staff) if (!isDelegate(byId.get(e.registrantId)!)) e.scrambler = false
+  const hasDelegateStaff = onlyDel.staff.some((e) => isDelegate(byId.get(e.registrantId)!))
+  if (hasDelegateStaff) {
+    const pl = generate(wcif, onlyDel, { roundIds: ['333-r1'] }).plan
+    const scr = pl.rounds['333-r1'].groups.flatMap((g) => g.scramblers)
+    assert.ok(scr.length > 0 && scr.every((r) => isDelegate(byId.get(refId(r)!)!)), 'Delegado deveria embaralhar')
+  }
+  assert.ok(hasDelegateStaff, 'a demonstração deveria ter Delegado na lista de staff')
+}
+ok('Delegados: não poupados, mas por último (juiz) e por mérito (embaralhar)')
 
 // 11. Travas: edição manual sobrevive a gerar de novo.
 const someone = plan.rounds['333-r1'].groups[0].competitors.at(-1)!
@@ -771,5 +785,73 @@ ok('melhores embaralhadores equilibrados entre os grupos')
   assert.equal(codes3.filter((c) => c.startsWith('333mbf-r1-g')).length, 0)
 }
 ok('Multi-BLD em grupos dentro das tentativas (repetidos na 2ª), FMC todos juntos')
+
+// 30. Proporção entre funções e áreas (staff, dados, helpdesk) do formulário.
+{
+  assert.deepEqual(parseShare('70% juiz, 30% embaralhador'), { judge: 70, scrambler: 30 })
+  assert.deepEqual(parseShare('Juiz 3 / Embaralhador 1'), { judge: 75, scrambler: 25 })
+  assert.equal(parseShare('tanto faz'), undefined)
+  assert.deepEqual(parseAreas('Staff, Equipe de dados'), ['staff', 'data'])
+  assert.deepEqual(parseAreas('Helpdesk (tirar dúvidas)'), ['helpdesk'])
+  const cols = detectColumns(['Nome', 'Proporção entre as funções', 'Em qual área você quer ajudar?'])
+  assert.equal(cols.fields.share, 1)
+  assert.equal(cols.fields.areas, 2)
+  // Codec: ida e volta, e linhas antigas continuam valendo.
+  const days = ['2026-11-14', '2026-11-15']
+  const plan2 = structuredClone(base)
+  plan2.staff[0] = { ...plan2.staff[0], share: { judge: 70, scrambler: 30 }, areas: ['staff', 'helpdesk'] }
+  const back = decodeStaffRow(
+    (encodePlan(plan2, wcif) as unknown as { st: string[] }).st[0],
+    competitionDays(wcif),
+  )
+  assert.deepEqual(back.share, { judge: 70, scrambler: 30 })
+  assert.deepEqual(back.areas, ['staff', 'helpdesk'])
+  assert.equal(decodeStaffRow('a|js|s|1|333|', days).share, undefined)
+  // Quem marcou só dados/helpdesk fica fora da escala automática.
+  const onlyData = structuredClone(base)
+  const target = onlyData.staff.find((e) => !isDelegate(byId.get(e.registrantId)!))!
+  target.areas = ['data']
+  const gen2 = generate(wcif, onlyData, { roundIds: Object.keys(onlyData.rounds).length ? Object.keys(onlyData.rounds) : ['333-r1'] }).plan
+  const refT = `p${target.registrantId}`
+  for (const rp of Object.values(gen2.rounds))
+    for (const g of rp.groups) assert.ok(![...g.judges, ...g.scramblers, ...g.runners].includes(refT), 'só dados não é escalado')
+  // Proporção: quem quer 100% embaralhar não vira juiz se houver outra opção.
+  const shareP = structuredClone(base)
+  for (const e of shareP.staff) e.share = undefined
+  const fan = shareP.staff.find((e) => !isDelegate(byId.get(e.registrantId)!) && e.scrambler !== false)!
+  fan.share = { judge: 0, scrambler: 100 }
+  fan.roles = []
+  const gen3 = generate(wcif, shareP, { roundIds: ['333-r1', '222-r1'] }).plan
+  const refF = `p${fan.registrantId}`
+  let asJudge = 0
+  let asScr = 0
+  for (const rp of Object.values(gen3.rounds))
+    for (const g of rp.groups) {
+      if (g.judges.includes(refF)) asJudge++
+      if (g.scramblers.includes(refF)) asScr++
+    }
+  assert.ok(asJudge <= asScr || asJudge <= 1, `proporção ignorada: juiz ${asJudge}× e embaralhador ${asScr}×`)
+}
+ok('proporção entre funções e áreas (staff, dados, helpdesk) do formulário')
+
+// 31. Nomes parecidos no mesmo grupo: recomendação na Conferência.
+{
+  assert.ok(similarNames('João Silva', 'João Pedro Silva'))
+  assert.ok(similarNames('Gabriel Souza', 'Gabriel Sousa'))
+  assert.ok(!similarNames('Ana Lima', 'Bruno Costa'))
+  assert.ok(!similarNames('Ana', 'Ane'), 'nomes curtos demais')
+  const twin = structuredClone(wcif)
+  const gen = generate(twin, base, { roundIds: ['333-r1'] }).plan
+  const g = gen.rounds['333-r1'].groups[0]
+  const [a1, a2] = g.competitors
+  const pa = twin.persons.find((p) => p.registrantId === a1)!
+  const pb = twin.persons.find((p) => p.registrantId === a2)!
+  pb.name = pa.name + ' Jr'
+  pa.name = pa.name.split(' ')[0] + ' ' + pa.name.split(' ').at(-1)
+  pb.name = pa.name.split(' ')[0] + ' X ' + pa.name.split(' ').at(-1)
+  const iss = checkPlan(twin, gen).filter((i) => i.code === 'similarNames')
+  assert.ok(iss.some((i) => [i.ref, i.ref2].includes(`p${a1}`) && [i.ref, i.ref2].includes(`p${a2}`)))
+}
+ok('nomes parecidos no mesmo grupo viram recomendação')
 
 console.log(`\n${n} testes do CubeStaff OK`)

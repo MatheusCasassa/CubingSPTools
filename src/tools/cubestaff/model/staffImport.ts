@@ -7,7 +7,7 @@
 // (funções, preferência, puzzles, disponibilidade) é aproveitado se existir.
 
 import type { Wcif, WcifPerson } from '../../../lib/wca/types'
-import type { Availability, StaffEntry, StaffRole } from './types'
+import type { Availability, StaffArea, StaffEntry, StaffRole } from './types'
 import { isApproved, normalizeName } from './people'
 import { competitionDays } from './schedule'
 
@@ -21,6 +21,8 @@ export type FieldKey =
   | 'scramblePuzzles'
   | 'applies'
   | 'preferred'
+  | 'share'
+  | 'areas'
   | 'delegate'
   | 'approved'
 
@@ -34,6 +36,8 @@ export const FIELD_KEYS: FieldKey[] = [
   'scramblePuzzles',
   'applies',
   'preferred',
+  'share',
+  'areas',
   'delegate',
   'approved',
 ]
@@ -76,6 +80,9 @@ export function detectColumns(headers: string[]): ColumnMap {
     if (/(puzzle|experien|eventos)/.test(h) && /(embaralh|scrambl|mezcl)/.test(h)) return set('scramblePuzzles', i)
     if (/(interesse|interest|interes|quer|want|quiere)/.test(h) && /(embaralh|scrambl|mezcl)/.test(h))
       return set('scramblerInterest', i)
+    if (/proporc|percent|porcent|proportion|%/.test(h)) return set('share', i)
+    if (/helpdesk|help desk|atendimento|equipe de dados|data team|equipo de datos|(area|setor|equipe|time|team|equipo).*(atuar|ajudar|trabalhar|work|help|ayudar|trabajar)/.test(h))
+      return set('areas', i)
     if (/selecione todos|select all|seleccione todos|marque todos/.test(h)) return set('applies', i)
     if (/prefer|posicao|funcao|position|role|puesto|funcion/.test(h)) return set('preferred', i)
     if (/(voce e|are you|eres|es usted).*(delegad|delegate)|^delegad/.test(h)) return set('delegate', i)
@@ -103,6 +110,38 @@ export function parseRoles(text: string): StaffRole[] {
   const t = norm(text)
   const found = ROLE_PATTERNS.map(([role, re]) => ({ role, idx: t.search(re) })).filter((x) => x.idx >= 0)
   return found.sort((a, b) => a.idx - b.idx).map((x) => x.role)
+}
+
+const AREA_PATTERNS: [StaffArea, RegExp][] = [
+  ['staff', /\bstaff\b|juiz|juiza|judge|juez|embaralh|scrambl|mezcl|runner|corredor/],
+  ['data', /dados|\bdata\b|datos|lancament|resultad|result|scoretak|digita/],
+  ['helpdesk', /helpdesk|help desk|atendimento|duvida|informac|info desk|recepc|credenc/],
+]
+
+/** Áreas citadas num texto (staff, dados, helpdesk). */
+export function parseAreas(text: string): StaffArea[] {
+  const t = norm(text)
+  return AREA_PATTERNS.filter(([, re]) => re.test(t)).map(([a]) => a)
+}
+
+/**
+ * Proporção entre funções: "70% juiz, 30% embaralhador", "Juiz 70 / Embaralhador 30".
+ * Normaliza para somar 100. Sem números = sem proporção.
+ */
+export function parseShare(text: string): Partial<Record<StaffRole, number>> | undefined {
+  const t = norm(text)
+  if (!/\d/.test(t)) return undefined
+  const raw: Partial<Record<StaffRole, number>> = {}
+  for (const chunk of t.split(/[,;/|+]|\be\b|\band\b|\by\b/)) {
+    const role = parseRoles(chunk)[0]
+    const n = chunk.match(/(\d{1,3})/)
+    if (role && n) raw[role] = (raw[role] ?? 0) + Number(n[1])
+  }
+  const sum = Object.values(raw).reduce((a, b) => a + (b ?? 0), 0)
+  if (sum <= 0) return undefined
+  const out: Partial<Record<StaffRole, number>> = {}
+  for (const [r, v] of Object.entries(raw) as [StaffRole, number][]) out[r] = Math.round((v / sum) * 100)
+  return out
 }
 
 const EVENT_PATTERNS: [string, RegExp][] = [
@@ -242,6 +281,8 @@ export interface ImportRow {
   phone: string
   roles: StaffRole[]
   preferred: StaffRole[]
+  share?: Partial<Record<StaffRole, number>>
+  areas: StaffArea[]
   scrambler: boolean | null
   scramblePuzzles: string[]
   availability: Availability | null
@@ -342,6 +383,12 @@ export function readRows(wcif: Wcif, table: string[][], map: ColumnMap): ImportR
       if (i >= 0) roles.splice(i, 1)
     }
     const preferred = parseRoles(get(row, 'preferred'))
+    const share = parseShare(get(row, 'share'))
+    // Áreas: coluna própria ou as opções da pergunta de funções.
+    const areasText = get(row, 'areas')
+    let areas = parseAreas(areasText || applies)
+    if (!areasText && areas.length > 0 && roles.length > 0 && !areas.includes('staff')) areas = ['staff', ...areas]
+    if (areas.length === 1 && areas[0] === 'staff') areas = []
     const approvedText = get(row, 'approved')
     const m = matchPerson(wcif, idMatch, email, name)
     return {
@@ -353,6 +400,8 @@ export function readRows(wcif: Wcif, table: string[][], map: ColumnMap): ImportR
       phone: get(row, 'phone'),
       roles,
       preferred: preferred.length > 0 ? preferred : [],
+      ...(share ? { share } : {}),
+      areas,
       scrambler,
       scramblePuzzles: puzzles,
       availability: parseAvailability(headers, map.availability, row, days),
@@ -375,6 +424,8 @@ export function toStaffEntry(r: ImportRow): StaffEntry | null {
     scrambler: r.scrambler,
     scramblePuzzles: r.scramblePuzzles,
     availability: r.availability,
+    ...(r.share ? { share: r.share } : {}),
+    ...(r.areas.length ? { areas: r.areas } : {}),
   }
 }
 

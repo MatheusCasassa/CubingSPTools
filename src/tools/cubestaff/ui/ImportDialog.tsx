@@ -15,6 +15,7 @@ import { DEMO_ID } from '../model/demo'
 import { useCs } from './ctx'
 import { approvedPersons } from '../model/people'
 import { Modal, Tag } from './primitives'
+import type { StaffRole } from '../model/types'
 
 export function ImportDialog({ onClose }: { onClose: () => void }) {
   const { m } = useI18n()
@@ -264,6 +265,16 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                           <div className="text-fg-muted">
                             {t.prefers}: {t.roles[r.preferred[0]]}
                           </div>
+                        )}
+                        {r.share && (
+                          <div className="text-fg-muted">
+                            {(Object.entries(r.share) as [StaffRole, number][])
+                              .map(([x, v]) => `${v}% ${t.roles[x].toLowerCase()}`)
+                              .join(' · ')}
+                          </div>
+                        )}
+                        {r.areas.some((a) => a !== 'staff') && (
+                          <div className="text-fg-muted">{r.areas.map((a) => t.areas[a]).join(', ')}</div>
                         )}
                       </td>
                       <td className="px-2 py-2 text-xs text-fg-muted">
