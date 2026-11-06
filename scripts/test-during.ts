@@ -43,6 +43,15 @@ import {
 import type { LiveCompetition, LiveEvent } from '../src/lib/wca/live'
 import { ilrToResults, mergeSources } from '../src/lib/wca/liveResults'
 import { isFirstCompetition, newcomerCandidates } from '../src/tools/smartranks/model/newcomers'
+import { DEFAULT_TEMPLATE, defaultItems, dueDate, groupsPublished, newItemId, statusOf, summary } from '../src/tools/repcheck/model/checklist'
+import {
+  DEFAULT_SETTINGS as FM_DEFAULT,
+  dueAnnouncements,
+  formatClock,
+  initialState as fmInitial,
+  phrase as fmPhrase,
+  remainingOf as fmRemaining,
+} from '../src/tools/fmtimer/model/timer'
 import type { Wcif, WcifPerson } from '../src/lib/wca/types'
 
 let n = 0
@@ -573,6 +582,24 @@ async function main() {
         (await call('PATCH', '/api/schedule/Teste2026', 'tStaff', { changes: [{ key: 'x', field: 'start', value: '1' }] })).status,
         400,
       )
+      // Checklist (RepCheck): staff marca; lista padrão gravada no 1º clique.
+      assert.equal((await call('GET', '/api/checklist/Teste2026', 'tOther')).status, 403)
+      const c0 = await call('GET', '/api/checklist/Teste2026', 'tStaff')
+      assert.equal(c0.data.items, null, 'começa no modelo padrão')
+      const c1 = await call('PATCH', '/api/checklist/Teste2026', 'tStaff', {
+        ops: [
+          { op: 'set', items: [{ id: 'a', phase: 'before', text: 'Item A', due: -3, required: true }, { id: 'b', phase: 'after', text: 'Item B' }] },
+          { op: 'check', id: 'a', done: true },
+        ],
+      })
+      const its = c1.data.items as { id: string; done?: { by: string } | null }[]
+      assert.equal(its[0].done?.by, 'tStaff')
+      assert.equal((await call('PATCH', '/api/checklist/Teste2026', 'tStaff', { ops: [{ op: 'check', id: 'zz', done: true }] })).status, 409)
+      assert.equal(
+        (await call('PATCH', '/api/checklist/Teste2026', 'tStaff', { ops: [{ op: 'set', items: [{ id: 'X Y', phase: 'before', text: 'x' }] }] })).status,
+        400,
+      )
+      assert.equal(store.get('check:Teste2026')!.exp, expiryFor('2026-11-01', 90, Date.parse('2026-10-31')))
       assert.equal((await call('DELETE', '/api/passcodes/Teste2026', 'tDelegate')).status, 200)
       assert.equal(store.has('pass:Teste2026'), false)
       assert.equal((await call('GET', '/api/nada/Teste2026', 'tDelegate')).status, 404)
@@ -584,6 +611,56 @@ async function main() {
     }
   }
   ok('Servidor: senhas só para Delegados, rascunho para o staff, validação e expiração')
+
+  // RepCheck: modelo padrão, prazos e "grupos publicados".
+  {
+    const texts = Object.fromEntries(DEFAULT_TEMPLATE.map((x) => [x.id, x.id.toUpperCase()]))
+    const items = defaultItems(texts)
+    assert.equal(items.length, DEFAULT_TEMPLATE.length)
+    assert.equal(new Set(items.map((i) => i.id)).size, items.length, 'ids únicos')
+    const days = { first: '2026-11-14', last: '2026-11-15' }
+    const ann = items.find((i) => i.id === 'announce')!
+    assert.equal(dueDate(ann, days), '2026-10-15', '30 dias antes do 1º dia')
+    const rep = items.find((i) => i.id === 'report')!
+    assert.equal(dueDate(rep, days), '2026-11-18', '3 dias depois do último dia')
+    assert.equal(statusOf(ann, days, '2026-10-16'), 'overdue')
+    assert.equal(statusOf(ann, days, '2026-10-15'), 'today')
+    assert.equal(statusOf({ ...ann, done: { by: 'x', at: '' } }, days, '2026-12-01'), 'done')
+    const sm = summary(items, days, '2026-11-20')
+    assert.ok(sm.before.overdue > 0 && sm.after.total > 0)
+    const wG = { schedule: { venues: [{ rooms: [{ activities: [{ activityCode: '333-r1', childActivities: [{ activityCode: '333-r1-g1', childActivities: [] }] }] }] }] } } as unknown as Wcif
+    assert.ok(groupsPublished(wG))
+    assert.ok(!groupsPublished({ schedule: { venues: [{ rooms: [{ activities: [{ activityCode: '333-r1', childActivities: [] }] }] }] } } as unknown as Wcif))
+    assert.equal(newItemId(items), `item-${items.length + 1}`)
+  }
+  ok('RepCheck: modelo padrão, prazos, atrasados e grupos publicados')
+
+  // FMTimer: avisos na hora certa, uma vez cada, sem tocar atrasado.
+  {
+    const s = { ...FM_DEFAULT }
+    let st = fmInitial(s)
+    st = { ...st, status: 'running' as const }
+    const step = (remMs: number) => {
+      const r = dueAnnouncements(st, s, remMs)
+      st = { ...st, fired: r.fired }
+      return r.play
+    }
+    assert.equal(step(59 * 60_000), null)
+    assert.deepEqual(step(30 * 60_000 - 100), { kind: 'left', minutes: 30 })
+    assert.equal(step(30 * 60_000 - 300), null, 'não repete')
+    // Aba dormindo: pulou dos 20 para 4:59 — não fala "15" nem "10" atrasado, fala o 5.
+    assert.deepEqual(step(5 * 60_000 - 1000), { kind: 'left', minutes: 5 })
+    assert.deepEqual(step(10_000 - 50), { kind: 'count', n: 10 })
+    assert.deepEqual(step(9_000 - 50), { kind: 'count', n: 9 })
+    assert.deepEqual(step(0), { kind: 'end' })
+    assert.equal(fmPhrase({ kind: 'left', minutes: 1 }, 'pt'), 'Falta 1 minuto.')
+    assert.equal(fmPhrase({ kind: 'left', minutes: 10 }, 'es'), 'Quedan 10 minutos.')
+    assert.equal(fmPhrase({ kind: 'left', minutes: 5 }, 'en'), '5 minutes remaining.')
+    assert.equal(formatClock(60 * 60_000), '60:00')
+    assert.equal(formatClock(61_001), '01:02')
+    assert.equal(fmRemaining({ ...st, status: 'running', endsAt: 10_000 }, 4_000), 6_000)
+  }
+  ok('FMTimer: avisos uma vez cada, contagem final e frases nos 3 idiomas')
 
   console.log(`\n${n} testes das ferramentas Durante OK`)
 }

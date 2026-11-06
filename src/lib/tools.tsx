@@ -15,6 +15,8 @@ import {
   ScoreCompsMark,
   SmartRanksMark,
   SortCuberMark,
+  RepCheckMark,
+  FMTimerMark,
 } from '../components/ui/icons'
 import type { Messages } from '../i18n/messages/pt'
 
@@ -111,6 +113,24 @@ export const TOOLS: Tool[] = [
     ready: true,
     login: true,
     description: 'sortcuber',
+  },
+  {
+    to: '/repcheck',
+    name: 'RepCheck',
+    mark: (c) => <RepCheckMark className={c} />,
+    category: 'during',
+    ready: true,
+    login: true,
+    description: 'repcheck',
+  },
+  {
+    to: '/fmtimer',
+    name: 'FMTimer',
+    mark: (c) => <FMTimerMark className={c} />,
+    category: 'during',
+    ready: true,
+    login: false,
+    description: 'fmtimer',
   },
 ]
 

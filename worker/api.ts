@@ -8,6 +8,7 @@
 //   /api/schedule/:id   rascunho dos horários reais (SchedManager) — staff da
 //                       competição (Delegados, Organizadores ou quem tem
 //                       tarefa/função de staff no WCIF).
+//   /api/checklist/:id  checklist da competição (RepCheck) — staff.
 //
 // Quem pede manda o token da WCA (o mesmo do login do site). O Worker confere
 // na própria WCA quem é a pessoa e qual o vínculo dela com a competição.
@@ -31,6 +32,8 @@ const DAY = 86400
 export const PASSCODE_KEEP_DAYS = 7
 /** Rascunho de cronograma: 60 dias depois do último dia. */
 export const SCHEDULE_KEEP_DAYS = 60
+/** Checklist: 90 dias depois do último dia (cobre o "Depois da competição"). */
+export const CHECKLIST_KEEP_DAYS = 90
 const MAX_BODY = 256 * 1024
 
 // ---------------------------------------------------------------- respostas
@@ -346,6 +349,106 @@ async function schedule(env: Env, req: Request, compId: string): Promise<Respons
   throw new HttpError(405, 'method')
 }
 
+// ---------------------------------------------------------------- checklist
+
+export type ChecklistPhase = 'before' | 'during' | 'after'
+
+export interface ChecklistItem {
+  id: string
+  phase: ChecklistPhase
+  text: string
+  /** Responsável (texto livre). */
+  owner?: string
+  /**
+   * Prazo em dias: antes/durante, relativo ao 1º dia da competição (−7 = uma
+   * semana antes); depois, relativo ao último dia (+7 = uma semana depois).
+   */
+  due?: number
+  required?: boolean
+  /** Conferência automática que o app sabe fazer (ex.: 'groups'). */
+  auto?: string
+  done?: { by: string; at: string } | null
+}
+
+export interface ChecklistDoc {
+  competitionId: string
+  /** null = ainda no modelo padrão (o app mostra o padrão no idioma de quem abre). */
+  items: ChecklistItem[] | null
+  rev: number
+  updatedAt: string | null
+  updatedBy: string | null
+}
+
+export type ChecklistOp =
+  | { op: 'set'; items: ChecklistItem[] }
+  | { op: 'check'; id: string; done: boolean }
+
+export const emptyChecklist = (id: string): ChecklistDoc => ({
+  competitionId: id,
+  items: null,
+  rev: 0,
+  updatedAt: null,
+  updatedBy: null,
+})
+
+const ITEM_ID = /^[a-z0-9-]{1,32}$/
+const PHASES = new Set(['before', 'during', 'after'])
+
+function cleanItem(v: unknown): ChecklistItem {
+  if (!v || typeof v !== 'object') throw new HttpError(400, 'badChange')
+  const x = v as Record<string, unknown>
+  const text = typeof x.text === 'string' ? x.text.trim().slice(0, 300) : ''
+  if (typeof x.id !== 'string' || !ITEM_ID.test(x.id) || !PHASES.has(x.phase as string) || !text)
+    throw new HttpError(400, 'badChange')
+  const item: ChecklistItem = { id: x.id, phase: x.phase as ChecklistPhase, text }
+  if (typeof x.owner === 'string' && x.owner.trim()) item.owner = x.owner.trim().slice(0, 80)
+  if (typeof x.due === 'number' && Number.isInteger(x.due) && Math.abs(x.due) <= 365) item.due = x.due
+  if (x.required === true) item.required = true
+  if (typeof x.auto === 'string' && ITEM_ID.test(x.auto)) item.auto = x.auto
+  const d = x.done as Record<string, unknown> | null | undefined
+  if (d && typeof d.by === 'string' && typeof d.at === 'string')
+    item.done = { by: d.by.slice(0, 120), at: d.at.slice(0, 40) }
+  return item
+}
+
+/** Aplica as operações: "set" troca a lista (personalização); "check" marca um item. */
+export function applyChecklist(doc: ChecklistDoc, ops: ChecklistOp[], who: string, now: string): ChecklistDoc {
+  const next: ChecklistDoc = structuredClone(doc)
+  for (const o of ops) {
+    if (o.op === 'set') {
+      if (!Array.isArray(o.items) || o.items.length > 300) throw new HttpError(400, 'badChange')
+      const items = o.items.map(cleanItem)
+      if (new Set(items.map((i) => i.id)).size !== items.length) throw new HttpError(400, 'badChange')
+      next.items = items
+    } else if (o.op === 'check') {
+      const item = next.items?.find((i) => i.id === o.id)
+      if (!item) throw new HttpError(409, 'unknownItem')
+      item.done = o.done ? { by: who, at: now } : null
+    } else throw new HttpError(400, 'badChange')
+  }
+  next.rev = doc.rev + 1
+  next.updatedAt = now
+  next.updatedBy = who
+  return next
+}
+
+async function checklist(env: Env, req: Request, compId: string): Promise<Response> {
+  const { me, info } = await authorize(env, req, compId, 'staff')
+  const key = `check:${compId}`
+  const load = async () => {
+    const raw = await env.CSP_KV.get(key)
+    return raw ? (JSON.parse(raw) as ChecklistDoc) : emptyChecklist(compId)
+  }
+  if (req.method === 'GET') return json(await load())
+  if (req.method === 'PATCH') {
+    const body = await readBody<{ ops?: ChecklistOp[] }>(req)
+    const doc = applyChecklist(await load(), Array.isArray(body.ops) ? body.ops.slice(0, 50) : [], me.name, new Date().toISOString())
+    await env.CSP_KV.put(key, JSON.stringify(doc), { expiration: expiryFor(info.end_date, CHECKLIST_KEEP_DAYS) })
+    return json(doc)
+  }
+  throw new HttpError(405, 'method')
+}
+
 // ------------------------------------------------------------------ roteador
 
 const DEV_ORIGINS = /^http:\/\/(localhost|127\.0\.0\.1):5173$/
@@ -365,10 +468,15 @@ export async function handleApi(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url)
   if (req.method === 'OPTIONS') return cors(req, new Response(null, { status: 204 }))
   try {
-    const m = url.pathname.match(/^\/api\/(passcodes|schedule)\/([A-Za-z0-9]{3,64})$/)
+    const m = url.pathname.match(/^\/api\/(passcodes|schedule|checklist)\/([A-Za-z0-9]{3,64})$/)
     if (url.pathname === '/api/health') return cors(req, json({ ok: true }))
     if (!m) throw new HttpError(404, 'route')
-    const res = m[1] === 'passcodes' ? await passcodes(env, req, m[2]) : await schedule(env, req, m[2])
+    const res =
+      m[1] === 'passcodes'
+        ? await passcodes(env, req, m[2])
+        : m[1] === 'schedule'
+          ? await schedule(env, req, m[2])
+          : await checklist(env, req, m[2])
     return cors(req, res)
   } catch (e) {
     if (e instanceof HttpError) return cors(req, json({ error: e.code }, e.status))

@@ -190,6 +190,33 @@ export function SortCuberMark({ className = 'h-7 w-7' }: P) {
   )
 }
 
+/** RepCheck: prancheta com itens marcados. */
+export function RepCheckMark({ className = 'h-7 w-7' }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <rect width="32" height="32" rx="7" fill="#E60000" />
+      <rect x="8" y="7" width="16" height="19" rx="2.5" fill="none" stroke="#fff" strokeWidth="2" />
+      <rect x="12.5" y="5.2" width="7" height="3.6" rx="1.2" fill="#fff" />
+      <path d="M11 13.2l1.6 1.6 2.8-3" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M11 19.2l1.6 1.6 2.8-3" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17.5 13.4h3.5M17.5 19.4h3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** FMTimer: cronômetro com ondas de som. */
+export function FMTimerMark({ className = 'h-7 w-7' }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <rect width="32" height="32" rx="7" fill="#E60000" />
+      <circle cx="14" cy="17.5" r="7.5" fill="none" stroke="#fff" strokeWidth="2" />
+      <path d="M12 7.5h4M14 7.5v2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      <path d="M14 17.5v-4M14 17.5l2.6 1.6" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" />
+      <path d="M23.6 13.6a5.5 5.5 0 0 1 0 7.8M26 11.4a8.6 8.6 0 0 1 0 12.2" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /**
  * Logo do CSPTools: o cubo "CSP" da CubingSP, intacto (C vermelho, S que
  * acompanha o tema, P azul), com um selo de chave de boca no canto — as

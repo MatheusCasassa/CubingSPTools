@@ -2,9 +2,19 @@
 // Manda o token da WCA; o servidor confere na WCA o vínculo com a competição.
 
 import { config } from '../config'
-import type { Advance, PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft } from '../../../worker/api'
+import type {
+  Advance,
+  ChecklistDoc,
+  ChecklistItem,
+  ChecklistOp,
+  ChecklistPhase,
+  PasscodeEntry,
+  PasscodeFile,
+  SchedChange,
+  ScheduleDraft,
+} from '../../../worker/api'
 
-export type { Advance, PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft }
+export type { Advance, ChecklistDoc, ChecklistItem, ChecklistOp, ChecklistPhase, PasscodeEntry, PasscodeFile, SchedChange, ScheduleDraft }
 
 export class CspApiError extends Error {
   constructor(
@@ -65,3 +75,8 @@ export const patchScheduleDraft = (
 
 export const clearScheduleDraft = (token: string, compId: string) =>
   call<ScheduleDraft>(token, 'DELETE', `/schedule/${id(compId)}`)
+
+export const getChecklist = (token: string, compId: string) => call<ChecklistDoc>(token, 'GET', `/checklist/${id(compId)}`)
+
+export const patchChecklist = (token: string, compId: string, ops: ChecklistOp[]) =>
+  call<ChecklistDoc>(token, 'PATCH', `/checklist/${id(compId)}`, { ops })

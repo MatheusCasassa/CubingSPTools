@@ -21,8 +21,10 @@ Produção: **https://csptools.cubingsp.com.br/**
 | **CubeStaff** (`/cubestaff`) | Grupos + staff (Juiz, Embaralhador, Corredor) gravados na WCA | WCA | ✅ disponível |
 | **EasyPassword** (`/easypassword`) | Senhas dos sets do TNoodle: modalidade → set → senha, para os Delegados | WCA (Delegado) | ✅ disponível |
 | **SchedManager** (`/schedmanager`) | Horários reais, sets e classificação (Top N, %, resultado) de cada rodada, rascunho do staff, salvo na WCA | WCA (staff) | ✅ disponível |
-| **SmartRanks** (`/smartranks`) | Rankings Novatos, Feminino, Idade e pontuação geral (APS/RASCS) do WCA Live | WCA (staff) | ✅ disponível |
+| **SmartRanks** (`/smartranks`) | Rankings Novatos, Feminino, Idade (faixas, mais novos/velhos) e pontuação geral (APS/RASCS), do WCA Live e do Integrated Live Results | WCA (staff) | ✅ disponível |
 | **SortCuber** (`/sortcuber`) | Sorteio entre competidores aprovados (presentes, sem Delegados…) | WCA (staff) | ✅ disponível |
+| **RepCheck** (`/repcheck`) | Checklist antes/durante/depois, modelo padrão personalizável, prazos e responsáveis, compartilhado com o staff (avisos por e-mail: futuro) | WCA (staff) | ✅ disponível |
+| **FMTimer** (`/fmtimer`) | Timer do FMC com avisos falados (TTS) em PT/EN/ES, contagem final, tela cheia e tela sempre ligada | — | ✅ disponível |
 
 Quase tudo roda no navegador: o login é OAuth da WCA (implicit grant, sem
 secret), os PDFs são gerados num Web Worker e o CubeStaff grava direto no
@@ -33,6 +35,8 @@ o que não pode ir para a WCA porque as extensões do WCIF são públicas:
   da competição. Apagadas 7 dias depois do último dia.
 - `/api/schedule/:id` — rascunho do SchedManager. Delegados, Organizadores e
   quem tem função/tarefa de staff no WCIF. Apagado 60 dias depois.
+- `/api/checklist/:id` — checklist do RepCheck. Mesmo acesso do SchedManager.
+  Apagado 90 dias depois.
 
 O navegador manda o token da WCA; o Worker confere na própria WCA
 (`/me`, `/competitions/:id`, WCIF público) quem é a pessoa e o vínculo dela

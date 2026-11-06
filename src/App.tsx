@@ -24,6 +24,9 @@ const SmartRanksHome = lazy(() => import('./tools/smartranks/ui/SmartRanks').the
 const SmartRanksPage = lazy(() => import('./tools/smartranks/ui/SmartRanks'))
 const SortCuberHome = lazy(() => import('./tools/sortcuber/ui/SortCuber').then((x) => ({ default: x.SortCuberHome })))
 const SortCuberPage = lazy(() => import('./tools/sortcuber/ui/SortCuber'))
+const RepCheckHome = lazy(() => import('./tools/repcheck/ui/RepCheck').then((x) => ({ default: x.RepCheckHome })))
+const RepCheckPage = lazy(() => import('./tools/repcheck/ui/RepCheck'))
+const FMTimerPage = lazy(() => import('./tools/fmtimer/ui/FMTimer'))
 
 const PAGES: { path: string; element: ReactElement }[] = [
   { path: '', element: <Home /> },
@@ -41,6 +44,9 @@ const PAGES: { path: string; element: ReactElement }[] = [
   { path: 'smartranks/:competitionId', element: <SmartRanksPage /> },
   { path: 'sortcuber', element: <SortCuberHome /> },
   { path: 'sortcuber/:competitionId', element: <SortCuberPage /> },
+  { path: 'repcheck', element: <RepCheckHome /> },
+  { path: 'repcheck/:competitionId', element: <RepCheckPage /> },
+  { path: 'fmtimer', element: <FMTimerPage /> },
 ]
 
 // Português sem prefixo; inglês em /en/… e espanhol em /es/… (como o site da CubingSP).
