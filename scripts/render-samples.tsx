@@ -3,6 +3,7 @@
 //   npm run samples            → samples/*.pdf
 //   npm run samples -- --logo caminho/logo.png [--watermark] [--no-header-logo] [--transparency 90]
 //   npm run samples -- --check psych 3 --station   (conferência do embaralhamento e nº da mesa)
+//   npm run samples -- --covers   (capa por grupo)
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { renderToBuffer } from '@react-pdf/renderer'
@@ -59,6 +60,7 @@ const batches = plans.map((p) => ({
           }
         : { mode: 'off', top: 10 },
       station: process.argv.includes('--station'),
+      covers: process.argv.includes('--covers'),
     },
   ),
 }))

@@ -732,6 +732,8 @@ export const en: Messages = {
     },
     showStation: 'Print the station number',
     showStationHint: 'Comes from the groups on the WCA website (in CubeStaff: Number stations).',
+    covers: 'Group cover sheet',
+    coversHint: 'Before each group\'s scorecards: event, round, group, scheduled × actual time and the Delegate and data entry checklist.',
     pdfLanguage: 'Scorecard language',
     logo: 'Competition logo',
     logoAlt: 'Competition logo',

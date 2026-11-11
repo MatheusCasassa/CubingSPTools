@@ -153,4 +153,26 @@ export interface ScorecardModel {
   scrambleCheck?: boolean
   /** Número da estação/mesa do competidor no grupo (WCIF), se for para imprimir. */
   station?: number | null
+  /** Capa do grupo (no lugar de uma súmula), quando ligada nas opções. */
+  cover?: CoverInfo
+}
+
+/** Capa de um grupo: identifica o maço de súmulas e o controle do Delegado e dos dados. */
+export interface CoverInfo {
+  locale: Locale
+  /** Nome da modalidade ("3x3x3 Cube"). */
+  eventName: string
+  /** "Rodada 1" / "Final". */
+  roundText: string
+  roundNumber: number
+  totalRounds: number
+  /** null quando a rodada não tem grupos. */
+  groupNumber: number | null
+  groupCount: number
+  /** Salas/palcos do grupo (vazio quando há uma sala só). */
+  rooms: string
+  /** "09:05–09:40" (horário previsto) ou null. */
+  scheduled: string | null
+  /** Quantas súmulas o grupo tem. */
+  sheets: number
 }

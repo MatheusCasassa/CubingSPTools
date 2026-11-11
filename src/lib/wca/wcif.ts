@@ -68,6 +68,36 @@ function allActivities(wcif: Wcif): WcifActivity[] {
 }
 
 /**
+ * Horário e salas de um grupo no cronograma (todas as salas em que ele acontece).
+ * Horas no fuso do local da competição, "HH:MM".
+ */
+export function groupSchedule(
+  wcif: Wcif,
+  roundId: string,
+  groupNumber: number,
+): { start: string | null; end: string | null; rooms: string[] } {
+  const re = new RegExp(`^${escapeRegex(roundId)}-g${groupNumber}(?:-a\\d+)?$`)
+  let start: string | null = null
+  let end: string | null = null
+  let tz = 'UTC'
+  const rooms: string[] = []
+  for (const venue of wcif.schedule?.venues ?? [])
+    for (const room of venue.rooms ?? [])
+      walkActivities(room.activities ?? [], (a) => {
+        if (!re.test(a.activityCode)) return
+        if (a.startTime && (!start || a.startTime < start)) start = a.startTime
+        if (a.endTime && (!end || a.endTime > end)) end = a.endTime
+        tz = venue.timezone || tz
+        if (!rooms.includes(room.name)) rooms.push(room.name)
+      })
+  const hm = (iso: string | null) =>
+    iso
+      ? new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(new Date(iso))
+      : null
+  return { start: hm(start), end: hm(end), rooms }
+}
+
+/**
  * Grupos de uma rodada, lidos do cronograma (child activities "...-gN").
  * Se a rodada não tiver grupos definidos, retorna vazio (o chamador cai
  * no fallback de "grupo único" por inscrição).

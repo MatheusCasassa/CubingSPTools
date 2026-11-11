@@ -748,6 +748,8 @@ export const pt = {
     },
     showStation: 'Imprimir o número da mesa',
     showStationHint: 'Vem dos grupos na WCA (no CubeStaff: Numerar estações).',
+    covers: 'Capa por grupo',
+    coversHint: 'Antes das súmulas de cada grupo: modalidade, rodada, grupo, horário previsto × real e o controle do Delegado e da equipe de dados.',
     pdfLanguage: 'Idioma da súmula',
     logo: 'Logo da competição',
     logoAlt: 'Logo da competição',

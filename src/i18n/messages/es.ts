@@ -734,6 +734,8 @@ export const es: Messages = {
     },
     showStation: 'Imprimir el número de estación',
     showStationHint: 'Viene de los grupos en la WCA (en CubeStaff: Numerar estaciones).',
+    covers: 'Carátula por grupo',
+    coversHint: 'Antes de las hojas de cada grupo: modalidad, ronda, grupo, horario previsto × real y el control del Delegado y del ingreso de datos.',
     pdfLanguage: 'Idioma de la hoja',
     logo: 'Logo de la competición',
     logoAlt: 'Logo de la competición',

@@ -32,7 +32,7 @@ function slug(s: string): string {
 
 /** Súmula em branco da mesma rodada (modalidade, limite e corte impressos; sem nome). */
 export function blankLike(m: ScorecardModel): ScorecardModel {
-  return { ...m, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank', station: null }
+  return { ...m, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank', station: null, cover: undefined }
 }
 
 /**
@@ -91,6 +91,7 @@ export function textsOf(files: OutputFile[]): string[] {
         out.add(m.competitionName)
         out.add(m.eventName)
         out.add(m.competitorName)
+        if (m.cover) out.add(m.cover.rooms)
       }
   return [...out]
 }

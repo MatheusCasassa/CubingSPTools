@@ -23,6 +23,24 @@ export interface ScorecardStrings {
   blankEventLine: string
   blankTimeLimit: string
   blankCutoff: string
+  /** Capa do grupo. */
+  cover: {
+    of: string
+    group: string
+    scheduled: string
+    actual: string
+    set: string
+    delegate: string
+    grouped: (n: number) => string
+    signatures: string
+    incidents: string
+    delegateInitials: string
+    data: string
+    entered: string
+    enteredInitials: string
+    incidentsLogged: string
+    verified: string
+  }
 }
 
 export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
@@ -44,6 +62,23 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
     blankEventLine: 'Modalidade: ______________  Rodada: ____',
     blankTimeLimit: 'Limite de tempo: ____________',
     blankCutoff: 'Tempo de corte se > ____________',
+    cover: {
+      of: 'de',
+      group: 'Grupo',
+      scheduled: 'Previsto',
+      actual: 'Real',
+      set: 'Set',
+      delegate: 'PARA O DELEGADO',
+      grouped: (n) => `Todas as ${n} súmulas agrupadas`,
+      signatures: 'Assinaturas faltantes conferidas',
+      incidents: 'Nº de súmulas com incidentes:',
+      delegateInitials: 'Rubrica do Delegado',
+      data: 'PARA A EQUIPE DE DADOS',
+      entered: 'Resultados lançados pelo digitador',
+      enteredInitials: 'Rubrica do digitador',
+      incidentsLogged: 'Incidentes registrados pelo Delegado',
+      verified: 'Resultados conferidos pelo Delegado',
+    },
   },
   en: {
     id: 'ID',
@@ -63,6 +98,23 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
     blankEventLine: 'Event: ______________  Round: ____',
     blankTimeLimit: 'Time limit: ____________',
     blankCutoff: 'Cutoff if > ____________',
+    cover: {
+      of: 'of',
+      group: 'Group',
+      scheduled: 'Scheduled',
+      actual: 'Actual',
+      set: 'Set',
+      delegate: 'FOR THE DELEGATE',
+      grouped: (n) => `All ${n} scorecards grouped`,
+      signatures: 'Missing signatures checked',
+      incidents: 'Scorecards with incidents:',
+      delegateInitials: 'Delegate initials',
+      data: 'FOR DATA ENTRY',
+      entered: 'Results entered by the scoretaker',
+      enteredInitials: 'Scoretaker initials',
+      incidentsLogged: 'Incidents recorded by the Delegate',
+      verified: 'Results checked by the Delegate',
+    },
   },
   es: {
     id: 'ID',
@@ -82,5 +134,22 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
     blankEventLine: 'Modalidad: ______________  Ronda: ____',
     blankTimeLimit: 'Tiempo límite: ____________',
     blankCutoff: 'Tiempo de corte si > ____________',
+    cover: {
+      of: 'de',
+      group: 'Grupo',
+      scheduled: 'Previsto',
+      actual: 'Real',
+      set: 'Set',
+      delegate: 'PARA EL DELEGADO',
+      grouped: (n) => `Agrupadas todas las ${n} hojas`,
+      signatures: 'Verificadas las firmas faltantes',
+      incidents: 'Número de hojas con incidentes:',
+      delegateInitials: 'Iniciales del Delegado',
+      data: 'PARA INGRESO DE DATOS',
+      entered: 'Resultados ingresados por el digitador',
+      enteredInitials: 'Iniciales del digitador',
+      incidentsLogged: 'Incidentes registrados por el Delegado',
+      verified: 'Resultados verificados por el Delegado',
+    },
   },
 }

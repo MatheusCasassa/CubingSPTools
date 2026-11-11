@@ -9,6 +9,7 @@ import type { Wcif } from '../../../lib/wca/types'
 import {
   listRounds,
   listGroups,
+  groupSchedule,
   competitorsInGroup,
   acceptedCompetitors,
   type RoundInfo,
@@ -145,6 +146,11 @@ export function roundName(info: RoundInfo, locale: Locale): string {
   return info.roundNumber === info.totalRounds && info.totalRounds > 1 ? S.final : S.round(info.roundNumber)
 }
 
+/** A competição tem mais de uma sala/palco? (para mostrar a sala na capa) */
+function hasManyRooms(wcif: Wcif): boolean {
+  return (wcif.schedule?.venues ?? []).reduce((n, v) => n + (v.rooms?.length ?? 0), 0) > 1
+}
+
 function eventLine(info: RoundInfo, locale: Locale): string {
   return info.totalRounds > 1 ? `${info.eventName} · ${roundName(info, locale)}` : info.eventName
 }
@@ -178,6 +184,8 @@ export interface CardOptions {
   check: CheckOption
   /** Imprimir o número da estação/mesa (quando o WCIF tiver). */
   station: boolean
+  /** Capa antes das súmulas de cada grupo. */
+  covers?: boolean
 }
 const DEFAULT_CARD_OPTIONS: CardOptions = { check: NO_CHECK, station: false }
 
@@ -227,8 +235,33 @@ export function buildRoundScorecards(
   }
   const wanted = new Set(sel.groupKeys)
   const out: ScorecardModel[] = []
+  const numbered = plan.groups.filter((g) => g.printed !== '')
   for (const g of plan.groups) {
     if (!wanted.has(g.key)) continue
+    if (options.covers && g.competitors.length > 0) {
+      const n = g.printed ? Number(g.printed) : null
+      const sch = n != null ? groupSchedule(wcif, plan.info.roundId, n) : { start: null, end: null, rooms: [] }
+      out.push({
+        ...base,
+        competitorId: '',
+        wcaId: null,
+        group: g.printed,
+        competitorName: '',
+        groupKey: g.key,
+        cover: {
+          locale,
+          eventName: plan.info.eventName,
+          roundText: roundName(plan.info, locale),
+          roundNumber: plan.info.roundNumber,
+          totalRounds: plan.info.totalRounds,
+          groupNumber: n,
+          groupCount: numbered.length,
+          rooms: sch.rooms.length > 1 || hasManyRooms(wcif) ? sch.rooms.join(' · ') : '',
+          scheduled: sch.start && sch.end ? `${sch.start}–${sch.end}` : null,
+          sheets: g.competitors.length,
+        },
+      })
+    }
     for (const c of sortCompetitors(g.competitors, sortBy, locale)) {
       out.push({
         ...base,

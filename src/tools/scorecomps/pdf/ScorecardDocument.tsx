@@ -12,6 +12,7 @@ import type { ScorecardModel, ScorecardRow } from '../model/logic'
 import { layoutFor, MM_TO_PT, type PaperId, type Rect } from './paper'
 import type { PreparedFonts } from './fonts'
 import { watermarkOpacity } from '../model/watermark'
+import { SCORECARD_STRINGS } from '../model/strings'
 
 // ------------------------------------------------------------------ medidas
 /** Largura de projeto do cartão (px). */
@@ -398,6 +399,103 @@ function ContentWatermark({ logo, rect, opacity }: { logo: Logo; rect: Rect; opa
   )
 }
 
+/**
+ * Capa de um grupo (no lugar de uma súmula): identifica o maço e traz o
+ * controle do Delegado e da equipe de dados, com horário previsto × real.
+ */
+export function CoverCard({ model, rect, fonts }: { model: ScorecardModel; rect: Rect; fonts: PreparedFonts }): ReactElement {
+  const c = model.cover!
+  const S = SCORECARD_STRINGS[c.locale].cover
+  const k = Math.min(rect.w / DESIGN_W, rect.h / MIN_DESIGN_H)
+  const s = (v: number) => v * k
+  const txt = (size: number, weight = REG, color = INK) => ({
+    fontFamily: fonts.stack,
+    fontSize: s(size),
+    fontWeight: weight,
+    color,
+    lineHeight: 1.2,
+  })
+  const GREY = '#8a8f9c'
+  const line = <View style={{ flex: 1, height: s(0.8), backgroundColor: INK }} />
+  const section = (label: string) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: s(24), marginBottom: s(8) }}>
+      {line}
+      <Text style={{ ...txt(14, BOLD), marginHorizontal: s(10) }}>{label}</Text>
+      {line}
+    </View>
+  )
+  const box = (
+    <View style={{ width: s(14), height: s(14), borderWidth: s(1), borderColor: INK, marginLeft: s(6) }} />
+  )
+  const blank = (w: number) => <View style={{ width: s(w), borderBottomWidth: s(0.8), borderColor: INK, marginLeft: s(4), height: s(13) }} />
+  const item = (n: number, text: string, tail?: ReactElement) => (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: s(10), paddingLeft: s(20) }}>
+      <Text style={txt(13.5)}>
+        {n}. {text}
+      </Text>
+      {tail}
+    </View>
+  )
+  const initials = (label: string) => (
+    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', marginTop: s(9) }}>
+      <Text style={txt(14, BOLD)}>{label}</Text>
+      {blank(64)}
+    </View>
+  )
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: rect.x,
+        top: rect.y,
+        width: rect.w,
+        height: rect.h,
+        paddingHorizontal: s(14),
+        paddingTop: s(24),
+      }}
+    >
+      <Text style={{ ...txt(16), textAlign: 'center' }}>{model.competitionName}</Text>
+      <Text style={{ ...txt(23, BOLD), textAlign: 'center', marginTop: s(4) }}>
+        {c.eventName} {c.roundText}
+        {c.totalRounds > 1 && c.roundNumber < c.totalRounds ? (
+          <Text style={{ color: GREY }}>{` ${S.of} ${c.totalRounds}`}</Text>
+        ) : null}
+      </Text>
+      {c.groupNumber != null ? (
+        <Text style={{ ...txt(30, BOLD), textAlign: 'center', marginTop: s(2) }}>
+          {S.group} {c.groupNumber}
+          <Text style={{ color: GREY }}>{` ${S.of} ${c.groupCount}`}</Text>
+        </Text>
+      ) : null}
+      {c.rooms ? <Text style={{ ...txt(13, BOLD, MUTED), textAlign: 'center', marginTop: s(2) }}>{c.rooms}</Text> : null}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', marginTop: s(12) }}>
+        <Text style={txt(12.5)}>
+          {S.scheduled} {c.scheduled ?? '—'} · {S.actual}
+        </Text>
+        {blank(34)}
+        <Text style={{ ...txt(12.5), marginLeft: s(2) }}>–</Text>
+        {blank(34)}
+        <Text style={{ ...txt(12.5), marginLeft: s(4) }}>· {S.set}</Text>
+        {blank(22)}
+      </View>
+
+      {section(S.delegate)}
+      {item(1, S.grouped(c.sheets), box)}
+      {item(2, S.signatures, box)}
+      {item(3, S.incidents, blank(34))}
+      <View style={{ marginTop: s(6) }}>{initials(S.delegateInitials)}</View>
+
+      {section(S.data)}
+      {item(4, S.entered)}
+      {initials(S.enteredInitials)}
+      {item(5, S.incidentsLogged)}
+      {initials(S.delegateInitials)}
+      {item(6, S.verified)}
+      {initials(S.delegateInitials)}
+    </View>
+  )
+}
+
 export function CardBorder({ rect }: { rect: Rect }): ReactElement {
   const lw = 0.4 * MM_TO_PT
   return (
@@ -456,7 +554,11 @@ export function ScorecardDocument({
           {page.map((m, si) =>
             m ? (
               <View key={si}>
-                <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} watermarkTransparency={options.watermarkTransparency} watermarkCenter={options.watermarkCenter} />
+                {m.cover ? (
+                  <CoverCard model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} />
+                ) : (
+                  <Card model={m} rect={toPt(layout.cards[si])} fonts={options.fonts} logo={options.logo} watermark={options.watermark} watermarkTransparency={options.watermarkTransparency} watermarkCenter={options.watermarkCenter} />
+                )}
                 <CardBorder rect={toPt(layout.cards[si])} />
               </View>
             ) : null,

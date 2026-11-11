@@ -57,6 +57,8 @@ interface Prefs {
   scrambleCheck: CheckOption
   /** Imprimir o número da estação/mesa (do WCIF). */
   showStation: boolean
+  /** Capa antes das súmulas de cada grupo. */
+  covers: boolean
 }
 const DEFAULT_PREFS: Prefs = {
   paperId: 'a4',
@@ -72,6 +74,7 @@ const DEFAULT_PREFS: Prefs = {
   watermarkCenter: 'card',
   scrambleCheck: NO_CHECK,
   showStation: false,
+  covers: false,
 }
 const PREFS_KEY = 'scorecomps.prefs'
 
@@ -369,10 +372,10 @@ export default function CompetitionPage() {
           { roundId: p.info.roundId, groupKeys: sel[p.info.roundId].groups, blank: sel[p.info.roundId].blank },
           prefs.sortBy,
           pdfLocale,
-          { check: prefs.scrambleCheck, station: prefs.showStation },
+          { check: prefs.scrambleCheck, station: prefs.showStation, covers: prefs.covers },
         ),
       }))
-  }, [wcif, plans, sel, prefs.sortBy, pdfLocale, prefs.scrambleCheck, prefs.showStation])
+  }, [wcif, plans, sel, prefs.sortBy, pdfLocale, prefs.scrambleCheck, prefs.showStation, prefs.covers])
 
   // Súmulas em branco: uma folha cheia de cada tipo usado na competição
   // (nas folhas de 1 súmula, 4 de cada).
@@ -692,6 +695,19 @@ export default function CompetitionPage() {
                   className="h-4 w-4 accent-brand-600"
                   checked={prefs.showStation}
                   onChange={(e) => setPrefs({ ...prefs, showStation: e.target.checked })}
+                />
+              </label>
+
+              <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                <span>
+                  {m.scorecomps.covers}
+                  <span className="block text-xs text-fg-faint">{m.scorecomps.coversHint}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-brand-600"
+                  checked={prefs.covers}
+                  onChange={(e) => setPrefs({ ...prefs, covers: e.target.checked })}
                 />
               </label>
 

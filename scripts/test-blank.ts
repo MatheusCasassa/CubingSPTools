@@ -10,6 +10,7 @@ import {
   ADVANCERS_KEY,
 } from '../src/tools/scorecomps/model/build'
 import { arrange } from '../src/tools/scorecomps/model/output'
+import { groupSchedule } from '../src/lib/wca/wcif'
 import { advancingFromPrevious } from '../src/tools/cubestaff/model/people'
 import { attemptsFor, buildRoundLayout } from '../src/tools/scorecomps/model/logic'
 
@@ -151,4 +152,41 @@ console.log('✓ súmulas em branco seguem o formato da rodada (Ao5/Bo5, Mo3/Bo3
   const noStation = buildRoundScorecards(w, plan2, { roundId: plan2.info.roundId, groupKeys: plan2.groups.map((g) => g.key), blank: 0 }, 'name', 'pt')
   assert.ok(noStation.every((c) => !c.station && !c.scrambleCheck), 'padrão: sem mesa e sem conferência')
   console.log('✓ conferência do embaralhamento (todas / top Psych Sheet / top nacional) e número da mesa')
+}
+
+// Capa por grupo: antes das súmulas de cada grupo, com horário previsto e salas.
+{
+  const w = demoWcif()
+  const room = w.schedule.venues[0].rooms[0]
+  w.schedule.venues[0].timezone = 'America/Bogota'
+  for (const a of room.activities)
+    for (const g of a.childActivities ?? [])
+      if (g.activityCode === '333-r1-g2') {
+        g.startTime = '2026-11-14T14:05:00Z'
+        g.endTime = '2026-11-14T14:40:00Z'
+      }
+  assert.deepEqual(groupSchedule(w, '333-r1', 2), { start: '09:05', end: '09:40', rooms: [room.name] })
+  const plan = planRounds(w).find((p) => p.info.roundId === '333-r1')!
+  const cards = buildRoundScorecards(
+    w,
+    plan,
+    { roundId: plan.info.roundId, groupKeys: plan.groups.map((g) => g.key), blank: 1 },
+    'name',
+    'es',
+    { check: { mode: 'off', top: 10 }, station: false, covers: true },
+  )
+  const covers = cards.filter((c) => c.cover)
+  assert.equal(covers.length, plan.groups.length, 'uma capa por grupo')
+  for (const g of plan.groups) {
+    const i = cards.findIndex((c) => c.cover && c.groupKey === g.key)
+    assert.ok(cards[i + 1].groupKey === g.key && !cards[i + 1].cover, 'capa logo antes das súmulas do grupo')
+    assert.equal(cards[i].cover!.sheets, g.competitors.length)
+    assert.equal(cards[i].cover!.groupCount, plan.groups.length)
+  }
+  assert.equal(covers[1].cover!.scheduled, '09:05–09:40')
+  assert.equal(covers[0].cover!.scheduled, null, 'sem horário no WCIF')
+  assert.ok(!cards.some((c) => c.groupKey === 'blank' && c.cover), 'em branco não tem capa')
+  const padded = arrange(cards.slice(0, 2), 4, 'natural')
+  assert.ok(padded.slice(2).every((c) => c && !c.cover), 'o preenchimento da folha não copia a capa')
+  console.log('✓ capa por grupo (horário previsto no fuso do local, folhas e ordem)')
 }
