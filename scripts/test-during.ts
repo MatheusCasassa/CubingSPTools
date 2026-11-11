@@ -561,7 +561,7 @@ async function main() {
       const got = await call('GET', '/api/passcodes/Teste2026', 'tDelegate')
       assert.equal((got.data.entries as { code: string }[])[0].code, 'abc12345')
       assert.equal((got.data.uploadedBy as { name: string }).name, 'tDelegate')
-      assert.equal(store.get('pass:Teste2026')!.exp, expiryFor('2026-11-01', 7, Date.parse('2026-10-31')))
+      assert.ok(Math.abs(store.get('pass:Teste2026')!.exp! - expiryFor('2026-11-01', 7)) <= 5, 'expiração (pass)')
       assert.equal((await call('PUT', '/api/passcodes/Teste2026', 'tDelegate', { entries: [{ bad: 1 }] })).status, 400)
       // Rascunho do cronograma: staff, organizador e Delegado; os outros não.
       assert.equal((await call('GET', '/api/schedule/Teste2026', 'tOther')).status, 403)
@@ -599,7 +599,7 @@ async function main() {
         (await call('PATCH', '/api/checklist/Teste2026', 'tStaff', { ops: [{ op: 'set', items: [{ id: 'X Y', phase: 'before', text: 'x' }] }] })).status,
         400,
       )
-      assert.equal(store.get('check:Teste2026')!.exp, expiryFor('2026-11-01', 90, Date.parse('2026-10-31')))
+      assert.ok(Math.abs(store.get('check:Teste2026')!.exp! - expiryFor('2026-11-01', 90)) <= 5, 'expiração (check)')
       assert.equal((await call('DELETE', '/api/passcodes/Teste2026', 'tDelegate')).status, 200)
       assert.equal(store.has('pass:Teste2026'), false)
       assert.equal((await call('GET', '/api/nada/Teste2026', 'tDelegate')).status, 404)

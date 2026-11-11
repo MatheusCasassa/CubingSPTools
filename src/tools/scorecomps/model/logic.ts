@@ -35,6 +35,8 @@ export interface RoundLayout {
   /** Rótulos do cabeçalho ("ID", "GRUPO"). */
   idLabel: string
   groupLabel: string
+  checkLabel?: string
+  stationLabel?: string
 }
 
 const SOLVES_BY_FORMAT: Record<WcifFormatId, number> = { '1': 1, '2': 2, '3': 3, m: 3, a: 5 }
@@ -97,6 +99,8 @@ export function buildRoundLayout(round: WcifRound, eventId: string, locale: Loca
     extrasText: S.extras,
     idLabel: S.id,
     groupLabel: S.group,
+    checkLabel: S.check,
+    stationLabel: S.station,
   }
 }
 
@@ -127,6 +131,8 @@ export function buildGenericLayout(attempts: GenericAttempts, locale: Locale = '
     extrasText: S.extras,
     idLabel: S.id,
     groupLabel: S.group,
+    checkLabel: S.check,
+    stationLabel: S.station,
   }
 }
 
@@ -143,4 +149,8 @@ export interface ScorecardModel {
   /** Chaves de agrupamento (para dividir arquivos por rodada/grupo). */
   roundId: string
   groupKey: string
+  /** Coluna de conferência do embaralhamento (2º embaralhador) nesta súmula. */
+  scrambleCheck?: boolean
+  /** Número da estação/mesa do competidor no grupo (WCIF), se for para imprimir. */
+  station?: number | null
 }

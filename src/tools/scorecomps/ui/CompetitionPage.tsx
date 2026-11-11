@@ -9,6 +9,8 @@ import { IconArrowLeft, IconDownload, IconEye, IconSpinner } from '../../../comp
 import { demoWcif } from '../model/demo'
 import {
   planRounds,
+  NO_CHECK,
+  type CheckOption,
   buildRoundScorecards,
   buildGenericScorecards,
   blankTypesFor,
@@ -51,6 +53,10 @@ interface Prefs {
   watermarkTransparency: number
   /** Centro da marca d'água: cartão inteiro ou só os desenhos. */
   watermarkCenter: 'card' | 'content'
+  /** Coluna de conferência do embaralhamento (2º embaralhador). */
+  scrambleCheck: CheckOption
+  /** Imprimir o número da estação/mesa (do WCIF). */
+  showStation: boolean
 }
 const DEFAULT_PREFS: Prefs = {
   paperId: 'a4',
@@ -64,6 +70,8 @@ const DEFAULT_PREFS: Prefs = {
   logoWatermark: false,
   watermarkTransparency: WATERMARK_TRANSPARENCY.default,
   watermarkCenter: 'card',
+  scrambleCheck: NO_CHECK,
+  showStation: false,
 }
 const PREFS_KEY = 'scorecomps.prefs'
 
@@ -361,9 +369,10 @@ export default function CompetitionPage() {
           { roundId: p.info.roundId, groupKeys: sel[p.info.roundId].groups, blank: sel[p.info.roundId].blank },
           prefs.sortBy,
           pdfLocale,
+          { check: prefs.scrambleCheck, station: prefs.showStation },
         ),
       }))
-  }, [wcif, plans, sel, prefs.sortBy, pdfLocale])
+  }, [wcif, plans, sel, prefs.sortBy, pdfLocale, prefs.scrambleCheck, prefs.showStation])
 
   // Súmulas em branco: uma folha cheia de cada tipo usado na competição
   // (nas folhas de 1 súmula, 4 de cada).
@@ -429,7 +438,7 @@ export default function CompetitionPage() {
       const blankFiles = planOutput(
         blankTypes.map((a) => ({
           roundId: genericRoundId(a),
-          models: buildGenericScorecards(wcif.name, a, blankPerType, pdfLocale),
+          models: buildGenericScorecards(wcif.name, a, blankPerType, pdfLocale, prefs.scrambleCheck.mode !== 'off'),
         })),
         { competitionId: wcif.id, paperId: prefs.paperId, order: 'natural', split: 'single' },
       ).map((f) => ({ ...f, name: `sumulas-em-branco-${wcif.id.replace(/[^\w-]/g, '')}-${prefs.paperId}.pdf` }))
@@ -637,6 +646,54 @@ export default function CompetitionPage() {
                   ]}
                 />
               </div>
+
+              <div>
+                <span className="label">{m.scorecomps.scrambleCheck}</span>
+                <Seg
+                  value={prefs.scrambleCheck.mode}
+                  onChange={(mode) => setPrefs({ ...prefs, scrambleCheck: { ...prefs.scrambleCheck, mode } })}
+                  options={[
+                    { value: 'off', label: m.scorecomps.scrambleCheckModes.off },
+                    { value: 'all', label: m.scorecomps.scrambleCheckModes.all },
+                    { value: 'psych', label: m.scorecomps.scrambleCheckModes.psych },
+                    { value: 'national', label: m.scorecomps.scrambleCheckModes.national },
+                  ]}
+                />
+                {(prefs.scrambleCheck.mode === 'psych' || prefs.scrambleCheck.mode === 'national') && (
+                  <label className="mt-2 flex items-center gap-2 text-sm">
+                    {m.scorecomps.scrambleCheckTop}
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={prefs.scrambleCheck.top}
+                      onChange={(e) =>
+                        setPrefs({
+                          ...prefs,
+                          scrambleCheck: { ...prefs.scrambleCheck, top: Math.max(1, Math.min(999, Math.round(Number(e.target.value) || 1))) },
+                        })
+                      }
+                      className="w-20 rounded-lg border border-border-subtle bg-surface px-2 py-1 text-sm"
+                    />
+                  </label>
+                )}
+                {prefs.scrambleCheck.mode !== 'off' && (
+                  <p className="mt-1.5 text-xs text-fg-faint">{m.scorecomps.scrambleCheckHint[prefs.scrambleCheck.mode]}</p>
+                )}
+              </div>
+
+              <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                <span>
+                  {m.scorecomps.showStation}
+                  <span className="block text-xs text-fg-faint">{m.scorecomps.showStationHint}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-brand-600"
+                  checked={prefs.showStation}
+                  onChange={(e) => setPrefs({ ...prefs, showStation: e.target.checked })}
+                />
+              </label>
 
               <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
                 <span>{m.scorecomps.cutLines}</span>

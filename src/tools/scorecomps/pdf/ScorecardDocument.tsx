@@ -140,8 +140,10 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
     </Text>
   )
 
+  const check = !!model.scrambleCheck
   const solveRow = (row: ScorecardRow, key: string) => {
-    const cells = row.isExtra ? ['s', 't', 'd', 'j', 'c'] : ['s', 't', 'j', 'c']
+    // Com conferência: S | conferência | resultado | J | C (como nos campeonatos grandes).
+    const cells = [...(check ? ['s', 'k'] : ['s']), 't', ...(row.isExtra ? ['d'] : []), 'j', 'c']
     return (
       <View key={key} style={{ flexDirection: 'row', height: s(ROW_H), marginBottom: s(ROW_GAP) }}>
         <View style={{ width: s(NUM_W), alignItems: 'center', justifyContent: 'center' }}>
@@ -195,9 +197,9 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
 
   // Rótulos S / J / C centrados EXATAMENTE sobre as colunas das caixas
   // (as caixas têm borda externa de 1.8 px; os rótulos descontam essa borda).
-  const colLabel = (label: string, w: number) => (
-    <View style={{ width: s(w), alignItems: 'center' }}>
-      <T size={12.5} weight={BOLD}>{label}</T>
+  const colLabel = (label: string, w: number, size = 12.5) => (
+    <View style={{ width: s(w), alignItems: 'center', justifyContent: 'center' }}>
+      <T size={size} weight={BOLD}>{label}</T>
     </View>
   )
 
@@ -302,9 +304,11 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
         <T size={nameSize} weight={BOLD} lh={1.08} style={{ textAlign: 'center' }}>
           {blank ? ' ' : model.competitorName}
         </T>
-        {model.wcaId ? (
+        {model.wcaId || model.station ? (
           <T size={9.5} weight={BOLD} color={MUTED} style={{ marginTop: s(1) }}>
-            {model.wcaId}
+            {[model.wcaId, model.station ? `${L.stationLabel ?? 'Station'} ${model.station}` : null]
+              .filter(Boolean)
+              .join('  ·  ')}
           </T>
         ) : null}
       </View>
@@ -332,6 +336,7 @@ export function Card({ model, rect, fonts, logo, watermark, watermarkTransparenc
         </View>
         <View style={{ flex: 1, flexDirection: 'row', paddingHorizontal: s(THICK) }}>
           {colLabel('S', SIG_W)}
+          {check ? colLabel(L.checkLabel ?? 'CHECK', SIG_W, 10) : null}
           <View style={{ flex: 1 }} />
           {colLabel('J', SIG_W)}
           {colLabel('C', SIG_W)}

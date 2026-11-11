@@ -2,6 +2,7 @@
 // (planejamento, ordem, fontes e documento react-pdf).
 //   npm run samples            → samples/*.pdf
 //   npm run samples -- --logo caminho/logo.png [--watermark] [--no-header-logo] [--transparency 90]
+//   npm run samples -- --check psych 3 --station   (conferência do embaralhamento e nº da mesa)
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { renderToBuffer } from '@react-pdf/renderer'
@@ -49,6 +50,16 @@ const batches = plans.map((p) => ({
     { roundId: p.info.roundId, groupKeys: p.groups.map((g) => g.key), blank: Math.min(p.suggestedBlank, 4) },
     'name',
     lang,
+    // --check [all|psych|national] [N]: coluna de conferência; --station: número da mesa
+    {
+      check: process.argv.includes('--check')
+        ? {
+            mode: (process.argv[process.argv.indexOf('--check') + 1] ?? 'all') as 'all' | 'psych' | 'national',
+            top: Number(process.argv[process.argv.indexOf('--check') + 2]) || 10,
+          }
+        : { mode: 'off', top: 10 },
+      station: process.argv.includes('--station'),
+    },
   ),
 }))
 

@@ -1,7 +1,14 @@
 // Súmulas em branco: as linhas seguem o formato da rodada (nunca o evento).
 import assert from 'node:assert/strict'
 import { demoWcif } from '../src/tools/scorecomps/model/demo'
-import { planRounds, buildRoundScorecards, buildGenericScorecards, blankTypesFor, ADVANCERS_KEY } from '../src/tools/scorecomps/model/build'
+import {
+  planRounds,
+  buildRoundScorecards,
+  buildGenericScorecards,
+  blankTypesFor,
+  checkedCompetitors,
+  ADVANCERS_KEY,
+} from '../src/tools/scorecomps/model/build'
 import { arrange } from '../src/tools/scorecomps/model/output'
 import { advancingFromPrevious } from '../src/tools/cubestaff/model/people'
 import { attemptsFor, buildRoundLayout } from '../src/tools/scorecomps/model/logic'
@@ -112,4 +119,36 @@ console.log('✓ súmulas em branco seguem o formato da rodada (Ao5/Bo5, Mo3/Bo3
   assert.deepEqual([...types].sort((a, b) => b - a), types, 'ordem 5, 3, 2, 1')
   assert.ok(types.every((t) => [5, 3, 2, 1].includes(t)))
   console.log(`✓ tipos de súmula em branco: ${types.join(', ')}`)
+}
+
+// Conferência do embaralhamento (2º embaralhador) e número da mesa.
+{
+  const w = demoWcif()
+  const plan = planRounds(w).find((p) => p.info.eventId === '333' && p.groups.length > 0)!
+  const ids = plan.groups.flatMap((g) => g.competitors.map((c) => c.registrantId))
+  // Recordes conhecidos: o competidor i tem média 1000 + i e ranking nacional i + 1.
+  ids.forEach((id, i) => {
+    const p = w.persons.find((x) => x.registrantId === id)!
+    p.personalBests = [{ eventId: '333', type: 'average', best: 1000 + i, worldRanking: 5000 + i, nationalRanking: i + 1 }]
+    p.assignments = p.assignments.map((a) => (a.assignmentCode === 'competitor' ? { ...a, stationNumber: (i % 8) + 1 } : a))
+  })
+  assert.equal(checkedCompetitors(w, plan, { mode: 'off', top: 3 }).size, 0)
+  assert.equal(checkedCompetitors(w, plan, { mode: 'all', top: 3 }).size, ids.length)
+  assert.deepEqual([...checkedCompetitors(w, plan, { mode: 'psych', top: 3 })].sort(), ids.slice(0, 3).sort())
+  assert.deepEqual([...checkedCompetitors(w, plan, { mode: 'national', top: 2 })].sort(), ids.slice(0, 2).sort())
+  const plan2 = planRounds(w).find((p) => p.info.roundId === plan.info.roundId)!
+  const cards = buildRoundScorecards(
+    w,
+    plan2,
+    { roundId: plan2.info.roundId, groupKeys: plan2.groups.map((g) => g.key), blank: 2 },
+    'name',
+    'pt',
+    { check: { mode: 'psych', top: 3 }, station: true },
+  )
+  assert.equal(cards.filter((c) => c.scrambleCheck && c.competitorName).length, 3)
+  assert.ok(cards.filter((c) => !c.competitorName).every((c) => c.scrambleCheck), 'em branco recebe a coluna')
+  assert.ok(cards.filter((c) => c.competitorName).every((c) => c.station! >= 1 && c.station! <= 8))
+  const noStation = buildRoundScorecards(w, plan2, { roundId: plan2.info.roundId, groupKeys: plan2.groups.map((g) => g.key), blank: 0 }, 'name', 'pt')
+  assert.ok(noStation.every((c) => !c.station && !c.scrambleCheck), 'padrão: sem mesa e sem conferência')
+  console.log('✓ conferência do embaralhamento (todas / top Psych Sheet / top nacional) e número da mesa')
 }

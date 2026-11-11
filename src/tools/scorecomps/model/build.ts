@@ -157,13 +157,67 @@ function sortCompetitors(list: Competitor[], sortBy: SortBy, locale: Locale): Co
 }
 
 /** Súmulas de UMA rodada (na ordem: grupo a grupo, depois as em branco). */
+// ------------------------------------------------- conferência do embaralhamento
+
+/**
+ * Coluna de conferência do embaralhamento (2º embaralhador confere e rubrica),
+ * comum em campeonatos grandes para os melhores competidores:
+ * - 'off': sem a coluna;
+ * - 'all': em todas as súmulas;
+ * - 'psych': nos N melhores da Psych Sheet da rodada (recorde pessoal);
+ * - 'national': em quem está no top N do ranking nacional da modalidade.
+ * Súmulas em branco (nome desconhecido) recebem a coluna sempre que ela está ligada.
+ */
+export interface CheckOption {
+  mode: 'off' | 'all' | 'psych' | 'national'
+  top: number
+}
+export const NO_CHECK: CheckOption = { mode: 'off', top: 10 }
+
+export interface CardOptions {
+  check: CheckOption
+  /** Imprimir o número da estação/mesa (quando o WCIF tiver). */
+  station: boolean
+}
+const DEFAULT_CARD_OPTIONS: CardOptions = { check: NO_CHECK, station: false }
+
+/** Quem recebe a coluna de conferência nesta rodada (registrantIds). */
+export function checkedCompetitors(wcif: Wcif, plan: RoundPlan, opt: CheckOption): Set<number> {
+  const all = plan.groups.flatMap((g) => g.competitors.map((c) => c.registrantId))
+  if (opt.mode === 'off') return new Set()
+  if (opt.mode === 'all') return new Set(all)
+  const type = plan.info.round.format === 'a' || plan.info.round.format === 'm' ? 'average' : 'single'
+  const byId = new Map(wcif.persons.map((p) => [p.registrantId, p]))
+  const pbOf = (id: number) => {
+    const pbs = byId.get(id)?.personalBests?.filter((b) => b.eventId === plan.info.eventId) ?? []
+    return pbs.find((b) => b.type === type) ?? pbs.find((b) => b.type === 'single') ?? null
+  }
+  if (opt.mode === 'national')
+    return new Set(
+      all.filter((id) => {
+        const r = pbOf(id)?.nationalRanking
+        return r != null && r > 0 && r <= opt.top
+      }),
+    )
+  // Psych Sheet: média (formatos a/m) ou single; sem recorde fica de fora.
+  const ranked = all
+    .map((id) => ({ id, pb: pbOf(id) }))
+    .filter((x) => x.pb && x.pb.best > 0)
+    .sort((a, b) => (a.pb!.worldRanking ?? Infinity) - (b.pb!.worldRanking ?? Infinity) || a.pb!.best - b.pb!.best)
+  // Empate na N-ésima posição: entram todos os empatados.
+  const cut = ranked[opt.top - 1]?.pb?.best
+  return new Set(ranked.filter((x, i) => i < opt.top || (cut != null && x.pb!.best === cut)).map((x) => x.id))
+}
+
 export function buildRoundScorecards(
   wcif: Wcif,
   plan: RoundPlan,
   sel: RoundSelection,
   sortBy: SortBy,
   locale: Locale = 'pt',
+  options: CardOptions = DEFAULT_CARD_OPTIONS,
 ): ScorecardModel[] {
+  const checked = checkedCompetitors(wcif, plan, options.check)
   const layout = buildRoundLayout(plan.info.round, plan.info.eventId, locale)
   const base = {
     competitionName: wcif.name,
@@ -183,11 +237,21 @@ export function buildRoundScorecards(
         group: g.printed,
         competitorName: c.name,
         groupKey: g.key,
+        scrambleCheck: checked.has(c.registrantId),
+        station: options.station ? (c.station ?? null) : null,
       })
     }
   }
   for (let i = 0; i < sel.blank; i++) {
-    out.push({ ...base, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank' })
+    out.push({
+      ...base,
+      competitorId: '',
+      wcaId: null,
+      group: '',
+      competitorName: '',
+      groupKey: 'blank',
+      scrambleCheck: options.check.mode !== 'off',
+    })
   }
   return out
 }
@@ -219,6 +283,7 @@ export function buildGenericScorecards(
   attempts: GenericAttempts,
   count: number,
   locale: Locale = 'pt',
+  scrambleCheck = false,
 ): ScorecardModel[] {
   const layout = buildGenericLayout(attempts, locale)
   const S = SCORECARD_STRINGS[locale]
@@ -234,6 +299,7 @@ export function buildGenericScorecards(
       group: '',
       competitorName: '',
       groupKey: 'generic',
+      scrambleCheck,
     })
   return out
 }

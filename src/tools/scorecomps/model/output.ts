@@ -32,7 +32,7 @@ function slug(s: string): string {
 
 /** Súmula em branco da mesma rodada (modalidade, limite e corte impressos; sem nome). */
 export function blankLike(m: ScorecardModel): ScorecardModel {
-  return { ...m, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank' }
+  return { ...m, competitorId: '', wcaId: null, group: '', competitorName: '', groupKey: 'blank', station: null }
 }
 
 /**

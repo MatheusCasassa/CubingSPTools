@@ -25,6 +25,8 @@ export interface Competitor {
   registrantId: number
   name: string
   wcaId: string | null
+  /** Estação/mesa no grupo (assignment do WCIF), quando houver. */
+  station?: number | null
 }
 
 /** Lista todas as rodadas da competição, ordenadas por evento e número. */
@@ -97,11 +99,14 @@ export function competitorsInGroup(wcif: Wcif, activityIds: number[]): Competito
   const out: Competitor[] = []
   for (const person of wcif.persons) {
     if (person.registrantId == null) continue
-    const assigned = person.assignments.some(
-      (as) => as.assignmentCode === 'competitor' && ids.has(as.activityId),
-    )
+    const assigned = person.assignments.find((as) => as.assignmentCode === 'competitor' && ids.has(as.activityId))
     if (assigned) {
-      out.push({ registrantId: person.registrantId, name: person.name, wcaId: person.wcaId })
+      out.push({
+        registrantId: person.registrantId,
+        name: person.name,
+        wcaId: person.wcaId,
+        station: assigned.stationNumber ?? null,
+      })
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))

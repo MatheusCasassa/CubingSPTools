@@ -5,6 +5,10 @@ import type { Locale } from '../../../i18n/locales'
 export interface ScorecardStrings {
   id: string
   group: string
+  /** Coluna de conferência do embaralhamento (2º embaralhador). */
+  check: string
+  /** Número da estação/mesa (WCIF). */
+  station: string
   round: (n: number) => string
   final: string
   dnfIf: (t: string) => string
@@ -25,6 +29,8 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
   pt: {
     id: 'ID',
     group: 'GRUPO',
+    check: 'CONF.',
+    station: 'Mesa',
     round: (n) => `Rodada ${n}`,
     final: 'Final',
     dnfIf: (t) => `DNF se > ${t}`,
@@ -42,6 +48,8 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
   en: {
     id: 'ID',
     group: 'GROUP',
+    check: 'CHECK',
+    station: 'Station',
     round: (n) => `Round ${n}`,
     final: 'Final',
     dnfIf: (t) => `DNF if > ${t}`,
@@ -59,6 +67,8 @@ export const SCORECARD_STRINGS: Record<Locale, ScorecardStrings> = {
   es: {
     id: 'ID',
     group: 'GRUPO',
+    check: 'REV.',
+    station: 'Estación',
     round: (n) => `Ronda ${n}`,
     final: 'Final',
     dnfIf: (t) => `DNF si > ${t}`,

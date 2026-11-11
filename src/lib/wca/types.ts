@@ -75,6 +75,8 @@ export interface WcifPersonalBest {
   best: number
   type: 'single' | 'average'
   worldRanking?: number
+  continentalRanking?: number
+  nationalRanking?: number
 }
 
 export interface WcifPerson {
